@@ -1,65 +1,40 @@
-/**
- * Below are the colors that are used in the app. The colors are defined in the light and dark mode.
- * There are many other ways to style your app. For example, [Nativewind](https://www.nativewind.dev/), [Tamagui](https://tamagui.dev/), [unistyles](https://unistyl.es/), etc.
- */
-
-import '@/global.css';
-
-import { Platform } from 'react-native';
-
-export const Colors = {
-  light: {
-    text: '#000000',
-    background: '#ffffff',
-    backgroundElement: '#F0F0F3',
-    backgroundSelected: '#E0E1E6',
-    textSecondary: '#60646C',
-  },
-  dark: {
-    text: '#ffffff',
-    background: '#000000',
-    backgroundElement: '#212225',
-    backgroundSelected: '#2E3135',
-    textSecondary: '#B0B4BA',
-  },
+// MATAF görsel dili: beyaz ağırlıklı zemin, turuncu rota, erişilebilir kontrast.
+export const C = {
+  bg: '#FFFFFF',
+  surface: '#F5F5F3',
+  border: '#ECEAE6',
+  borderStrong: '#E2E0DC',
+  ink: '#17181C',
+  ink2: '#2E3036',
+  muted: '#5E636E',
+  route: '#F26A1B', // harita üzerindeki turuncu iz
+  accent: '#C2410C', // beyaz yazılı düğmeler (WCAG AA)
+  accentTint: '#FFF1E8',
+  accentSoft: '#FFF6F0',
+  closed: '#B42318',
+  closedTint: '#FEECEB',
+  limited: '#92400E',
+  limitedFill: '#F5A524',
+  limitedTint: '#FEF3C7',
+  open: '#0F766E',
+  openTint: '#E6F4F1',
+  user: '#2563EB',
+  userTint: '#EEF3FE',
+  green: '#2F8F57',
+  greenDark: '#1E5A38',
+  greenTint: '#EEF7F1',
+  gold: '#C9A227',
+  mapGround: '#EFECE6',
 } as const;
 
-export type ThemeColor = keyof typeof Colors.light & keyof typeof Colors.dark;
+export const R = { sm: 10, md: 14, lg: 18, xl: 24, pill: 999 } as const;
 
-export const Fonts = Platform.select({
-  ios: {
-    /** iOS `UIFontDescriptorSystemDesignDefault` */
-    sans: 'system-ui',
-    /** iOS `UIFontDescriptorSystemDesignSerif` */
-    serif: 'ui-serif',
-    /** iOS `UIFontDescriptorSystemDesignRounded` */
-    rounded: 'ui-rounded',
-    /** iOS `UIFontDescriptorSystemDesignMonospaced` */
-    mono: 'ui-monospace',
-  },
-  default: {
-    sans: 'normal',
-    serif: 'serif',
-    rounded: 'normal',
-    mono: 'monospace',
-  },
-  web: {
-    sans: 'var(--font-display)',
-    serif: 'var(--font-serif)',
-    rounded: 'var(--font-rounded)',
-    mono: 'var(--font-mono)',
-  },
-});
+export const S = { xs: 4, sm: 8, md: 12, lg: 16, xl: 20, xxl: 24 } as const;
 
-export const Spacing = {
-  half: 2,
-  one: 4,
-  two: 8,
-  three: 16,
-  four: 24,
-  five: 32,
-  six: 64,
+export const shadow = {
+  shadowColor: '#17181C',
+  shadowOpacity: 0.12,
+  shadowRadius: 10,
+  shadowOffset: { width: 0, height: 3 },
+  elevation: 4,
 } as const;
-
-export const BottomTabInset = Platform.select({ ios: 50, android: 80 }) ?? 0;
-export const MaxContentWidth = 800;

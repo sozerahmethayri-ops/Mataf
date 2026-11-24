@@ -1,18 +1,26 @@
-import { DarkTheme, DefaultTheme, ThemeProvider } from 'expo-router';
-import * as SplashScreen from 'expo-splash-screen';
-import { useColorScheme } from 'react-native';
+import { Stack } from 'expo-router';
+import { StatusBar } from 'expo-status-bar';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
 
-import { AnimatedSplashOverlay } from '@/components/animated-icon';
-import AppTabs from '@/components/app-tabs';
+import { C } from '@/constants/theme';
+import { I18nProvider } from '@/i18n';
+import { AppProvider } from '@/services/AppContext';
+import { ReportsProvider } from '@/services/ReportsContext';
 
-SplashScreen.preventAutoHideAsync();
-
-export default function TabLayout() {
-  const colorScheme = useColorScheme();
+export default function RootLayout() {
   return (
-    <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-      <AnimatedSplashOverlay />
-      <AppTabs />
-    </ThemeProvider>
+    <SafeAreaProvider>
+      <I18nProvider>
+        <ReportsProvider>
+          <AppProvider>
+            <StatusBar style="dark" />
+            <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: C.bg } }}>
+              <Stack.Screen name="(tabs)" />
+              <Stack.Screen name="bildir" options={{ presentation: 'modal' }} />
+            </Stack>
+          </AppProvider>
+        </ReportsProvider>
+      </I18nProvider>
+    </SafeAreaProvider>
   );
 }

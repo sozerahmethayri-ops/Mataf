@@ -1,56 +1,92 @@
-# Welcome to your Expo app 👋
+# MATAF — Mescid-i Haram ve Mescid-i Nebevî navigasyon uygulaması
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+Mekke ve Medine'deki ziyaretçiler için iOS ve Android uygulaması:
 
-## Get started
+- **Gerçek ölçekli 3D harita** — Mescid-i Haram (Kâbe, Mataf, Mes'a, Saat Kulesi) ve Mescid-i Nebevî (Yeşil Kubbe, şemsiyeler, minareler), metre cinsinden; 100 m ölçek çubuğu.
+- **Kapı kapanmalarına göre rota** — ziyaretçiler kapı durumunu bildirir, yorum yazar, onaylar; kapalı kapılar rotadan otomatik çıkar. Resmî duyuru her zaman önceliklidir.
+- **Turuncu izle navigasyon** — sıradaki dönüş, kalan mesafe, kapı kapanınca "rota güncellendi" uyarısı. Mescid çevresinde değilseniz demo yürüyüş.
+- **Şehir haritası** — oteller, yemek, eczane, otobüs, taksi, hastane (OpenStreetMap); otelinizi kaydedip mescide yaya rotası.
+- **Namaz vakitleri ve kıble pusulası** — telefonda hesaplanır (Ümmü'l-Kurâ, Diyanet, MWL…), internet gerekmez.
+- **Kur'an-ı Kerim** — 114 sûre, Arapça metin + meal, cihazda saklanır.
+- **Sahîh-i Buhârî, günün hadisi ve dualar** — mescit, telbiye, tavaf, sa'y, zemzem, yolculuk.
+- **Ravza rehberi** — ziyaret saatleri, Nusuk izni, resmî 360° sanal tur bağlantısı.
+- **Türkçe, İngilizce, Arapça** (Arapça sağdan sola).
 
-1. Install dependencies
+> Durum: **0.1.0 — geliştirme sürümü.** Harita dış hatları yayımlanmış ölçülerden oranlanmıştır; kapı yerleri ve mescit içi hizmet noktaları yaklaşıktır / örnektir. Ayrıntı: [docs/VERI-KAYNAKLARI.md](docs/VERI-KAYNAKLARI.md).
 
-   ```bash
-   npm install
-   ```
+## Hızlı başlangıç
 
-2. Start the app
-
-   ```bash
-   npx expo start
-   ```
-
-In the output, you'll find options to open the app in a
-
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
-
-You can start developing by editing the files inside the **src/app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
-
-## Get a fresh project
-
-When you're ready, run:
+Gerekenler: [Node.js 20+](https://nodejs.org) ve telefonda **Expo Go** uygulaması.
 
 ```bash
-npm run reset-project
+git clone https://github.com/<kullanici-adiniz>/mataf.git
+cd mataf
+npm install
+npx expo start
 ```
 
-This command will move the starter code to the **example** directory and create a blank **src/app** directory where you can start developing.
+Terminalde çıkan QR kodu telefonunuzdaki Expo Go ile okutun. Uygulama birkaç saniyede açılır.
 
-### Other setup steps
+### Telefona kurulabilir dosya (APK / iOS) üretmek
 
-- To set up ESLint for linting, run `npx expo lint`, or follow our guide on ["Using ESLint and Prettier"](https://docs.expo.dev/guides/using-eslint/)
-- If you'd like to set up unit testing, follow our guide on ["Unit Testing with Jest"](https://docs.expo.dev/develop/unit-testing/)
-- Learn more about the TypeScript setup in this template in our guide on ["Using TypeScript"](https://docs.expo.dev/guides/typescript/)
+Expo'nun bulut derleme hizmetiyle (ücretsiz katman yeterli):
 
-## Learn more
+```bash
+npx eas-cli@latest login
+npx eas-cli@latest build -p android --profile preview   # paylaşılabilir .apk
+npx eas-cli@latest build -p ios --profile preview       # Apple geliştirici hesabı gerekir
+```
 
-To learn more about developing your project with Expo, look at the following resources:
+Derleme bitince verilen bağlantıdan dosyayı indirip GitHub'da **Releases** bölümüne ekleyebilirsiniz.
 
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
+## Canlı bildirim sunucusu (isteğe bağlı)
 
-## Join the community
+Kurulumsuz çalıştırdığınızda kapı bildirimleri **yalnızca o telefonda** tutulur (yerel demo, örnek bildirimlerle). Herkesin bildirimini herkesin görmesi için ücretsiz bir [Supabase](https://supabase.com) projesi açın:
 
-Join our community of developers creating universal apps.
+1. Supabase'de yeni proje → **SQL Editor** → [`supabase/schema.sql`](supabase/schema.sql) dosyasını çalıştırın.
+2. **Authentication → Providers → Anonymous sign-ins**'i açın.
+3. Proje kök klasöründe `.env` dosyası oluşturun (örnek: [`.env.example`](.env.example)):
 
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+```
+EXPO_PUBLIC_SUPABASE_URL=https://xxxx.supabase.co
+EXPO_PUBLIC_SUPABASE_ANON_KEY=eyJ...
+```
+
+4. `npx expo start` ile yeniden başlatın. Ayarlar ekranında "Canlı sunucu (Supabase)" yazmalı.
+
+## Proje yapısı
+
+```
+src/
+  app/            Ekranlar (Expo Router): (tabs)/ harita, kapılar, Kur'an, vakitler, hadis
+                  kapi/[id] · bildir · navigasyon · arama · sehir · kible · ravza · medine-rehber · veriler · ayarlar
+  scene/          Gerçek ölçekli 3D çizim motoru (eğik izdüşüm) ve Mekke/Medine sahneleri
+  services/       Bildirim kuralları + Supabase, rota planlama, konum, namaz vakti, Kur'an, hadis, OSM
+  data/           Kapılar, hedefler, hizmet noktaları, Ravza saatleri, dualar
+  i18n/           TR / EN / AR metinleri
+supabase/         Veritabanı şeması
+docs/             Mimari, veri kaynakları, otomatik güncelleme
+scripts/          Mantık kontrolü (npm run check)
+```
+
+## Geliştirme komutları
+
+```bash
+npm run typecheck   # TypeScript kontrolü
+npm run check       # bildirim kuralları ve kapı kapanınca yeniden rota testleri
+npm run lint
+```
+
+## Veri ve lisans notları
+
+- Harita: © OpenStreetMap katkıcıları (ODbL) — uygulamada atıf gösterilir. Yaya rotası: FOSSGIS OSRM.
+- Kur'an metni ve meal: alquran.cloud (Tanzil). Meal hakları sahiplerine aittir; mağazaya yüklemeden önce kullanılan mealin lisansını kontrol edin.
+- Hadis: fawazahmed0/hadith-api (açık veri). Çevirileri yayından önce bir ilahiyatçıya kontrol ettirin.
+- Resmî kapı/kapanma verisi için İki Kutsal Mescid İşleri Genel Kurumu ile veri anlaşması gerekir (docs/VERI-KAYNAKLARI.md).
+- Bu depo için henüz bir yazılım lisansı seçilmedi. Açık kaynak yapmak isterseniz `LICENSE` dosyası ekleyin (ör. MIT).
+
+---
+
+### English summary
+
+MATAF is an Expo (React Native) app for visitors to Masjid al-Haram and the Prophet's Mosque: true-scale 3D maps, crowd-sourced gate closures with automatic rerouting, turn-by-turn walking guidance, a city map (OpenStreetMap), on-device prayer times and Qibla, Quran, Sahih al-Bukhari and duas, and a Rawdah guide. Run with `npm install && npx expo start` and open in Expo Go. Optional live backend: Supabase (`supabase/schema.sql`, `.env`).

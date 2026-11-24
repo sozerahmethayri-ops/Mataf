@@ -1,0 +1,33 @@
+// Ağdan JSON indirir, AsyncStorage'da saklar. Ağ yoksa son kaydı döner (çevrimdışı çalışma).
+import AsyncStorage from '@react-native-async-storage/async-storage';
+
+export type Cached<T> = { data: T; fetchedAt: number; fromCache: boolean };
+
+export async function cachedJson<T>(key: string, url: string, ttlMs: number, init?: RequestInit): Promise<Cached<T>> {
+  const raw = await AsyncStorage.getItem(`cache:${key}`);
+  const hit = raw ? (JSON.parse(raw) as { data: T; at: number }) : null;
+  if (hit && Date.now() - hit.at < ttlMs) return { data: hit.data, fetchedAt: hit.at, fromCache: true };
+  try {
+    const ctl = new AbortController();
+    const timer = setTimeout(() => ctl.abort(), 20000);
+    const res = await fetch(url, { ...init, signal: ctl.signal });
+    clearTimeout(timer);
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const data = (await res.json()) as T;
+    await AsyncStorage.setItem(`cache:${key}`, JSON.stringify({ data, at: Date.now() }));
+    return { data, fetchedAt: Date.now(), fromCache: false };
+  } catch (e) {
+    if (hit) return { data: hit.data, fetchedAt: hit.at, fromCache: true };
+    throw e;
+  }
+}
+
+export async function cacheAge(key: string) {
+  const raw = await AsyncStorage.getItem(`cache:${key}`);
+  return raw ? (JSON.parse(raw) as { at: number }).at : undefined;
+}
+
+export async function clearCache(prefix: string) {
+  const keys = await AsyncStorage.getAllKeys();
+  await AsyncStorage.multiRemove(keys.filter((k) => k.startsWith(`cache:${prefix}`)));
+}
