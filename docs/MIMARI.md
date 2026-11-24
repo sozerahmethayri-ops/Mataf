@@ -11,6 +11,7 @@
 | Ses | `src/services/voice.ts`, `quranIndex.ts` | Ayet: kâri kaydı (cdn.islamic.network); dua/yönlendirme: cihaz sesi (expo-speech); sıralı okuma kuyruğu |
 | Kur'an | `src/services/quran.ts`, `tafsir.ts`, `QuranPrefs.tsx`, `src/data/quranEditions.ts` | Çok dilli meal/okunuş, ayet ayet ses, sesli meal, tefsir; tercihler cihazda |
 | Dualar | `src/data/duas.ts`, `src/components/DuaBlock.tsx` | Metin kayıtları (hadis) + ayet kayıtları (API'den, seçili meal dilinde) |
+| En yakın cami | `src/services/mosques.ts` (saf, testli), `mosqueStore.ts`, `src/app/cami.tsx`, `src/components/MosqueMap.tsx` | Overpass sorgusu (cami, mescit, çok inançlı ibadet odası), kademeli yarıçap, yedek sunucular, aynı caminin kayıtlarını birleştirme, çevrimdışı son sonuç, yön/mesafe, harita uygulamasında tarif |
 | Rota | `src/services/routing.ts` | Mescidin dış halkası üzerinden kısa yön + açık kapı seçimi. Kapı `closed` / `exitOnly` ise atlanır |
 | Kapı bildirimleri | `src/services/reports.ts`, `ReportsContext.tsx` | Yerel demo (AsyncStorage) ya da Supabase (gerçek zamanlı) |
 | İçerik | `quran.ts`, `hadith.ts`, `osm.ts`, `cache.ts` | Ağdan indirilir, cihazda saklanır, çevrimdışı çalışır |

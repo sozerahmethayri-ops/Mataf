@@ -64,7 +64,12 @@ export default function MapScreen() {
         <View style={[{ flexDirection: 'row', alignItems: 'center', gap: 10, height: 52, paddingLeft: 16, paddingRight: 6, borderRadius: 26, backgroundColor: C.bg }, shadow]}>
           <Icon name="search" color={C.muted} />
           <Pressable style={{ flex: 1, height: 44, justifyContent: 'center' }} onPress={() => router.push('/arama')} accessibilityRole="search">
-            <Text style={{ fontSize: 15, color: C.muted }}>{t('map.search')}</Text>
+            <Text style={{ fontSize: 15, color: C.muted }} numberOfLines={1}>{t('map.search')}</Text>
+          </Pressable>
+          <Pressable onPress={() => router.push('/cami')} accessibilityRole="button" accessibilityLabel={lang === 'en' ? 'Nearest mosque' : lang === 'ar' ? 'أقرب مسجد' : 'En yakın cami'}
+            style={{ flexDirection: 'row', alignItems: 'center', gap: 5, height: 40, paddingHorizontal: 12, borderRadius: 20, backgroundColor: C.green }}>
+            <Icon name="pin" size={16} color="#FFFFFF" />
+            <Text style={{ fontSize: 13, fontWeight: '700', color: '#FFFFFF' }}>{lang === 'en' ? 'Mosque' : lang === 'ar' ? 'مسجد' : 'Cami'}</Text>
           </Pressable>
           <IconBtn name="settings" label={t('settings.title')} tint={C.accentTint} color={C.accent} size={40} onPress={() => router.push('/ayarlar')} />
         </View>

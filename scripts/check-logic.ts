@@ -7,6 +7,7 @@ import { MAKKAH_CORE } from '../src/scene/makkah';
 import { CORNERS, KAABA_POLY, adjustLap, bearingOf, initialLap, pointAt, startManual, stepLap, zoneOf, type Fix, type LapState } from '../src/services/tawaf';
 import { globalAyah, surahLength } from '../src/services/quranIndex';
 import { DUA_LIB, isQuranRef } from '../src/data/duas';
+import { OVERPASS_ENDPOINTS, bearingDeg, distanceM, findMosques, parseOverpass, type El, type Fetcher } from '../src/services/mosques';
 
 const now = Date.now();
 const r = (gateId: string, status: GateStatus, user: string, minsAgo: number, official = false): Report =>
@@ -120,4 +121,50 @@ function simulate(o: Sim, st0: LapState = initialLap()) {
   ok(bad.length === 0 && texts.every((d) => d.ar && d.tr && d.ref), `dua kütüphanesi: ${DUA_LIB.length} kategori, ${refs.length} ayet + ${texts.length} metin kaydı; geçersiz ayet referansı ${bad.length}`);
 }
 
-process.exit(fails ? 1 : 0);
+// ── En yakın cami (Overpass yanıtı benzetimi) ──
+async function mosqueChecks() {
+  const o = { lat: 41.0082, lng: 28.9784 }; // İstanbul, Sultanahmet
+  const at = (dn: number, de: number) => ({ lat: o.lat + dn / 111320, lon: o.lng + de / (111320 * Math.cos((o.lat * Math.PI) / 180)) });
+  const sample: { elements: El[] } = { elements: [
+    { type: 'node', id: 1, ...at(300, 0), tags: { amenity: 'place_of_worship', religion: 'muslim', name: 'Sultan Ahmet Camii', 'name:en': 'Blue Mosque', wheelchair: 'yes' } },
+    { type: 'way', id: 2, center: at(320, 15), tags: { building: 'mosque', name: 'Sultan Ahmet Camii' } },
+    { type: 'node', id: 3, ...at(0, 800), tags: { amenity: 'place_of_worship', religion: 'muslim', place_of_worship: 'musalla' } },
+    { type: 'node', id: 4, ...at(-1200, 0), tags: { amenity: 'place_of_worship', religion: 'multifaith', name: 'Prayer room' } },
+    { type: 'way', id: 5, center: at(100, 100), tags: { building: 'mosque', religion: 'christian', name: 'Eski cami (kilise)' } },
+    { type: 'node', id: 6, ...at(50, 50), tags: { amenity: 'place_of_worship', religion: 'muslim', disused: 'yes', name: 'Kapalı' } },
+    { type: 'relation', id: 7, tags: { amenity: 'place_of_worship', religion: 'muslim' } },
+  ] };
+  const list = parseOverpass(sample, o, 'en');
+  ok(list.length === 3 && list[0].name === 'Blue Mosque' && list[0].wheelchair === true && list[1].kind === 'musalla' && list[2].kind === 'multifaith' && Math.abs(list[0].dist - 300) < 5,
+    `cami listesi: ${list.map((m) => `${m.name || '(isimsiz)'}/${m.kind}/${Math.round(m.dist)}m`).join(', ')} (kilise, kapalı ve konumsuz kayıt elendi, bina+nokta birleşti)`);
+
+  // Yarıçap büyütme ve yedek sunucu
+  const calls: string[] = [];
+  const fetcher: Fetcher = async (url, init) => {
+    const radius = Number(/around:(\d+)/.exec(decodeURIComponent(init.body))![1]);
+    calls.push(`${OVERPASS_ENDPOINTS.indexOf(url)}:${radius}`);
+    if (url === OVERPASS_ENDPOINTS[0]) return { ok: false, status: 504, json: async () => ({}) };
+    return { ok: true, status: 200, json: async () => (radius >= 10000 ? sample : { elements: [] }) };
+  };
+  const r = await findMosques(o, 'tr', { fetcher, minCount: 3 });
+  ok(r.radius === 10000 && r.mosques.length === 3 && calls.join(' ') === '0:1500 1:1500 0:4000 1:4000 0:10000 1:10000',
+    `cami arama: 1,5 → 4 → 10 km büyüdü, çöken sunucudan yedeğe geçti (${calls.join(' ')})`);
+
+  // İnternet yok: son sonuç gösterilir, mesafeler yeni konuma göre
+  let stored = '';
+  const cache = { get: async () => stored || null, set: async (v: string) => { stored = v; } };
+  await findMosques(o, 'tr', { fetcher: async () => ({ ok: true, status: 200, json: async () => sample }), cache });
+  const moved = { lat: o.lat + 300 / 111320, lng: o.lng };
+  const off = await findMosques(moved, 'tr', { fetcher: async () => { throw new Error('offline'); }, cache });
+  ok(!!off.offline && off.mosques[0].dist < 30, `internet yokken son arama gösteriliyor, mesafe yeni konuma göre (${Math.round(off.mosques[0].dist)} m)`);
+  let threw = false;
+  try { await findMosques(o, 'tr', { fetcher: async () => { throw new Error('offline'); } }); } catch { threw = true; }
+  ok(threw, 'internet ve kayıt yoksa hata gösteriliyor (sessizce boş liste değil)');
+
+  const kaaba = { lat: 21.42252, lng: 39.82621 };
+  const b = bearingDeg(o, kaaba);
+  const d = distanceM(o, kaaba) / 1000;
+  ok(b > 150 && b < 153 && d > 2350 && d < 2450, `yön/mesafe: İstanbul → Kâbe ${b.toFixed(1)}° (kıble), ${Math.round(d)} km`);
+}
+
+mosqueChecks().then(() => process.exit(fails ? 1 : 0));

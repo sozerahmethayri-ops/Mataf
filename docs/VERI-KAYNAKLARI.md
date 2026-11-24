@@ -34,6 +34,7 @@
 | cdn.jsdelivr.net/gh/spa5k/tafsir_api | Tefsir (30+ dil) | Depo MIT; tefsir metinlerinin hakları yayıncılarına aittir |
 | cdn.jsdelivr.net/gh/fawazahmed0/hadith-api | Sahîh-i Buhârî | Açık veri |
 | overpass-api.de | Şehir yerleri | © OpenStreetMap katkıcıları, ODbL — atıf zorunlu |
+| overpass-api.de, overpass.kumi.systems, overpass.private.coffee | En yakın cami (dünya geneli; sırayla yedek) | ODbL; kamu sunucuları — yoğun kullanımda kendi Overpass sunucunuzu kurun |
 | routing.openstreetmap.de | Yaya rotası | FOSSGIS kullanım koşulları; yoğun kullanımda kendi OSRM sunucunuzu kurun |
 | Supabase (isteğe bağlı) | Canlı kapı bildirimleri | Kendi projeniz |
 

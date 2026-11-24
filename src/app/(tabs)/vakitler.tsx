@@ -70,6 +70,10 @@ export default function PrayerTimes() {
         </>
       )}
       <ListRow title={t('times.qibla')} subtitle={t('times.qiblaSub')} onPress={() => router.push('/kible')} left={<Icon name="nav" color={C.accent} />} />
+      <ListRow
+        title={lang === 'en' ? 'Nearest mosque' : lang === 'ar' ? 'أقرب مسجد' : 'En yakın cami'}
+        subtitle={lang === 'en' ? 'Anywhere in the world · distance, direction, directions' : lang === 'ar' ? 'في أي مكان في العالم · المسافة والاتجاه' : 'Dünyanın her yerinde · mesafe, yön ve yol tarifi'}
+        onPress={() => router.push('/cami')} left={<Icon name="pin" color={C.green} />} />
       <ListRow title={t('settings.method')} subtitle={METHODS.find((x) => x.id === method)?.label} onPress={() => router.push('/ayarlar')} left={<Icon name="settings" color={C.muted} />} />
     </Screen>
   );
