@@ -2,7 +2,7 @@
   "expo": {
     "name": "MATAF",
     "slug": "mataf",
-    "version": "0.1.1",
+    "version": "0.2.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "mataf",
@@ -56,7 +56,14 @@
           "photosPermission": "Kapı bildirimine fotoğraf eklemek için."
         }
       ],
-      "expo-localization"
+      "expo-localization",
+      [
+        "expo-audio",
+        {
+          "microphonePermission": false,
+          "enableBackgroundPlayback": true
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true,

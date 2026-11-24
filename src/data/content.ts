@@ -45,32 +45,6 @@ export const RAWDAH = {
 };
 
 // ── Dualar (Arapça metin, okunuş, Türkçe anlam, kaynak) ──
-export type Dua = { ar: string; tr: string; meaning: string; ref: string };
-export const DUA_CATS: { id: string; title: string; items: Dua[] }[] = [
-  { id: 'mescit', title: 'Mescide giriş-çıkış', items: [
-    { ar: 'اللَّهُمَّ افْتَحْ لِي أَبْوَابَ رَحْمَتِكَ', tr: 'Allâhümme’ftah lî ebvâbe rahmetik', meaning: 'Allah’ım, bana rahmetinin kapılarını aç. (girerken)', ref: 'Müslim, 713' },
-    { ar: 'اللَّهُمَّ إِنِّي أَسْأَلُكَ مِنْ فَضْلِكَ', tr: 'Allâhümme innî es’elüke min fadlik', meaning: 'Allah’ım, senden lütfunu isterim. (çıkarken)', ref: 'Müslim, 713' },
-  ] },
-  { id: 'telbiye', title: 'Telbiye', items: [
-    { ar: 'لَبَّيْكَ اللَّهُمَّ لَبَّيْكَ، لَبَّيْكَ لَا شَرِيكَ لَكَ لَبَّيْكَ، إِنَّ الْحَمْدَ وَالنِّعْمَةَ لَكَ وَالْمُلْكَ، لَا شَرِيكَ لَكَ', tr: 'Lebbeyk Allâhümme lebbeyk, lebbeyke lâ şerîke leke lebbeyk, inne’l-hamde ve’n-ni’mete leke ve’l-mülk, lâ şerîke lek', meaning: 'Buyur Allah’ım, buyur! Senin hiçbir ortağın yoktur, buyur! Hamd, nimet ve mülk senindir; senin ortağın yoktur.', ref: 'Buhârî, 1549' },
-  ] },
-  { id: 'tavaf', title: 'Tavaf', items: [
-    { ar: 'رَبَّنَا آتِنَا فِي الدُّنْيَا حَسَنَةً وَفِي الْآخِرَةِ حَسَنَةً وَقِنَا عَذَابَ النَّارِ', tr: 'Rabbenâ âtinâ fi’d-dünyâ haseneten ve fi’l-âhirati haseneten ve kınâ azâbe’n-nâr', meaning: 'Rabbimiz! Bize dünyada da iyilik ver, ahirette de iyilik ver ve bizi ateş azabından koru. (Rükn-i Yemânî ile Hacerülesved arasında)', ref: 'Bakara 201; Ebû Dâvûd, 1892' },
-  ] },
-  { id: 'say', title: "Sa'y", items: [
-    { ar: 'إِنَّ الصَّفَا وَالْمَرْوَةَ مِنْ شَعَائِرِ اللَّهِ', tr: 'İnne’s-Safâ ve’l-Mervete min şeâirillâh', meaning: 'Şüphesiz Safa ile Merve Allah’ın nişanlarındandır. (Safa’ya ilk çıkışta)', ref: 'Bakara 158; Müslim, 1218' },
-  ] },
-  { id: 'zemzem', title: 'Zemzem', items: [
-    { ar: 'مَاءُ زَمْزَمَ لِمَا شُرِبَ لَهُ', tr: 'Mâu zemzeme limâ şuribe leh', meaning: 'Zemzem suyu ne niyetle içilirse onun içindir. (Hadis; içerken dilediğiniz duayı yapabilirsiniz.)', ref: 'İbn Mâce, 3062' },
-  ] },
-  { id: 'yolculuk', title: 'Yolculuk', items: [
-    { ar: 'سُبْحَانَ الَّذِي سَخَّرَ لَنَا هَذَا وَمَا كُنَّا لَهُ مُقْرِنِينَ وَإِنَّا إِلَى رَبِّنَا لَمُنْقَلِبُونَ', tr: 'Sübhânellezî sahhara lenâ hâzâ ve mâ künnâ lehû mukrinîn ve innâ ilâ rabbinâ le-munkalibûn', meaning: 'Bunu bizim hizmetimize veren Allah’ı tesbih ederiz; yoksa biz buna güç yetiremezdik. Şüphesiz biz Rabbimize döneceğiz.', ref: 'Zuhruf 13–14; Müslim, 1342' },
-  ] },
-  { id: 'sabah', title: 'Sabah ve akşam', items: [
-    { ar: 'أَصْبَحْنَا وَأَصْبَحَ الْمُلْكُ لِلَّهِ وَالْحَمْدُ لِلَّهِ', tr: 'Asbahnâ ve asbaha’l-mülkü lillâh, ve’l-hamdü lillâh', meaning: 'Sabaha erdik, mülk de Allah’ındır; hamd Allah’a mahsustur. (Akşam: Emseynâ ve emse’l-mülkü lillâh)', ref: 'Müslim, 2723' },
-  ] },
-];
-
 // ── Veri kaynakları ekranı için ──
 export const SOURCES = [
   { id: 'reports', title: 'Kapı durumları', meta: 'Ziyaretçi bildirimleri (yerel demo / Supabase)', live: true },

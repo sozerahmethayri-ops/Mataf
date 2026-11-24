@@ -45,6 +45,19 @@ const P: Record<string, string> = {
   taxi: 'M5 13l2-5h10l2 5v5H5zM7 18v2M17 18v2M8 13h8',
   hospital: 'M4 4h16v16H4zM12 8v8M8 12h8',
   tour: 'M12 2v3M12 19v3M8 12h8m1-3 3 3-3 3',
+  play: 'M7 4.5v15l12-7.5z',
+  pause: 'M7 4h3.5v16H7zM13.5 4H17v16h-3.5z',
+  stop: 'M6 6h12v12H6z',
+  next: 'M5 5l10 7-10 7zM19 5v14',
+  prev: 'M19 19 9 12l10-7zM5 19V5',
+  mute: 'M11 5 6 9H2v6h4l5 4V5zM22 9l-6 6M16 9l6 6',
+  lock: 'M5 11h14v10H5zM8 11V7a4 4 0 0 1 8 0v4',
+  star: 'm12 3 2.8 5.7 6.2.9-4.5 4.4 1.1 6.2L12 17.3 6.4 20.2l1.1-6.2L3 9.6l6.2-.9z',
+  kaaba: 'M4 8.5 12 5l8 3.5v9L12 21l-8-3.5zM4 8.5 12 12l8-3.5M12 12v9M4 12.2l8 3.5 8-3.5',
+  compass: 'm15.5 8.5-2.2 4.8-4.8 2.2 2.2-4.8z',
+  list: 'M8 6h13M8 12h13M8 18h13M3.5 6h.01M3.5 12h.01M3.5 18h.01',
+  tafsir: 'M4 5.5A2.5 2.5 0 0 1 6.5 3H20v15H6.5A2.5 2.5 0 0 0 4 20.5zM4 20.5A2.5 2.5 0 0 0 6.5 23H20v-5M8 8h8M8 12h6',
+  counter: 'M12 8v4l2.5 1.5M5 3 2 6M19 3l3 3',
 };
 
 const CIRCLES: Record<string, [number, number, number][]> = {
@@ -56,6 +69,8 @@ const CIRCLES: Record<string, [number, number, number][]> = {
   pin: [[12, 10, 2.5]],
   tour: [[12, 12, 10]],
   wheel: [[12, 4, 1.5]],
+  compass: [[12, 12, 9]],
+  counter: [[12, 13, 8]],
 };
 
 export type IconName = keyof typeof P;

@@ -16,20 +16,32 @@ export type Prim =
   | { t: 'rect'; x: number; y: number; w: number; h: number; fill: string; stroke?: string; sw?: number };
 
 export class Cam {
-  constructor(public k: number, public ox: number, public oy: number) {}
+  /** Planın ekrandaki dönüş açısının kosinüs/sinüsü (varsayılan -35°). */
+  readonly ct: number;
+  readonly st: number;
+  /** `rotDeg`: izleyicinin bulunduğu yön; (sin, cos) = izleyiciye doğru yerel (doğu, güney) birim vektörü. */
+  constructor(public k: number, public ox: number, public oy: number, public rotDeg = -35) {
+    const th = (rotDeg * Math.PI) / 180;
+    this.ct = Math.cos(th);
+    this.st = Math.sin(th);
+  }
   P(x: number, y: number, h = 0): [number, number] {
-    const X = x * CT - y * STH;
-    const Y = x * STH + y * CT;
+    const X = x * this.ct - y * this.st;
+    const Y = x * this.st + y * this.ct;
     return [this.ox + this.k * X, this.oy + this.k * SA * Y - this.k * CA * h];
+  }
+  /** İzleyiciye yakınlık (büyük = önde). */
+  depthOf(x: number, y: number) {
+    return x * this.st + y * this.ct;
   }
   static depth(x: number, y: number) {
     return x * STH + y * CT;
   }
   /** Ekrandaki (sx, sy) noktasına `p` noktasını oturtan kamera. */
-  static centeredOn(k: number, p: Pt, sx: number, sy: number) {
-    const c = new Cam(k, 0, 0);
+  static centeredOn(k: number, p: Pt, sx: number, sy: number, rotDeg = -35) {
+    const c = new Cam(k, 0, 0, rotDeg);
     const [x, y] = c.P(p[0], p[1]);
-    return new Cam(k, sx - x, sy - y);
+    return new Cam(k, sx - x, sy - y, rotDeg);
   }
 }
 
@@ -111,10 +123,10 @@ export function extrude(
       let nx = a > 0 ? ey : -ey;
       let ny = a > 0 ? -ex : ex;
       if (inward) { nx = -nx; ny = -ny; }
-      if (nx * STH + ny * CT > 1e-6) {
-        const sx = nx * CT - ny * STH;
+      if (nx * cam.st + ny * cam.ct > 1e-6) {
+        const sx = nx * cam.ct - ny * cam.st;
         faces.push({
-          d: Cam.depth((x1 + x2) / 2, (y1 + y2) / 2),
+          d: cam.depthOf((x1 + x2) / 2, (y1 + y2) / 2),
           q: [cam.P(x1, y1, h0), cam.P(x2, y2, h0), cam.P(x2, y2, h1), cam.P(x1, y1, h1)],
           c: sx < 0 ? light : dark,
         });

@@ -1,6 +1,6 @@
-import { memo, useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Animated, Easing, PanResponder, Pressable, Text, View } from 'react-native';
-import Svg, { Circle, Ellipse, G, Path, Polygon, Rect } from 'react-native-svg';
+import Svg, { G, Path } from 'react-native-svg';
 
 import { C } from '@/constants/theme';
 import { GATES, type City, type Pt } from '@/data/sites';
@@ -9,7 +9,8 @@ import type { GateSummary } from '@/services/reports';
 import { fitCamera, NO_INSETS, niceScale, placeLabels, textWidth, type Box, type Viewport } from '@/scene/layout';
 import { buildMadinah, MADINAH_LABELS } from '@/scene/madinah';
 import { buildMakkah, MAKKAH_LABELS } from '@/scene/makkah';
-import { Cam, pathD, type Prim } from '@/scene/oblique';
+import { Cam, pathD } from '@/scene/oblique';
+import { Prims } from './SvgPrims';
 import { Icon } from './Icon';
 
 const BASE_K: Record<City, number> = { makkah: 0.6, madinah: 0.56 };
@@ -20,22 +21,6 @@ const PIN = 28; // kapı dairesi
 const STEM = 10;
 const LABEL_H = 18;
 const DEST_H = 24;
-
-const Prims = memo(function Prims({ prims }: { prims: Prim[] }) {
-  return (
-    <>
-      {prims.map((p, i) => {
-        switch (p.t) {
-          case 'poly': return <Polygon key={i} points={p.pts} fill={p.fill} stroke={p.stroke} strokeWidth={p.sw} opacity={p.op} />;
-          case 'path': return <Path key={i} d={p.d} fill={p.fill ?? 'none'} stroke={p.stroke} strokeWidth={p.sw} opacity={p.op} fillRule={p.rule} />;
-          case 'ell': return <Ellipse key={i} cx={p.cx} cy={p.cy} rx={p.rx} ry={p.ry} fill={p.fill} stroke={p.stroke} strokeWidth={p.sw} />;
-          case 'circ': return <Circle key={i} cx={p.cx} cy={p.cy} r={p.r} fill={p.fill} stroke={p.stroke} strokeWidth={p.sw} />;
-          case 'rect': return <Rect key={i} x={p.x} y={p.y} width={p.w} height={p.h} fill={p.fill} stroke={p.stroke} strokeWidth={p.sw} />;
-        }
-      })}
-    </>
-  );
-});
 
 export type SceneProps = {
   city: City;

@@ -134,6 +134,7 @@ export function ago(ms: number | undefined, t: ReturnType<typeof useI18n>['t']) 
 export const T = StyleSheet.create({
   h1: { fontSize: 26, fontWeight: '700', color: C.ink, letterSpacing: -0.3 } as TextStyle,
   h2: { fontSize: 18, fontWeight: '700', color: C.ink } as TextStyle,
+  h3: { fontSize: 16, fontWeight: '700', color: C.ink, lineHeight: 22 } as TextStyle,
   body: { fontSize: 15, lineHeight: 22, color: C.ink2 } as TextStyle,
   muted: { fontSize: 13, color: C.muted } as TextStyle,
   small: { fontSize: 12, color: C.muted } as TextStyle,

@@ -30,7 +30,17 @@
 | Servis | Amaç | Lisans / not |
 |---|---|---|
 | api.alquran.cloud | Kur'an metni + meal | Arapça metin Tanzil; meal hakları sahiplerine aittir |
+| cdn.islamic.network/quran/audio | Ayet ayet tilavet ve sesli meal (alquran.cloud) | Kayıt hakları kâri/yayıncılara aittir |
+| cdn.jsdelivr.net/gh/spa5k/tafsir_api | Tefsir (30+ dil) | Depo MIT; tefsir metinlerinin hakları yayıncılarına aittir |
 | cdn.jsdelivr.net/gh/fawazahmed0/hadith-api | Sahîh-i Buhârî | Açık veri |
 | overpass-api.de | Şehir yerleri | © OpenStreetMap katkıcıları, ODbL — atıf zorunlu |
 | routing.openstreetmap.de | Yaya rotası | FOSSGIS kullanım koşulları; yoğun kullanımda kendi OSRM sunucunuzu kurun |
 | Supabase (isteğe bağlı) | Canlı kapı bildirimleri | Kendi projeniz |
+
+## Tavaf asistanı ve dualar
+
+- Kâbe ölçüleri: 12,86 × 11,03 × 13,1 m. Uzun eksen pusulada ~151° (Kanopus doğuşu / yaz gündönümü hizası); köşe yönleri buna göre hesaplanır. Kapı, Hatîm ve Makam-ı İbrâhîm konumları yaklaşıktır.
+- Fıkıh: Diyanet İşleri Başkanlığı Hac İlmihali (istilam, Rükn-i Yemânî, remel/ıztıba, tavaf namazı). Başlangıçtaki yeşil ışıklar: Suudi Hac ve Umre Bakanlığı (haj.gov.sa).
+- Tavaf hadisleri sunnah.com ile karşılaştırıldı: Buhârî 1604 (remel), 1609 (iki Yemânî rükün), 1613 (tekbir), 1637 (Zemzem); Ebû Dâvûd 1892 (iki rükün arası dua); Müslim 1218 (Makam, iki rekât, sa'y).
+- Dua kütüphanesindeki hadis numaraları sunnah.com numaralandırmasıdır. Yayından önce bir ilahiyatçıya kontrol ettirin.
+- Cihaz sesi (metin okuma) bir hafız tilaveti değildir; ayetler her zaman kâri kaydıyla çalınır, bağlantı yoksa cihaz sesine düşer.

@@ -7,8 +7,10 @@ Mekke ve Medine'deki ziyaretçiler için iOS ve Android uygulaması:
 - **Turuncu izle navigasyon** — sıradaki dönüş, kalan mesafe, kapı kapanınca "rota güncellendi" uyarısı. Mescid çevresinde değilseniz demo yürüyüş.
 - **Şehir haritası** — oteller, yemek, eczane, otobüs, taksi, hastane (OpenStreetMap); otelinizi kaydedip mescide yaya rotası.
 - **Namaz vakitleri ve kıble pusulası** — telefonda hesaplanır (Ümmü'l-Kurâ, Diyanet, MWL…), internet gerekmez.
-- **Kur'an-ı Kerim** — 114 sûre, Arapça metin + meal, cihazda saklanır.
-- **Sahîh-i Buhârî, günün hadisi ve dualar** — mescit, telbiye, tavaf, sa'y, zemzem, yolculuk.
+- **3D tavaf asistanı** — Kâbe gerçek ölçü ve yönüyle (Hacerü'l-Esved, Rükn-i Irâkî/Şâmî/Yemânî, kapı, Hatîm, Makam-ı İbrâhîm); konumunuz ve bu şavtta yürüdüğünüz yay; Hacerü'l-Esved hizasından başlayan **şavt sayacı** (GPS ile otomatik + elle düzeltme); köşelere geldikçe istilam/selamlama ve dua; **sesli asistan** (şavt duyurusu, "Rabbenâ âtinâ…" kâri sesiyle); tavaf sonrası adımlar (Makam, 2 rekât, Zemzem, sa'y). Ekran açık kalır, cep kilidi vardır.
+- **Kur'an-ı Kerim** — 114 sûre; **12 kâriden ayet ayet sesli okuma**, **9 dilde sesli meal** (Türkçe Diyanet Vakfı dahil), 50+ dilde 100'ü aşkın meal, Latin harfli okunuş, **30+ dilde tefsir** (Türkçe: Muhtasar, Sa'dî, İbn Kesîr); okunan ayet vurgulanır.
+- **Dua kütüphanesi** — 20 kategori, 100'ü aşkın kayıt (sabah-akşam, namaz sonrası, tavaf, sa'y, hac, Medine, sıkıntı, şifa, tövbe, yolculuk, Kur'an'daki dualar…), arama, kaynak numarası, sesli dinleme. Kur'an'daki dualar seçtiğiniz meal dilinde gelir.
+- **Sahîh-i Buhârî ve günün hadisi.**
 - **Ravza rehberi** — ziyaret saatleri, Nusuk izni, resmî 360° sanal tur bağlantısı.
 - **Türkçe, İngilizce, Arapça** (Arapça sağdan sola).
 
@@ -76,6 +78,16 @@ npm run typecheck   # TypeScript kontrolü
 npm run check       # bildirim kuralları ve kapı kapanınca yeniden rota testleri
 npm run lint
 ```
+
+## Tavaf asistanı nasıl sayar?
+
+`src/services/tawaf.ts` — saf fonksiyonlar, `npm run check` gürültülü GPS benzetimleriyle test eder.
+
+- Konum, Kâbe merkezine göre açıya çevrilir; ilerleme Hacerü'l-Esved hizasından saatin tersine ölçülür.
+- Açı son 5 ölçümün medyanıdır; Kâbe'ye uzaklığı birden değişen ölçümler atılır.
+- Şavt, başlangıç çizgisi en az 15° (gürültüyle artan pay) geçilince sayılır; **sayaç hiçbir zaman fazla ya da çizgiden önce saymaz** (168 rastgele iz, %3 sıçrayan ölçümle test edildi).
+- Kâbe'ye çok yakın ve GPS zayıfken (açısal hata ~17°'den büyük) otomatik sayım durur, ekran "elle sayın" der.
+- Fıkhî içerik Diyanet Hac İlmihali'ne (Hanefî) göredir; her şavt için Sünnet'te belirli bir dua olmadığı belirtilir ve yalnız sahih kaynaklı dualar önerilir.
 
 ## Veri ve lisans notları
 

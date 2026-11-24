@@ -1,12 +1,24 @@
 import { router } from 'expo-router';
-import { useEffect, useState } from 'react';
-import { ActivityIndicator, Pressable, Share, Text, View } from 'react-native';
+import { useEffect, useMemo, useState } from 'react';
+import { ActivityIndicator, Pressable, Share, Text, TextInput, View } from 'react-native';
 
+import { DuaBlock } from '@/components/DuaBlock';
+import { Icon } from '@/components/Icon';
 import { Card, Header, IconBtn, ListRow, Screen, SectionTitle, T } from '@/components/ui';
 import { C } from '@/constants/theme';
-import { DUA_CATS } from '@/data/content';
-import { useI18n } from '@/i18n';
+import { DUA_LIB, allTextDuas } from '@/data/duas';
+import type { ML } from '@/data/sites';
+import { pick, useI18n } from '@/i18n';
 import { bukhariBooks, dailyHadith } from '@/services/hadith';
+
+const L = {
+  tawaf: { tr: 'Tavaf asistanı', en: 'Tawaf assistant', ar: 'مساعد الطواف' },
+  tawafSub: { tr: '3D Kâbe · şavt sayacı · köşelerde dua ve sesli rehber', en: '3D Kaaba · round counter · corner guidance with audio', ar: 'كعبة ثلاثية الأبعاد · عدّاد الأشواط · أدعية صوتية' },
+  search: { tr: 'Dua ara (ör. sabah, yolculuk, şifa)', en: 'Search du‘as (e.g. morning, travel, healing)', ar: 'ابحث في الأدعية' },
+  none: { tr: 'Sonuç yok', en: 'No results', ar: 'لا نتائج' },
+} satisfies Record<string, ML>;
+
+const norm = (s: string) => s.toLocaleLowerCase('tr').normalize('NFD').replace(/[\u0300-\u036f’'ʿʾ‘-]/g, '');
 
 export default function HadithDua() {
   const { t, lang } = useI18n();
@@ -14,12 +26,32 @@ export default function HadithDua() {
   const [books, setBooks] = useState<{ no: number; name: string }[] | null>(null);
   const [err, setErr] = useState(false);
   const [showAll, setShowAll] = useState(false);
+  const [q, setQ] = useState('');
+  const hits = useMemo(() => {
+    const n = norm(q.trim());
+    if (n.length < 2) return null;
+    return allTextDuas().filter(({ cat, d }) => {
+      const c = DUA_LIB.find((x) => x.id === cat)!;
+      return norm(`${d.tr} ${pick(d.mean, lang)} ${d.when ? pick(d.when, lang) : ''} ${pick(c.title, lang)} ${d.ref}`).includes(n) || d.ar.includes(q.trim());
+    }).slice(0, 25);
+  }, [q, lang]);
 
   useEffect(() => { bukhariBooks().then(setBooks).catch(() => setErr(true)); }, []);
 
   return (
     <Screen>
       <Header title={t('hadith.title')} />
+      <Pressable onPress={() => router.push('/tavaf')} accessibilityRole="button"
+        style={{ flexDirection: 'row', alignItems: 'center', gap: 12, padding: 14, borderRadius: 18, backgroundColor: C.ink }}>
+        <View style={{ width: 44, height: 44, borderRadius: 22, backgroundColor: C.route, alignItems: 'center', justifyContent: 'center' }}>
+          <Icon name="kaaba" size={24} color="#FFFFFF" />
+        </View>
+        <View style={{ flex: 1 }}>
+          <Text style={{ color: '#FFFFFF', fontSize: 16, fontWeight: '700' }}>{pick(L.tawaf, lang)}</Text>
+          <Text style={{ color: '#C9CCD3', fontSize: 12.5 }}>{pick(L.tawafSub, lang)}</Text>
+        </View>
+        <Icon name="chevron" size={18} color="#FFFFFF" />
+      </Pressable>
       <Card>
         <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
           <Text style={{ fontSize: 12, fontWeight: '700', color: C.accent, textTransform: 'uppercase', letterSpacing: 0.7 }}>{t('hadith.daily')}</Text>
@@ -31,14 +63,22 @@ export default function HadithDua() {
       </Card>
 
       <SectionTitle>{t('hadith.duas')}</SectionTitle>
-      <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
-        {DUA_CATS.map((c) => (
-          <Pressable key={c.id} onPress={() => router.push({ pathname: '/dua/[kategori]', params: { kategori: c.id } })} accessibilityRole="button"
-            style={{ width: '31.5%', minHeight: 64, borderRadius: 16, backgroundColor: C.surface, alignItems: 'center', justifyContent: 'center', padding: 8 }}>
-            <Text style={{ fontSize: 13, fontWeight: '600', textAlign: 'center', color: C.ink }}>{c.title}</Text>
-          </Pressable>
-        ))}
-      </View>
+      <TextInput value={q} onChangeText={setQ} placeholder={pick(L.search, lang)} placeholderTextColor={C.muted}
+        style={{ height: 44, borderRadius: 22, backgroundColor: C.surface, paddingHorizontal: 16, fontSize: 15, color: C.ink }} />
+      {hits ? (
+        hits.length ? hits.map(({ d }) => <DuaBlock key={d.id} d={d} compact />) : <Text style={T.body}>{pick(L.none, lang)}</Text>
+      ) : (
+        <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
+          {DUA_LIB.map((c) => (
+            <Pressable key={c.id} onPress={() => router.push({ pathname: '/dua/[kategori]', params: { kategori: c.id } })} accessibilityRole="button"
+              style={{ width: '31.5%', minHeight: 88, borderRadius: 16, backgroundColor: c.id === 'tavaf' ? C.accentTint : C.surface, alignItems: 'center', justifyContent: 'center', padding: 8, gap: 6 }}>
+              <Icon name={c.icon} size={20} color={C.accent} />
+              <Text style={{ fontSize: 12.5, fontWeight: '600', textAlign: 'center', color: C.ink }} numberOfLines={2}>{pick(c.title, lang)}</Text>
+              <Text style={{ fontSize: 11, color: C.muted }}>{c.items.length}</Text>
+            </Pressable>
+          ))}
+        </View>
+      )}
 
       <SectionTitle>{t('hadith.bukhari')} · {t('hadith.books')}</SectionTitle>
       {err && <Text style={T.body}>{t('hadith.error')}</Text>}

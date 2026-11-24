@@ -80,6 +80,7 @@ export default function MapScreen() {
           {DESTINATIONS.filter((d) => d.city === city).map((d) => (
             <Chip key={d.id} label={t(d.label).split(' · ')[0]} active={d.id === dest.id} onPress={() => setDestId(d.id)} />
           ))}
+          {city === 'makkah' && <Chip label={lang === 'en' ? 'Tawaf assistant' : lang === 'ar' ? 'مساعد الطواف' : 'Tavaf asistanı'} dot={C.route} onPress={() => router.push('/tavaf')} />}
           <Chip label={t('map.city')} onPress={() => router.push('/sehir')} />
           {city === 'madinah' && <Chip label="Ravza" onPress={() => router.push('/ravza')} />}
           {city === 'madinah' && <Chip label="360°" onPress={() => Linking.openURL(RAWDAH.tourUrl)} />}

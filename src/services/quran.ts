@@ -45,6 +45,56 @@ export async function listSurahs() {
   return r.data.data;
 }
 
+// ── Çok dilli meal, okunuş ve ses ────────────────────────────
+export type Edition = { identifier: string; language: string; englishName: string; name: string };
+export type FullAyah = { n: number; global: number; ar: string; meal?: string; translit?: string };
+
+/** Mevcut tüm mealler (dil koduna göre gruplanmak üzere). */
+export async function listTranslations(): Promise<Edition[]> {
+  const r = await cachedJson<{ data: Edition[] }>('quran:editions:tr', `${API}/edition?format=text&type=translation`, 30 * DAY);
+  return r.data.data;
+}
+
+/** alquran.cloud'un Uthmani metninde 1. ayetin başına eklenen besmeleyi ayırır (Fâtiha ve Tevbe hariç). */
+export function stripBasmala(surah: number, ayah: number, text: string) {
+  if (surah === 1 || surah === 9 || ayah !== 1) return text;
+  const words = text.split(' ');
+  if (words.length > 4 && words[0].includes('سْمِ') && words[3].includes('رَّحِيمِ')) return words.slice(4).join(' ');
+  return text;
+}
+
+export async function getSurahText(n: number, translation: string | null, translit: string | null): Promise<{ ayahs: FullAyah[]; fromCache: boolean }> {
+  const eds = ['quran-uthmani', translation, translit].filter(Boolean) as string[];
+  try {
+    const r = await cachedJson<{ data: { edition: { identifier: string }; ayahs: { number: number; numberInSurah: number; text: string }[] }[] }>(
+      `quran:${n}:${eds.join(',')}`, `${API}/surah/${n}/editions/${eds.join(',')}`, 90 * DAY,
+    );
+    const by = (id: string | null) => (id ? r.data.data.find((d) => d.edition.identifier === id) : undefined);
+    const ar = by('quran-uthmani') ?? r.data.data[0];
+    const tr = by(translation);
+    const tl = by(translit);
+    return {
+      ayahs: ar.ayahs.map((a, i) => ({ n: a.numberInSurah, global: a.number, ar: stripBasmala(n, a.numberInSurah, a.text), meal: tr?.ayahs[i]?.text, translit: tl?.ayahs[i]?.text })),
+      fromCache: r.fromCache,
+    };
+  } catch (e) {
+    if (n === 1) return { ayahs: FATIHA.map((a) => ({ n: a.n, global: a.n, ar: a.ar, meal: translation?.startsWith('tr.') ? a.tr : undefined })), fromCache: true };
+    throw e;
+  }
+}
+
+/** Sûrenin ayet ayet ses adresleri (kâri ya da sesli meal). */
+export async function getSurahAudio(n: number, edition: string): Promise<string[]> {
+  const r = await cachedJson<{ data: { ayahs: { audio?: string; audioSecondary?: string[] }[] } }>(`quran:audio:${n}:${edition}`, `${API}/surah/${n}/${edition}`, 90 * DAY);
+  return r.data.data.ayahs.map((a) => a.audio ?? a.audioSecondary?.[0] ?? '');
+}
+
+/** Bir ayet aralığı (dua kütüphanesi için) — sûre önbelleğini kullanır. */
+export async function getAyahRange(s: number, from: number, to: number, translation: string | null, translit: string | null) {
+  const { ayahs } = await getSurahText(s, translation, translit);
+  return ayahs.filter((a) => a.n >= from && a.n <= to);
+}
+
 export async function getSurah(n: number, lang: Lang): Promise<{ ayahs: Ayah[]; fromCache: boolean }> {
   const tr = TRANSLATIONS[lang];
   const editions = ['quran-uthmani', ...(tr ? [tr] : [])].join(',');
