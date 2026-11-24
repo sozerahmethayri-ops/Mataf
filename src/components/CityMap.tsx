@@ -1,15 +1,18 @@
-// Şehir haritası (iOS: Apple Haritalar, Android: Google Haritalar — react-native-maps).
+// Şehir haritası (iOS: Apple Haritalar, Android: Google Haritalar — react-native-maps; anahtarsız Android'de sade harita).
 import MapView, { Marker, Polyline, type LongPressEvent } from 'react-native-maps';
 
 import { C } from '@/constants/theme';
-import type { PoiCat } from '@/services/osm';
-import type { CityMapProps } from './CityMap.types';
+import { NATIVE_MAPS } from '@/services/nativeMaps';
+import { POI_COLORS, type CityMapProps } from './CityMap.types';
+import { CityMapPlain } from './CityMapPlain';
 
-export const POI_COLORS: Record<PoiCat, string> = {
-  hotel: '#7C3AED', food: '#B45309', pharmacy: '#0F766E', bus: '#1D4ED8', taxi: '#A16207', hospital: '#B42318',
-};
+export { POI_COLORS };
 
-export function CityMap({ center, pois, hotel, gates, route, onLongPress, onPoiPress, onGatePress }: CityMapProps) {
+export function CityMap(props: CityMapProps) {
+  return NATIVE_MAPS ? <CityMapNative {...props} /> : <CityMapPlain {...props} />;
+}
+
+function CityMapNative({ center, pois, hotel, gates, route, onLongPress, onPoiPress, onGatePress }: CityMapProps) {
   return (
     <MapView
       style={{ flex: 1 }}

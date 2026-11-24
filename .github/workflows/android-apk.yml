@@ -1,0 +1,62 @@
+# Telefona kurulabilir Android APK'sı: her main gönderiminde ya da "Run workflow" ile GitHub'ın
+# sunucularında derlenir. Sonuç: Actions → bu çalışma → "mataf-apk" ve Releases → "apk-latest".
+# APK, Expo şablonundaki hata ayıklama anahtarıyla imzalıdır (yan yükleme için; Play Store için kendi
+# anahtarınızla imzalayın). Google Haritalar anahtarı isteğe bağlı: depo Secrets → GOOGLE_MAPS_API_KEY.
+name: Android APK
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: android-apk
+  cancel-in-progress: true
+
+jobs:
+  apk:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    env:
+      CI: 1
+      GOOGLE_MAPS_API_KEY: ${{ secrets.GOOGLE_MAPS_API_KEY }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+      - uses: gradle/actions/setup-gradle@v4
+      - run: npm ci
+      - run: npm run typecheck && npm run check
+      - name: Android projesini üret
+        run: npx expo prebuild --platform android --no-install
+      - name: APK derle
+        working-directory: android
+        run: ./gradlew assembleRelease --no-daemon -PreactNativeArchitectures=arm64-v8a,armeabi-v7a
+      - name: APK'yı adlandır
+        id: name
+        run: |
+          V=$(node -p "require('./app.json').expo.version")
+          cp android/app/build/outputs/apk/release/app-release.apk "mataf-$V.apk"
+          echo "file=mataf-$V.apk" >> "$GITHUB_OUTPUT"
+          echo "version=$V" >> "$GITHUB_OUTPUT"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: mataf-apk
+          path: ${{ steps.name.outputs.file }}
+      - name: Sürüm sayfasına koy (apk-latest)
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: apk-latest
+          name: MATAF ${{ steps.name.outputs.version }} (APK)
+          body: Telefona kurulabilir Android APK'sı. İndirip açın; "bilinmeyen kaynaklardan yükleme" izni istenirse verin.
+          prerelease: true
+          files: ${{ steps.name.outputs.file }}

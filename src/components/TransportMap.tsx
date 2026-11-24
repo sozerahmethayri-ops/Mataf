@@ -1,14 +1,20 @@
-// Ulaşım haritası (iOS: Apple Haritalar, Android: Google Haritalar — react-native-maps).
+// Ulaşım haritası (iOS: Apple Haritalar, Android: Google Haritalar — react-native-maps; anahtarsız Android'de sade harita).
 // İki parmakla büyütme, döndürme ve eğme açık; pusulaya dokununca kuzey yukarı döner.
 import { useEffect, useRef } from 'react';
 import MapView, { Marker, Polyline, type LongPressEvent } from 'react-native-maps';
 
 import { C } from '@/constants/theme';
+import { NATIVE_MAPS } from '@/services/nativeMaps';
 import type { TransportMapProps } from './TransportMap.types';
+import { TransportMapPlain } from './TransportMapPlain';
 
 const ll = (p: { lat: number; lng: number }) => ({ latitude: p.lat, longitude: p.lng });
 
-export function TransportMap({ user, dest, segments, onLongPress, fitKey }: TransportMapProps) {
+export function TransportMap(props: TransportMapProps) {
+  return NATIVE_MAPS ? <TransportMapNative {...props} /> : <TransportMapPlain {...props} />;
+}
+
+function TransportMapNative({ user, dest, segments, onLongPress, fitKey }: TransportMapProps) {
   const ref = useRef<MapView>(null);
   useEffect(() => {
     const pts = [...(user ? [ll(user)] : []), ...(dest ? [ll(dest)] : []), ...segments.flatMap((s) => s.coords.map(ll))];

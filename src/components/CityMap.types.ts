@@ -1,4 +1,8 @@
-import type { Poi } from '@/services/osm';
+import type { Poi, PoiCat } from '@/services/osm';
+
+export const POI_COLORS: Record<PoiCat, string> = {
+  hotel: '#7C3AED', food: '#B45309', pharmacy: '#0F766E', bus: '#1D4ED8', taxi: '#A16207', hospital: '#B42318',
+};
 
 export type LatLngLite = { latitude: number; longitude: number };
 

@@ -39,7 +39,16 @@ Terminalde çıkan QR kodu telefonunuzdaki Expo Go ile okutun. Uygulama birkaç 
 
 ### Telefona kurulabilir dosya (APK / iOS) üretmek
 
-Expo'nun bulut derleme hizmetiyle (ücretsiz katman yeterli):
+**En kolayı — GitHub Actions (bilgisayar gerekmez):** depo GitHub'dayken her `main` gönderiminde
+`.github/workflows/android-apk.yml` APK'yı GitHub'ın sunucularında derler (~15–25 dk). İndirmek için:
+depo → **Releases → apk-latest → mataf-x.y.z.apk** (ya da Actions → son çalışma → `mataf-apk`).
+Telefonda dosyayı açın; "bilinmeyen kaynaklardan yükleme" izni istenirse verin. Elle başlatmak için
+Actions → *Android APK* → *Run workflow*.
+
+- APK, Expo şablonunun hata ayıklama anahtarıyla imzalıdır: yan yükleme için yeterli, Play Store için kendi anahtarınızla imzalayın.
+- Google Haritalar anahtarı isteğe bağlıdır (depo **Settings → Secrets → GOOGLE_MAPS_API_KEY**). Anahtar yoksa ulaşım, şehir ve cami ekranları uygulamanın kendi sade haritasını gösterir; 3D Haram/Nebevî haritası anahtar gerektirmez.
+
+**Expo'nun bulut derleme hizmetiyle** (ücretsiz katman yeterli; bilgisayarda terminal gerekir):
 
 ```bash
 npx eas-cli@latest login

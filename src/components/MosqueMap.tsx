@@ -1,11 +1,17 @@
-// En yakın cami haritası (iOS: Apple Haritalar, Android: Google Haritalar — react-native-maps).
+// En yakın cami haritası (iOS: Apple Haritalar, Android: Google Haritalar — react-native-maps; anahtarsız Android'de sade harita).
 import { useEffect, useRef } from 'react';
 import MapView, { Marker, Polyline } from 'react-native-maps';
 
 import { C } from '@/constants/theme';
+import { NATIVE_MAPS } from '@/services/nativeMaps';
 import type { MosqueMapProps } from './MosqueMap.types';
+import { MosqueMapPlain } from './MosqueMapPlain';
 
-export function MosqueMap({ user, mosques, selectedId, route, onSelect }: MosqueMapProps) {
+export function MosqueMap(props: MosqueMapProps) {
+  return NATIVE_MAPS ? <MosqueMapNative {...props} /> : <MosqueMapPlain {...props} />;
+}
+
+function MosqueMapNative({ user, mosques, selectedId, route, onSelect }: MosqueMapProps) {
   const ref = useRef<MapView>(null);
   const sel = mosques.find((m) => m.id === selectedId) ?? mosques[0];
   // Kullanıcı ve seçili cami birlikte görünsün
