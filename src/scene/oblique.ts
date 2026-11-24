@@ -5,12 +5,16 @@ import type { Pt } from '@/data/sites';
 export const SA = 0.58;
 export const CA = Math.sqrt(1 - SA * SA);
 
-export type Prim =
-  | { t: 'poly'; pts: string; fill: string; stroke?: string; sw?: number; op?: number }
-  | { t: 'path'; d: string; fill?: string; stroke?: string; sw?: number; op?: number; rule?: 'evenodd' }
+/** Doğrusal renk geçişi (ekran koordinatında): dolgu yerine kullanılır. Durak: [konum 0–1, renk, saydamlık?]. */
+export type Grad = { x1: number; y1: number; x2: number; y2: number; stops: [number, string, number?][] };
+/** `keep`: koyu temada gece tonuna çevirme (Kâbe örtüsü, altın, gümüş gerçek rengiyle kalsın). */
+type PrimExtra = { grad?: Grad; keep?: boolean; op?: number; cap?: 'round' | 'butt' };
+export type Prim = PrimExtra & (
+  | { t: 'poly'; pts: string; fill: string; stroke?: string; sw?: number }
+  | { t: 'path'; d: string; fill?: string; stroke?: string; sw?: number; rule?: 'evenodd' }
   | { t: 'ell'; cx: number; cy: number; rx: number; ry: number; fill: string; stroke?: string; sw?: number }
   | { t: 'circ'; cx: number; cy: number; r: number; fill: string; stroke?: string; sw?: number }
-  | { t: 'rect'; x: number; y: number; w: number; h: number; fill: string; stroke?: string; sw?: number };
+  | { t: 'rect'; x: number; y: number; w: number; h: number; fill: string; stroke?: string; sw?: number });
 
 export class Cam {
   /** Planın ekrandaki dönüş açısının kosinüs/sinüsü (varsayılan -35°). */

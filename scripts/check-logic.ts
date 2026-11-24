@@ -12,6 +12,8 @@ import { PALETTES, colorsFor, contrast, type PaletteId } from '../src/constants/
 import { DEFAULT_NOTIF, notifText, planNotifications } from '../src/services/adhanPlan';
 import type { PrayerKey } from '../src/services/prayer';
 import { Cam } from '../src/scene/oblique';
+import { buildKaaba } from '../src/scene/kaaba';
+import { buildTawafView } from '../src/scene/tawafScene';
 import { buildMadinah } from '../src/scene/madinah';
 import { decodePolyline, legKind, mapsUrl, parseMotis, parseOsrm, parsePhoton, planTransit, roughRoute, transitUserAgent, uberUrl, meters } from '../src/services/transport';
 
@@ -214,6 +216,29 @@ for (const dark of [false, true]) for (const p of Object.keys(PALETTES) as Palet
   const needle = (rot: number) => { const c = new Cam(1, 0, 0, rot); const [x0, y0] = c.P(0, 0); const [x1, y1] = c.P(0, -100); return (Math.atan2(x1 - x0, -(y1 - y0)) * 180) / Math.PI; };
   ok([0, 90, 180, -90].every((r) => Math.abs(((needle(r) - r + 540) % 360) - 180) < 0.01), 'pusula: 0/90/180/-90° dönüşte iğne aynı açıda');
   ok(needle(-35) < -35 && needle(-35) > -90, `pusula: varsayılan eğik görünümde kuzey sola yatık (${needle(-35).toFixed(1)}°)`);
+}
+
+// ── Beytullah modeli: her açıdan sağlam çizim, ayrıntı ölçeğe göre ──
+{
+  let bad = 0, minParts = Infinity, maxParts = 0;
+  for (let rot = 0; rot < 360; rot += 15) for (const k of [1, 4, 10, 16]) {
+    const kb = buildKaaba(new Cam(k, 300, 300, rot));
+    const txt = JSON.stringify([...kb.under, ...kb.body]);
+    if (/NaN|Infinity/.test(txt)) bad++;
+    if (k === 10) { minParts = Math.min(minParts, kb.body.length); maxParts = Math.max(maxParts, kb.body.length); }
+  }
+  ok(bad === 0, `Kâbe modeli 24 açı × 4 ölçekte geçersiz koordinat üretmez (${bad})`);
+  ok(minParts > 60, `yakın planda ayrıntılı (en az ${minParts}, en çok ${maxParts} parça)`);
+  ok(buildKaaba(new Cam(1, 0, 0, 0)).body.length < buildKaaba(new Cam(10, 0, 0, 0)).body.length / 2, 'uzak ölçekte ayrıntı azalır (harita hızlı kalır)');
+  // Altın ve örtü koyu temada gerçek rengini korur
+  ok(buildKaaba(new Cam(10, 0, 0, 0)).body.filter((p) => p.keep).length > 40, 'örtü/altın/gümüş koyu temada korunur');
+  // Tavaf görünümü: Kâbe büyük (uzaktaki izleyiciyi sığdırmak için en az %25), izleyici ekranda
+  for (const [r, bearing] of [[6, 110], [24, 20], [45, 250]] as const) {
+    const v = buildTawafView({ width: 390, height: 360, viewerBearing: bearing, radius: r });
+    const w = v.kaabaBox.w + 8;
+    const front = v.cam.P(Math.sin((bearing * Math.PI) / 180) * r, -Math.cos((bearing * Math.PI) / 180) * r);
+    ok(w / 390 > (r > 30 ? 0.25 : 0.38) && w / 390 < 0.6 && front[1] < 360 && front[1] > 0, `tavaf görünümü r=${r} m: Kâbe %${Math.round((w / 390) * 100)} genişlik, izleyici ekranda (y=${Math.round(front[1])})`);
+  }
 }
 
 // ── Ezan bildirimleri planı ──

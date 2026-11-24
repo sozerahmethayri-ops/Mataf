@@ -55,7 +55,7 @@ export default function MapScreen() {
         avoid={[{ x: size.w - ctrl.right - ctrl.w, y: size.h - ctrl.bottom - ctrl.h, w: ctrl.w, h: ctrl.h }]}
         recenterKey={recenter}
         rotDeg={rot}
-        onTransform={(sc, dr) => { setZoom((z) => Math.min(4, Math.max(0.6, z * sc))); setRot((r) => r + dr); }}
+        onTransform={(sc, dr) => { setZoom((z) => Math.min(8, Math.max(0.6, z * sc))); setRot((r) => r + dr); }}
         route={plan?.points}
         user={user}
         dest={dest.pos}
@@ -101,7 +101,7 @@ export default function MapScreen() {
 
       <View style={{ position: 'absolute', right: ctrl.right, bottom: ctrl.bottom, gap: 8, alignItems: 'center' }}>
         <View style={[{ width: ctrl.w, borderRadius: ctrl.w / 2, backgroundColor: C.bg, overflow: 'hidden' }, shadow]}>
-          <IconBtn name="plus" label={t('map.zoomIn')} tint={C.bg} onPress={() => setZoom((z) => Math.min(3, z * 1.4))} />
+          <IconBtn name="plus" label={t('map.zoomIn')} tint={C.bg} onPress={() => setZoom((z) => Math.min(8, z * 1.4))} />
           <View style={{ height: 1, marginHorizontal: 10, backgroundColor: C.border }} />
           <IconBtn name="minus" label={t('map.zoomOut')} tint={C.bg} onPress={() => setZoom((z) => Math.max(0.7, z / 1.4))} />
         </View>

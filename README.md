@@ -2,6 +2,7 @@
 
 Mekke ve Medine'deki ziyaretçiler için iOS ve Android uygulaması:
 
+- **Beytullah'ın ayrıntılı 3D modeli** — gerçek ölçü ve yönde Kâbe: ışıkla gölgelenen kisve ve dokusu, altın işlemeli kuşak (hizâm) ve kandiller, kapı ve kapı perdesi (sitâre), gümüş çerçeveli Hacerü'l-Esved, Şâzervân mermer eteği, mermer çatı, altın oluk (Mîzâb), Hatîm duvarı ve Makam-ı İbrâhîm; yere düşen gölge. Harita hangi yöne döndürülürse döndürülsün doğru çizilir, uzakta sadeleşir, yakında ayrıntılanır; koyu temada altın ve örtü gerçek renginde kalır.
 - **Gerçek ölçekli 3D harita** — Mescid-i Haram (Kâbe, Mataf, Mes'a, Saat Kulesi) ve Mescid-i Nebevî (Yeşil Kubbe, şemsiyeler, minareler), metre cinsinden; 100 m ölçek çubuğu. **İki parmakla büyütülür ve döndürülür**; pusula düğmesi kuzeyi yukarı alır / eğik görünüme döner.
 - **Kapı kapanmalarına göre rota** — ziyaretçiler kapı durumunu bildirir, yorum yazar, onaylar; kapalı kapılar rotadan otomatik çıkar. Resmî duyuru her zaman önceliklidir.
 - **Turuncu izle navigasyon** — sıradaki dönüş, kalan mesafe, kapı kapanınca "rota güncellendi" uyarısı. Mescid çevresinde değilseniz demo yürüyüş.
@@ -18,7 +19,7 @@ Mekke ve Medine'deki ziyaretçiler için iOS ve Android uygulaması:
 - **Ravza rehberi** — ziyaret saatleri, Nusuk izni, resmî 360° sanal tur bağlantısı.
 - **Türkçe, İngilizce, Arapça** (Arapça sağdan sola).
 
-> Durum: **0.4.0 — geliştirme sürümü.** Harita dış hatları yayımlanmış ölçülerden oranlanmıştır; kapı yerleri ve mescit içi hizmet noktaları yaklaşıktır / örnektir. Ayrıntı: [docs/VERI-KAYNAKLARI.md](docs/VERI-KAYNAKLARI.md).
+> Durum: **0.4.1 — geliştirme sürümü.** Harita dış hatları yayımlanmış ölçülerden oranlanmıştır; kapı yerleri ve mescit içi hizmet noktaları yaklaşıktır / örnektir. Ayrıntı: [docs/VERI-KAYNAKLARI.md](docs/VERI-KAYNAKLARI.md).
 
 ## Hızlı başlangıç
 

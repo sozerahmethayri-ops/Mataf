@@ -1,7 +1,7 @@
 // Mescid-i Haram gerçek ölçekli sahnesi (metre). Ölçüler: Kâbe 12,86×11,03×13,1 m;
 // Osmanlı revakı 192×132 m; Mes'a 394×40 m; Saat Kulesi 601 m; minareler 92–139 m.
 // Genişleme bloklarının dış hatları yayımlanmış alanlardan oranlanmış tahminlerdir.
-import { KAABA_POLY } from '@/services/tawaf';
+import { buildKaaba } from './kaaba';
 import { Cam, ellipsePl, extrude, flat, line, minaret, rect, rrect, type Prim } from './oblique';
 import type { Pt } from '@/data/sites';
 
@@ -58,18 +58,13 @@ export function buildMakkah(cam: Cam): { below: Prim[]; above: Prim[]; ghost: Pr
       inner.push({ t: 'ell', cx, cy: cy - 0.8, rx: 3.1 * k, ry: 1.9 * k, fill: '#BDB8AE' });
     }
 
-  // Kâbe: gerçek ölçü ve yön (tavaf asistanıyla aynı geometri)
-  const kb = KAABA_POLY;
-  const kaaba = [
-    ...extrude(cam, kb, 0, 13.1, '#2F3036', '#202126', '#131418', [], '#131418'),
-    ...extrude(cam, kb, 8.6, 9.6, '#2F3036', '#C9A227', '#B08B1C', [], 'none'),
-    flat(cam, kb, '#2F3036', 13.1),
-  ];
+  // Kâbe: gerçek ölçü ve yön, Hatîm ve Makam'la (tavaf asistanıyla aynı model)
+  const kaaba = buildKaaba(cam, { shadow: k >= 2 });
 
   for (const o of objs) if (o.d < mainD && !o.main) below.push(...o.prims);
   below.push(...inner);
   below.push(...(objs.find((o) => o.main)?.prims ?? []));
-  below.push(...kaaba);
+  below.push(...kaaba.under, ...kaaba.body);
   for (const o of objs) if (o.d > mainD) (o.ghost ? ghost : above).push(...o.prims);
   const [c1x, c1y] = P(-30, 354, 420);
   const [c2x, c2y] = P(-2, 326, 420);

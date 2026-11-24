@@ -4,7 +4,8 @@ import type { Pt } from '@/data/sites';
 import {
   CORNERS, DOOR, KAABA, KAABA_POLY, MAQAM, bearingOf, dirOf, hijrBand, pointAt, zoneRange, type ZoneId,
 } from '@/services/tawaf';
-import { Cam, extrude, flat, ptsStr, type Prim } from './oblique';
+import { buildKaaba } from './kaaba';
+import { CA, Cam, SA, flat, type Prim } from './oblique';
 
 export type TawafView = { cam: Cam; prims: Prim[]; anchors: Record<string, [number, number]>; kaabaBox: { x: number; y: number; w: number; h: number } };
 
@@ -52,8 +53,16 @@ export function buildTawafView(opts: {
   const { width, height, viewerBearing, radius } = opts;
   const R = Math.max(20, radius + 8);
   const rot = rotForViewer(viewerBearing);
-  const k = Math.min((width - 20) / (2 * R), (height - 30) / (2 * R * 0.58 + 13.1 * 0.815 * 0.6));
-  const cam = Cam.centeredOn(k, [0, 0], width / 2, height * 0.56, rot);
+  // Çerçeve: Beytullah sahnenin odağı. Ölçek, Kâbe genişliğin %40–55'ini kaplayacak ve izleyici
+  // (halkanın önü, ekranın altı) görünür kalacak şekilde seçilir; uzak halkanın yanları kırpılabilir.
+  const span = 16.9; // Kâbe'nin ekrandaki en geniş yatay boyu (köşegen, m)
+  const up = SA * 8 + CA * KAABA.height + 1.2; // Kâbe merkezinden çatının arka köşesine (m, ekran birimi)
+  const rFront = Math.min(45, radius + 4); // önde görünmesi gereken uzaklık (izleyici + pay)
+  const kRing = (width - 24) / (2 * (radius + 4));
+  const kV = (height - 40) / (up + rFront * SA);
+  const k = Math.min(kV, width * 0.55 / span, Math.max(kRing, width * 0.4 / span));
+  const cy = (height - (up + rFront * SA) * k) / 2 + up * k + 4;
+  const cam = Cam.centeredOn(k, [0, 0], width / 2, cy, rot);
   const P = cam.P.bind(cam);
   const prims: Prim[] = [];
   const ur = opts.userR ?? radius;
@@ -82,59 +91,32 @@ export function buildTawafView(opts: {
   if (opts.progress && opts.progress > 0.5)
     prims.push(
       { t: 'path', d: pathOf(cam, ring(ur, 0, opts.progress, 180)), stroke: '#FFFFFF', sw: 8, fill: 'none' },
-      { t: 'path', d: pathOf(cam, ring(ur, 0, opts.progress, 180)), stroke: '#F26A1B', sw: 4.5, fill: 'none' },
+      { t: 'path', d: pathOf(cam, ring(ur, 0, opts.progress, 180)), stroke: '#F26A1B', sw: 4.5, fill: 'none', keep: true },
     );
 
   // Başlangıç çizgisi (Hacerü'l-Esved hizası) ve yeşil ışık
   const bs = bearingOf(CORNERS.aswad);
   const s0 = CORNERS.aswad;
   const s1: Pt = [dirOf(bs)[0] * (R + 22), dirOf(bs)[1] * (R + 22)];
-  prims.push({ t: 'path', d: pathOf(cam, [s0, s1]), stroke: '#2F8F57', sw: 2.2, fill: 'none' });
+  prims.push({ t: 'path', d: pathOf(cam, [s0, s1]), stroke: '#2F8F57', sw: 2.2, fill: 'none', keep: true });
   const gl: Pt = [dirOf(bs)[0] * (ur + 7), dirOf(bs)[1] * (ur + 7)]; // yeşil ışık: halkanın hemen dışında
   const [gx, gy] = P(gl[0], gl[1], 0);
   const [, gty] = P(gl[0], gl[1], 6);
-  prims.push({ t: 'rect', x: gx - 2, y: gty, w: 4, h: gy - gty, fill: '#2F8F57' });
-  prims.push({ t: 'circ', cx: gx, cy: gty, r: 4, fill: '#7CFC9A', stroke: '#2F8F57', sw: 1.2 });
+  prims.push({ t: 'rect', x: gx - 2, y: gty, w: 4, h: gy - gty, fill: '#2F8F57', keep: true });
+  prims.push({ t: 'circ', cx: gx, cy: gty, r: 4, fill: '#7CFC9A', stroke: '#2F8F57', sw: 1.2, keep: true });
 
-  // 3D cisimler: derinliğe göre sıralı (önce arkadakiler)
-  type Obj = { d: number; prims: Prim[] };
-  const objs: Obj[] = [];
-
-  // Çatı duvarlardan açık: kutu hissi için (gerçekte çatı açık renkli mermer kaplıdır)
-  const kaaba: Prim[] = [...extrude(cam, KAABA_POLY, 0, KAABA.height, '#6B6D75', '#2A2B31', '#18191D', [], '#3B3C43')];
-  // Kuşak (hizam) — yalnız yan yüzler
-  kaaba.push(...extrude(cam, KAABA_POLY, 8.6, 9.5, '#000', '#C9A227', '#A8861A', [], 'none').slice(0, -1));
-  // Kapı (kuzeydoğu duvarı görünüyorsa)
-  const nDoor = dirOf(KAABA.axis - 90);
-  if (nDoor[0] * cam.st + nDoor[1] * cam.ct > 0) {
-    const t = dirOf(KAABA.axis + 180);
-    const a: Pt = [DOOR.center[0] - (t[0] * DOOR.width) / 2, DOOR.center[1] - (t[1] * DOOR.width) / 2];
-    const b: Pt = [DOOR.center[0] + (t[0] * DOOR.width) / 2, DOOR.center[1] + (t[1] * DOOR.width) / 2];
-    kaaba.push({ t: 'poly', pts: ptsStr([P(a[0], a[1], DOOR.bottom), P(b[0], b[1], DOOR.bottom), P(b[0], b[1], DOOR.top), P(a[0], a[1], DOOR.top)]), fill: '#C9A227', stroke: '#8A6D12', sw: 0.8 });
-  }
-  // Hacerü'l-Esved: köşede gümüş çerçeve
-  const [hx, hy] = P(CORNERS.aswad[0], CORNERS.aswad[1], 1.5);
-  kaaba.push({ t: 'ell', cx: hx, cy: hy, rx: Math.max(3, 0.42 * k), ry: Math.max(3.6, 0.5 * k), fill: '#D9DCE1', stroke: '#8E939C', sw: 1 });
-  kaaba.push({ t: 'ell', cx: hx, cy: hy, rx: Math.max(1.6, 0.24 * k), ry: Math.max(2, 0.3 * k), fill: '#1B1B1F' });
-  // Mîzâb (altın oluk) — Hatîm duvarı tarafında, çatı hizasında
-  const mz: Pt = [(CORNERS.iraqi[0] + CORNERS.shami[0]) / 2, (CORNERS.iraqi[1] + CORNERS.shami[1]) / 2];
-  const nh = dirOf(KAABA.axis + 180);
-  const [m1x, m1y] = P(mz[0], mz[1], 12.9);
-  const [m2x, m2y] = P(mz[0] + nh[0] * 1.6, mz[1] + nh[1] * 1.6, 12.5);
-  kaaba.push({ t: 'path', d: `M${m1x.toFixed(1)} ${m1y.toFixed(1)} L${m2x.toFixed(1)} ${m2y.toFixed(1)}`, stroke: '#C9A227', sw: Math.max(2, 0.35 * k) });
-  objs.push({ d: cam.depthOf(0, 0), prims: kaaba });
+  // Kâbe (Hatîm duvarı, Makam ve gölgeyle birlikte; kendi içinde doğru sıralı)
+  const kb = buildKaaba(cam);
+  // Başlangıç ışığı Kâbe'nin önündeyse ondan sonra, arkasındaysa önce çizilir
+  const pole = prims.splice(prims.length - 2, 2);
+  prims.push(...kb.under);
+  const poleFront = cam.depthOf(gl[0], gl[1]) > kb.frontDepth;
+  if (!poleFront) prims.push(...pole);
+  prims.push(...kb.body);
+  if (poleFront) prims.push(...pole);
 
   const hb = hijrBand();
-  objs.push({ d: cam.depthOf(...hb.mid[12]), prims: extrude(cam, [...hb.outer, ...[...hb.inner].reverse()], 0, 1.32, '#FBFAF7', '#E9E4DA', '#D6CFC1', [], '#CFC7B8') });
-
-  const oct: Pt[] = Array.from({ length: 8 }, (_, i) => [MAQAM[0] + 0.9 * Math.cos((i * Math.PI) / 4), MAQAM[1] + 0.9 * Math.sin((i * Math.PI) / 4)]);
-  const maqam = extrude(cam, oct, 0, 2.2, '#E2C15A', '#D4AF37', '#B08B1C', [], '#9C7A14');
-  const [qx, qy] = P(MAQAM[0], MAQAM[1], 2.6);
-  maqam.push({ t: 'circ', cx: qx, cy: qy, r: Math.max(2.5, 0.55 * k), fill: '#E2C15A', stroke: '#9C7A14', sw: 0.8 });
-  objs.push({ d: cam.depthOf(MAQAM[0], MAQAM[1]), prims: maqam });
-
-  objs.sort((a, b) => a.d - b.d);
-  for (const o of objs) prims.push(...o.prims);
+  const nDoor = dirOf(KAABA.axis - 90);
 
   // Etiket bağlantı noktaları (ekran koordinatı). Kâbe'nin arkasında kalanlar gizlenir;
   // Hatîm için duvarın görünen bir noktası aranır.
