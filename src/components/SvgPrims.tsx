@@ -1,7 +1,7 @@
 import { memo, useId } from 'react';
 import { Circle, Defs, Ellipse, LinearGradient, Path, Polygon, Rect, Stop } from 'react-native-svg';
 
-import { nightColor } from '@/constants/theme';
+import { isDark, nightColor } from '@/constants/theme';
 import type { Prim } from '@/scene/oblique';
 
 /** Sahne ilkel şekillerini react-native-svg ile çizer (koyu temada gece tonlarına çevrilir; `keep` olanlar hariç). */
@@ -9,7 +9,8 @@ export const Prims = memo(function Prims({ prims }: { prims: Prim[] }) {
   // Aynı sayfadaki başka SVG'lerle çakışmasın diye geçiş kimlikleri bileşene özgü
   const uid = `g${useId().replace(/[^a-zA-Z0-9]/g, '')}`;
   const col = (p: Prim, c?: string) => (p.keep ? c : nightColor(c));
-  const fillOf = (p: Prim, i: number, c?: string) => (p.grad ? `url(#${uid}_${i})` : col(p, c));
+  const dark = isDark();
+  const fillOf = (p: Prim, i: number, c?: string) => (p.grad ? `url(#${uid}_${i})` : dark && p.nfill ? p.nfill : col(p, c));
   const defs = prims.flatMap((p, i) => (p.grad ? [
     <LinearGradient key={i} id={`${uid}_${i}`} x1={p.grad.x1} y1={p.grad.y1} x2={p.grad.x2} y2={p.grad.y2} gradientUnits="userSpaceOnUse">
       {p.grad.stops.map(([o, c, a], j) => <Stop key={j} offset={o} stopColor={col(p, c)} stopOpacity={a ?? 1} />)}

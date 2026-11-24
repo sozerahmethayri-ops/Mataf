@@ -152,7 +152,7 @@ export function nightColor(c: string | undefined): string | undefined {
     h = max === rn ? (gn - bn) / d + (gn < bn ? 6 : 0) : max === gn ? (bn - rn) / d + 2 : (rn - gn) / d + 4;
     h /= 6;
   }
-  const l2 = 0.1 + l * 0.36;
+  const l2 = 0.08 + l * 0.33;
   // Açık bej/mermer tonlar gece zeytin-altın gibi çamurlaşmasın: açık renklerde doygunluğu daha çok düşür
   const s2 = s * Math.max(0.2, 0.8 - 2 * Math.max(0, l - 0.6));
   // HSL → RGB

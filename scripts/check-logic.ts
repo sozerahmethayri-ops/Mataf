@@ -12,6 +12,7 @@ import { PALETTES, colorsFor, contrast, type PaletteId } from '../src/constants/
 import { DEFAULT_NOTIF, notifText, planNotifications } from '../src/services/adhanPlan';
 import type { PrayerKey } from '../src/services/prayer';
 import { Cam } from '../src/scene/oblique';
+import { nearestEdgeFaces } from '../src/scene/haramArch';
 import { buildKaaba } from '../src/scene/kaaba';
 import { buildTawafView } from '../src/scene/tawafScene';
 import { buildMadinah } from '../src/scene/madinah';
@@ -240,6 +241,27 @@ for (const dark of [false, true]) for (const p of Object.keys(PALETTES) as Palet
     ok(w / 390 > (r > 30 ? 0.25 : 0.38) && w / 390 < 0.6 && front[1] < 360 && front[1] > 0, `tavaf görünümü r=${r} m: Kâbe %${Math.round((w / 390) * 100)} genişlik, izleyici ekranda (y=${Math.round(front[1])})`);
   }
 }
+
+// ── Mescid-i Haram silüeti: her açı ve ölçekte geçerli çizim, ayrıntı düzeyi, gece ışıkları ──
+{
+  let bad = 0;
+  for (let rot = 0; rot < 360; rot += 30) for (const k of [0.4, 0.8, 1.6, 4]) {
+    const m = buildMakkah(new Cam(k, 200, 300, rot));
+    if (/NaN|Infinity/.test(JSON.stringify(m))) bad++;
+  }
+  ok(bad === 0, `Haram sahnesi 12 açı × 4 ölçekte geçersiz koordinat üretmez (${bad})`);
+  const near = buildMakkah(new Cam(1.6, 200, 300, -35));
+  const all = [...near.below, ...near.above, ...near.ghost];
+  ok(all.filter((p) => p.nfill).length >= 8, 'gece temasında pencereler ve kapılar aydınlık');
+  ok(all.length < 450, `yakın görünümde şekil sayısı makul (${all.length})`);
+  // Bitişik minare/portal: cephesi izleyiciye bakıyorsa binadan sonra (önde), bakmıyorsa önce çizilir
+  const mainPoly: [number, number][] = [[-235, -200], [72, -200], [72, 130], [60, 165], [-235, 165]];
+  ok(nearestEdgeFaces(new Cam(1, 0, 0, -35), mainPoly, [-80, 165]) && !nearestEdgeFaces(new Cam(1, 0, 0, 145), mainPoly, [-80, 165]),
+    'güney kapısı minaresi: güneyden bakınca önde, kuzeyden bakınca binanın arkasında');
+  ok(nearestEdgeFaces(new Cam(1, 0, 0, -35), mainPoly, [-235, -40]) === (cam0WestFaces()), 'batı kapısı minaresi cepheyle tutarlı');
+}
+
+function cam0WestFaces() { const c = new Cam(1, 0, 0, -35); return c.depthOf(-1, 0) > 0; }
 
 // ── Ezan bildirimleri planı ──
 {
