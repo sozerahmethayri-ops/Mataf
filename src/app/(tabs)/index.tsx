@@ -14,6 +14,8 @@ import { useApp } from '@/services/AppContext';
 import { localPosition, useLocation } from '@/services/location';
 import { useReports } from '@/services/ReportsContext';
 import { planRoute } from '@/services/routing';
+import { MADINAH_CORE } from '@/scene/madinah';
+import { MAKKAH_CORE } from '@/scene/makkah';
 
 export default function MapScreen() {
   const { t, lang } = useI18n();
@@ -23,6 +25,8 @@ export default function MapScreen() {
   const { fix } = useLocation();
   const [size, setSize] = useState({ w: 390, h: 600 });
   const [zoom, setZoom] = useState(1);
+  const [recenter, setRecenter] = useState(0);
+  const [sheetH, setSheetH] = useState(150);
 
   const { pos: user, demo } = localPosition(city, fix);
   const dest = DESTINATIONS.find((d) => d.id === destId && d.city === city) ?? DESTINATIONS.find((d) => d.city === city)!;
@@ -31,17 +35,22 @@ export default function MapScreen() {
   const closed = GATES.filter((g) => g.city === city && summaries[g.id]?.status === 'closed')
     .sort((a, b) => dist(a.pos, user) - dist(b.pos, user))[0];
   const nearestGate = GATES.filter((g) => g.city === city).sort((a, b) => dist(a.pos, user) - dist(b.pos, user))[0];
-  const sheetH = 236;
+  // Üstteki arama + çipler ve alttaki panel haritayı kaplar; harita kalan alana sığdırılır.
+  const topH = insets.top + 8 + 52 + 10 + 40 + 6;
+  const ctrl = { w: 44, h: 44 * 2 + 8 + 44, right: 12, bottom: sheetH + 12 };
+  const fit = [...(city === 'makkah' ? MAKKAH_CORE : MADINAH_CORE), ...(plan?.points ?? [user]), dest.pos];
 
   return (
     <View style={{ flex: 1, backgroundColor: C.mapGround }} onLayout={(e) => setSize({ w: e.nativeEvent.layout.width, h: e.nativeEvent.layout.height })}>
       <HaramScene
         city={city}
         width={size.w}
-        height={size.h - sheetH + 24}
+        height={size.h}
         zoom={zoom}
-        focus={city === 'makkah' ? [-60, 20] : [0, 0]}
-        focusAt={[0.5, 0.55]}
+        fit={fit}
+        viewport={{ top: topH, bottom: sheetH, left: 0, right: 0 }}
+        avoid={[{ x: size.w - ctrl.right - ctrl.w, y: size.h - ctrl.bottom - ctrl.h, w: ctrl.w, h: ctrl.h }]}
+        recenterKey={recenter}
         route={plan?.points}
         user={user}
         dest={dest.pos}
@@ -78,19 +87,22 @@ export default function MapScreen() {
         </ScrollView>
       </View>
 
-      <View style={{ position: 'absolute', right: 12, top: insets.top + 122, gap: 8 }}>
-        <IconBtn name="plus" label="+" tint={C.bg} elevated onPress={() => setZoom((z) => Math.min(4, z * 1.4))} />
-        <IconBtn name="minus" label="−" tint={C.bg} elevated onPress={() => setZoom((z) => Math.max(0.6, z / 1.4))} />
-        <IconBtn name="locate" label="Konum" tint={C.bg} color={C.user} elevated onPress={() => setZoom(1)} />
-        <IconBtn name="data" label={t('data.title')} tint={C.bg} elevated onPress={() => router.push('/veriler')} />
+      <View style={{ position: 'absolute', right: ctrl.right, bottom: ctrl.bottom, gap: 8, alignItems: 'center' }}>
+        <View style={[{ width: ctrl.w, borderRadius: ctrl.w / 2, backgroundColor: C.bg, overflow: 'hidden' }, shadow]}>
+          <IconBtn name="plus" label={t('map.zoomIn')} tint={C.bg} onPress={() => setZoom((z) => Math.min(3, z * 1.4))} />
+          <View style={{ height: 1, marginHorizontal: 10, backgroundColor: '#ECEAE6' }} />
+          <IconBtn name="minus" label={t('map.zoomOut')} tint={C.bg} onPress={() => setZoom((z) => Math.max(0.7, z / 1.4))} />
+        </View>
+        <IconBtn name="locate" label={t('map.recenter')} tint={C.bg} color={C.user} elevated onPress={() => { setZoom(1); setRecenter((n) => n + 1); }} />
       </View>
 
-      <View style={[{ position: 'absolute', left: 0, right: 0, bottom: 0, height: sheetH, backgroundColor: C.bg, borderTopLeftRadius: 24, borderTopRightRadius: 24, paddingHorizontal: 20, paddingTop: 10, gap: 10 }, shadow]}>
-        <View style={{ alignSelf: 'center', width: 40, height: 4, borderRadius: 2, backgroundColor: '#E2E0DC' }} />
-        <View style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 12 }}>
-          <View style={{ flex: 1, gap: 3 }}>
-            <Text style={T.h2}>{t(dest.label)}</Text>
-            <Text style={T.muted}>{plan?.gate ? t('map.via', { gate: `${pick(plan.gate.name, lang)} (${plan.gate.no})` }) : demo ? t('map.demoLocation') : ' '}</Text>
+      <View onLayout={(e) => setSheetH(Math.round(e.nativeEvent.layout.height))}
+        style={[{ position: 'absolute', left: 0, right: 0, bottom: 0, backgroundColor: C.bg, borderTopLeftRadius: 22, borderTopRightRadius: 22, paddingHorizontal: 16, paddingTop: 8, paddingBottom: 12, gap: 10 }, shadow]}>
+        <View style={{ alignSelf: 'center', width: 36, height: 4, borderRadius: 2, backgroundColor: '#E2E0DC' }} />
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+          <View style={{ flex: 1, gap: 2 }}>
+            <Text style={T.h2} numberOfLines={1}>{t(dest.label)}</Text>
+            <Text style={T.muted} numberOfLines={1}>{plan?.gate ? t('map.via', { gate: `${pick(plan.gate.name, lang)} (${plan.gate.no})` }) : demo ? t('map.demoLocation') : ' '}</Text>
           </View>
           {plan && (
             <View style={{ alignItems: 'flex-end' }}>
@@ -99,17 +111,15 @@ export default function MapScreen() {
             </View>
           )}
         </View>
-        {closed ? (
-          <Pressable onPress={() => router.push({ pathname: '/kapi/[id]', params: { id: closed.id } })}
-            style={{ flexDirection: 'row', alignItems: 'center', gap: 10, padding: 10, borderRadius: 14, backgroundColor: C.closedTint }}>
-            <Icon name="alert" color={C.closed} />
-            <View style={{ flex: 1 }}>
-              <Text style={{ fontSize: 13, fontWeight: '700', color: C.closed }}>{t('map.closedAlert', { gate: `${pick(closed.name, lang)} (${closed.no})` })}</Text>
-              <Text style={T.small}>{t('map.rerouted', { n: summaries[closed.id]?.confirmations ?? 0 })}</Text>
-            </View>
-            <Icon name="chevron" color={C.muted} size={18} />
+        {closed && (
+          <Pressable onPress={() => router.push({ pathname: '/kapi/[id]', params: { id: closed.id } })} accessibilityRole="button"
+            style={{ flexDirection: 'row', alignItems: 'center', gap: 8, height: 40, paddingHorizontal: 10, borderRadius: 12, backgroundColor: C.closedTint }}>
+            <Icon name="alert" color={C.closed} size={18} />
+            <Text numberOfLines={1} style={{ flex: 1, fontSize: 13, fontWeight: '700', color: C.closed }}>{t('map.closedAlert', { gate: `${pick(closed.name, lang)} (${closed.no})` })}</Text>
+            <Text style={T.small}>{t('map.confirmations', { n: summaries[closed.id]?.confirmations ?? 0 })}</Text>
+            <Icon name="chevron" color={C.muted} size={16} />
           </Pressable>
-        ) : <View style={{ height: 8 }} />}
+        )}
         <View style={{ flexDirection: 'row', gap: 10 }}>
           <Btn title={t('map.start')} icon="nav" style={{ flex: 1 }} onPress={() => router.push('/navigasyon')} disabled={!plan} />
           <Btn title={t('map.report')} kind="secondary" onPress={() => router.push({ pathname: '/bildir', params: { gate: nearestGate.id } })} />

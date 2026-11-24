@@ -11,7 +11,7 @@ function insideBld(x: number, y: number, m = 16) {
   return x > -46 - m && x < 46 + m && y > 120 && y < 176 + m;
 }
 
-export function buildMadinah(cam: Cam): { below: Prim[]; above: Prim[] } {
+export function buildMadinah(cam: Cam): { below: Prim[]; above: Prim[]; ghost: Prim[] } {
   const P = cam.P.bind(cam);
   const k = cam.k;
   const below: Prim[] = [];
@@ -90,8 +90,11 @@ export function buildMadinah(cam: Cam): { below: Prim[]; above: Prim[] } {
   ];
   mins.sort((a, b) => Cam.depth(a[0], a[1]) - Cam.depth(b[0], b[1]));
   for (const [x, y, h] of mins) above.push(...minaret(cam, x, y, h));
-  return { below, above };
+  return { below, above, ghost: [] };
 }
+
+/** Ana ekranda sığdırılacak çekirdek alan. */
+export const MADINAH_CORE: Pt[] = [[-175, -215], [180, -215], [180, 200], [-175, 200]];
 
 export const MADINAH_LABELS = [
   { key: 'dome', pos: [30, 152] as Pt, h: 27, text: { tr: 'Yeşil Kubbe · Ravza', en: 'Green Dome · Rawdah', ar: 'القبة الخضراء' } },

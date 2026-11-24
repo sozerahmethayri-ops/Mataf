@@ -58,6 +58,7 @@ export default function Navigation() {
   return (
     <View style={{ flex: 1, backgroundColor: C.mapGround }} onLayout={(e) => setSize({ w: e.nativeEvent.layout.width, h: e.nativeEvent.layout.height })}>
       <HaramScene city={city} width={size.w} height={size.h} zoom={1.9} focus={pos} focusAt={[0.4, 0.62]}
+        viewport={{ top: insets.top + 92, bottom: insets.bottom + 108, left: 0, right: 0 }}
         route={ahead} traveled={traveled} user={pos} dest={dest.pos} summaries={summaries} routeGateId={plan.gate?.id} labels={false} pannable={false}
         onGatePress={(id) => router.push({ pathname: '/kapi/[id]', params: { id } })} />
 

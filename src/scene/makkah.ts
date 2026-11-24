@@ -4,10 +4,12 @@
 import { Cam, ellipsePl, extrude, flat, line, minaret, rect, rot, rrect, type Prim } from './oblique';
 import type { Pt } from '@/data/sites';
 
-export function buildMakkah(cam: Cam): { below: Prim[]; above: Prim[] } {
+/** `ghost`: Haram'ın önünde yükselen Saat Kulesi kompleksi — harita bunu yarı saydam çizer ki rota ve kapılar örtülmesin. */
+export function buildMakkah(cam: Cam): { below: Prim[]; above: Prim[]; ghost: Prim[] } {
   const P = cam.P.bind(cam);
   const below: Prim[] = [];
   const above: Prim[] = [];
+  const ghost: Prim[] = [];
   const k = cam.k;
 
   for (const [a, b] of [
@@ -15,7 +17,7 @@ export function buildMakkah(cam: Cam): { below: Prim[]; above: Prim[] } {
   ] as [Pt, Pt][]) below.push(line(cam, a, b, '#FFFFFF', 16 * k));
   below.push(flat(cam, rect(-285, -590, 150, 235), '#FAF8F4'));
 
-  type Obj = { d: number; prims: Prim[]; main?: boolean };
+  type Obj = { d: number; prims: Prim[]; main?: boolean; ghost?: boolean };
   const objs: Obj[] = [];
   const ka: Pt[] = [[-240, -555], [70, -555], [70, -240], [-240, -240]];
   objs.push({ d: Cam.depth(-85, -240), prims: extrude(cam, ka, 0, 35, '#F4F1EB', '#DCD5C8', '#CEC6B7') });
@@ -25,12 +27,12 @@ export function buildMakkah(cam: Cam): { below: Prim[]; above: Prim[] } {
   const ottoOuter = rrect(-66, -96, 66, 96, 6);
   const mainD = Cam.depth(-80, 165);
   objs.push({ d: mainD, prims: extrude(cam, main, 0, 22, '#F7F4EF', '#DDD6CA', '#CFC6B6', [ottoOuter]), main: true });
-  objs.push({ d: Cam.depth(-30, 410), prims: extrude(cam, rect(-150, 250, 85, 410), 0, 70, '#EFEAE2', '#D8D0C2', '#C8BFAF') });
+  objs.push({ d: Cam.depth(-30, 410), ghost: true, prims: extrude(cam, rect(-150, 250, 85, 410), 0, 70, '#EFEAE2', '#D8D0C2', '#C8BFAF') });
   // Saat Kulesi ve yan kuleler
-  objs.push({ d: Cam.depth(-30, 354), prims: extrude(cam, rect(-58, 298, -2, 354), 70, 450, '#E9E3D8', '#D6CEBF', '#C4BBAA') });
-  objs.push({ d: Cam.depth(-30, 346) + 0.1, prims: extrude(cam, rect(-50, 306, -10, 346), 450, 530, '#EFE9DF', '#DDD5C7', '#CBC2B1') });
+  objs.push({ d: Cam.depth(-30, 354), ghost: true, prims: extrude(cam, rect(-58, 298, -2, 354), 70, 450, '#E9E3D8', '#D6CEBF', '#C4BBAA') });
+  objs.push({ d: Cam.depth(-30, 346) + 0.1, ghost: true, prims: extrude(cam, rect(-50, 306, -10, 346), 450, 530, '#EFE9DF', '#DDD5C7', '#CBC2B1') });
   for (const [x0, y0, x1, y1, h] of [[25, 262, 70, 300, 250], [-140, 262, -95, 300, 240], [25, 362, 70, 402, 230], [-140, 362, -95, 402, 220]])
-    objs.push({ d: Cam.depth((x0 + x1) / 2, y1), prims: extrude(cam, rect(x0, y0, x1, y1), 70, h, '#ECE6DC', '#D8D0C2', '#C6BDAD') });
+    objs.push({ d: Cam.depth((x0 + x1) / 2, y1), ghost: true, prims: extrude(cam, rect(x0, y0, x1, y1), 70, h, '#ECE6DC', '#D8D0C2', '#C6BDAD') });
   for (const [x, y, h] of [[-235, -40, 92], [-235, 5, 92], [-80, 165, 92], [-40, 165, 92], [-185, -200, 92], [-150, -200, 92], [108, 104, 92], [100, -290, 92], [-105, -555, 139], [-65, -555, 139]])
     objs.push({ d: Cam.depth(x, y) + 0.05, prims: minaret(cam, x, y, h) });
   objs.sort((a, b) => a.d - b.d);
@@ -64,17 +66,20 @@ export function buildMakkah(cam: Cam): { below: Prim[]; above: Prim[] } {
   below.push(...inner);
   below.push(...(objs.find((o) => o.main)?.prims ?? []));
   below.push(...kaaba);
-  for (const o of objs) if (o.d > mainD) above.push(...o.prims);
+  for (const o of objs) if (o.d > mainD) (o.ghost ? ghost : above).push(...o.prims);
   const [c1x, c1y] = P(-30, 354, 420);
   const [c2x, c2y] = P(-2, 326, 420);
   const [sbx, sby] = P(-30, 326, 530);
   const [stx, sty] = P(-30, 326, 601);
-  above.push({ t: 'circ', cx: c1x, cy: c1y, r: 20 * k, fill: '#FFFFFF', stroke: '#C9A227', sw: 1.4 });
-  above.push({ t: 'circ', cx: c2x, cy: c2y, r: 20 * k, fill: '#FFFFFF', stroke: '#C9A227', sw: 1.4 });
-  above.push({ t: 'path', d: `M${sbx.toFixed(1)} ${sby.toFixed(1)} L${stx.toFixed(1)} ${sty.toFixed(1)}`, stroke: '#B9AD95', sw: 2.4 });
-  above.push({ t: 'circ', cx: stx, cy: sty - 1, r: 2.6, fill: '#C9A227' });
-  return { below, above };
+  ghost.push({ t: 'circ', cx: c1x, cy: c1y, r: 20 * k, fill: '#FFFFFF', stroke: '#C9A227', sw: 1.4 });
+  ghost.push({ t: 'circ', cx: c2x, cy: c2y, r: 20 * k, fill: '#FFFFFF', stroke: '#C9A227', sw: 1.4 });
+  ghost.push({ t: 'path', d: `M${sbx.toFixed(1)} ${sby.toFixed(1)} L${stx.toFixed(1)} ${sty.toFixed(1)}`, stroke: '#B9AD95', sw: 2.4 });
+  ghost.push({ t: 'circ', cx: stx, cy: sty - 1, r: 2.6, fill: '#C9A227' });
+  return { below, above, ghost };
 }
+
+/** Ana ekranda sığdırılacak çekirdek alan: revak + Mes'a + çevre yolu. */
+export const MAKKAH_CORE: Pt[] = [[-262, -222], [140, -222], [140, 195], [-262, 195]];
 
 export const MAKKAH_LABELS = [
   { key: 'kaaba', pos: [0, 0] as Pt, h: 13.1, text: { tr: 'Kâbe · 13,1 m', en: 'Kaaba · 13.1 m', ar: 'الكعبة' } },

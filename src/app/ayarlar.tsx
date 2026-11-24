@@ -1,5 +1,6 @@
 import Constants from 'expo-constants';
 import { useEffect, useState } from 'react';
+import { router } from 'expo-router';
 import { Linking, Text } from 'react-native';
 
 import { Icon } from '@/components/Icon';
@@ -32,6 +33,10 @@ export default function Settings() {
         <ListRow key={m.id} title={m.label} onPress={() => { setM(m.id); setMethod(m.id); }}
           right={m.id === method ? <Icon name="check" color={C.accent} /> : <></>} />
       ))}
+
+      <SectionTitle>{t('data.title')}</SectionTitle>
+      <ListRow title={t('data.title')} subtitle={t('data.sub')} onPress={() => router.push('/veriler')}
+        left={<Icon name="data" color={C.accent} />} />
 
       <SectionTitle>{t('settings.backend')}</SectionTitle>
       <Card tint={C.surface}>

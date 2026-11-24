@@ -6,6 +6,7 @@
 |---|---|---|
 | Ekranlar | `src/app/**` | Expo Router; sekmeler `(tabs)/` altında |
 | 3D harita motoru | `src/scene/oblique.ts`, `makkah.ts`, `madinah.ts`, `src/components/HaramScene.tsx` | Metre cinsinden plan → eğik izdüşüm (yatay k px/m, derinlik k·0,58, yükseklik k·0,81). react-native-svg ile çizilir |
+| Harita yerleşimi | `src/scene/layout.ts` | Kamera; Haram çekirdeğini, rotayı ve hedefi üst arayüz ile alt panel arasındaki boş alana sığdırır (`fitCamera`). Etiketler kapı işaretleriyle, hedefle ve Kâbe'yle çakışmayacak yere konur; yer yoksa gizlenir (`placeLabels`). Saat Kulesi kompleksi yarı saydam çizilir |
 | Rota | `src/services/routing.ts` | Mescidin dış halkası üzerinden kısa yön + açık kapı seçimi. Kapı `closed` / `exitOnly` ise atlanır |
 | Kapı bildirimleri | `src/services/reports.ts`, `ReportsContext.tsx` | Yerel demo (AsyncStorage) ya da Supabase (gerçek zamanlı) |
 | İçerik | `quran.ts`, `hadith.ts`, `osm.ts`, `cache.ts` | Ağdan indirilir, cihazda saklanır, çevrimdışı çalışır |
