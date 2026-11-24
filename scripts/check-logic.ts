@@ -1,7 +1,7 @@
 // Hızlı mantık kontrolü: npx tsx scripts/check-logic.ts
-import { planRoute } from '../src/services/routing';
+import { isInsideBuilding, planRoute, walkPath } from '../src/services/routing';
 import { summarize, type Report, type GateStatus } from '../src/services/reports';
-import { DEMO_START } from '../src/data/sites';
+import { DEMO_START, DESTINATIONS, GATES } from '../src/data/sites';
 import { fitCamera, overlaps, placeLabels } from '../src/scene/layout';
 import { MAKKAH_CORE, buildMakkah } from '../src/scene/makkah';
 import { CORNERS, KAABA_POLY, adjustLap, bearingOf, initialLap, pointAt, startManual, stepLap, zoneOf, type Fix, type LapState } from '../src/services/tawaf';
@@ -12,7 +12,9 @@ import { PALETTES, colorsFor, contrast, type PaletteId } from '../src/constants/
 import { DEFAULT_NOTIF, notifText, planNotifications } from '../src/services/adhanPlan';
 import type { PrayerKey } from '../src/services/prayer';
 import { Cam } from '../src/scene/oblique';
-import { nearestEdgeFaces } from '../src/scene/haramArch';
+import { buildModel, convexPieces, decodeOsm3d, drawModel, findTowers, mergePrims, signedArea } from '../src/scene/osm3d';
+import { HARAM_3D } from '../src/data/osm/haram3d';
+import { NABAWI_3D } from '../src/data/osm/nabawi3d';
 import { buildKaaba } from '../src/scene/kaaba';
 import { buildTawafView } from '../src/scene/tawafScene';
 import { buildMadinah } from '../src/scene/madinah';
@@ -33,12 +35,30 @@ ok(summarize([r('g', 'closed', 'a', 130), r('g', 'closed', 'b', 130), r('g', 'cl
 ok(summarize([r('g', 'closed', 'off', 60, true)], 'g').status === 'closed', 'resmî kapalı → kapalı');
 ok(summarize([r('g', 'closed', 'off', 60, true), r('g', 'open', 'a', 1), r('g', 'open', 'b', 1), r('g', 'open', 'c', 1)], 'g').status === 'open', 'resmî kapalı + 3 kişi açıldı → açık');
 
-// Rota: kapı 79 kapalıysa başka kapı seçilmeli
+// Rota: gerçek dış hatlar çevresinden; batıdan Mataf'a en yakın kapı Umre Kapısı (62), kapalıysa başka kapı
 const all = () => 'open' as GateStatus;
 const p1 = planRoute('makkah', DEMO_START.makkah, 'mataf', all)!;
-ok(p1.gate?.id === 'mk-79', `batıdan Mataf'a en kısa kapı 79 (seçilen: ${p1.gate?.id}, ${Math.round(p1.lengthM)} m)`);
-const p2 = planRoute('makkah', DEMO_START.makkah, 'mataf', (id) => (id === 'mk-79' ? 'closed' : 'open'))!;
-ok(!!p2.gate && p2.gate.id !== 'mk-79', `79 kapalı → yeni kapı ${p2.gate?.id} (${Math.round(p2.lengthM)} m)`);
+ok(p1.gate?.id === 'mk-62', `batıdan Mataf'a en kısa kapı 62 (seçilen: ${p1.gate?.id}, ${Math.round(p1.lengthM)} m)`);
+const p2 = planRoute('makkah', DEMO_START.makkah, 'mataf', (id) => (id === 'mk-62' ? 'closed' : 'open'))!;
+ok(!!p2.gate && p2.gate.id !== 'mk-62', `62 kapalı → yeni kapı ${p2.gate?.id} (${Math.round(p2.lengthM)} m)`);
+{
+  // Kapıya kadarki yürüyüş hiçbir binanın içinden geçmez (her kapı için, dört yönden)
+  let through = 0;
+  const starts: Record<string, [number, number][]> = { makkah: [[-420, 0], [150, -450], [300, 0], [0, 600]], madinah: [[-420, -120], [0, -450], [300, -120], [0, 150]] };
+  for (const g of GATES) for (const from of starts[g.city]) {
+    const pts = walkPath(g.city, from, g.out);
+    for (let i = 1; i < pts.length; i++) for (let t = 0.05; t < 1; t += 0.05) {
+      const q: [number, number] = [pts[i - 1][0] + (pts[i][0] - pts[i - 1][0]) * t, pts[i - 1][1] + (pts[i][1] - pts[i - 1][1]) * t];
+      if (isInsideBuilding(g.city, q)) through++;
+    }
+  }
+  ok(through === 0, `yürüme yolları bina içinden geçmez (${through} örnek içeride)`);
+  const gateOk = GATES.every((g) => isInsideBuilding(g.city, g.inner) && !isInsideBuilding(g.city, g.out));
+  ok(gateOk, 'her kapının iç noktası binada, dış noktası meydanda');
+  ok(DESTINATIONS.every((d) => isInsideBuilding(d.city, d.pos) === d.inside), 'hedefler: Mataf, Safâ ve Ravza bina içinde; Bakî dışarıda');
+  const around = planRoute('makkah', [150, -450], 'mataf', all)!;
+  ok(around.gate?.id === 'mk-45' || around.gate?.id === 'mk-100', `kuzeyden gelen kuzey kapısına yönlenir (${around.gate?.id}, ${Math.round(around.lengthM)} m)`);
+}
 const p3 = planRoute('madinah', DEMO_START.madinah, 'rawdah', all)!;
 ok(p3.lengthM > 300 && p3.lengthM < 1500, `Medine kuzeyden Ravza girişine ${Math.round(p3.lengthM)} m`);
 
@@ -212,7 +232,8 @@ for (const dark of [false, true]) for (const p of Object.keys(PALETTES) as Palet
   // Arka yüzler gizlendiği için parça sayısı açıya göre birkaç adet oynar
   ok(lens.every((n) => Math.abs(n - lens[0]) <= lens[0] * 0.05 && n > 20), `Mekke sahnesi her açıda kurulur (${lens.join(',')})`);
   const md = [0, 135, 225].map((rot) => { const m = buildMadinah(new Cam(1, 0, 0, rot)); return Object.values(m).flat().length; });
-  ok(md.every((n) => Math.abs(n - md[0]) <= md[0] * 0.05 && n > 10), `Medine sahnesi her açıda kurulur (${md.join(',')})`);
+  // Birleştirme (aynı renkli, örtüşmeyen şekiller tek yol) açıya göre farklı sayıda öğe verir
+  ok(md.every((n) => n > 60), `Medine sahnesi her açıda kurulur (${md.join(',')})`);
   // Kuzey oku: ana yönlerde dönüş açısıyla aynı; ara açılarda eğik izdüşüm nedeniyle yatıklaşır
   const needle = (rot: number) => { const c = new Cam(1, 0, 0, rot); const [x0, y0] = c.P(0, 0); const [x1, y1] = c.P(0, -100); return (Math.atan2(x1 - x0, -(y1 - y0)) * 180) / Math.PI; };
   ok([0, 90, 180, -90].every((r) => Math.abs(((needle(r) - r + 540) % 360) - 180) < 0.01), 'pusula: 0/90/180/-90° dönüşte iğne aynı açıda');
@@ -253,15 +274,39 @@ for (const dark of [false, true]) for (const p of Object.keys(PALETTES) as Palet
   const near = buildMakkah(new Cam(1.6, 200, 300, -35));
   const all = [...near.below, ...near.above, ...near.ghost];
   ok(all.filter((p) => p.nfill).length >= 8, 'gece temasında pencereler ve kapılar aydınlık');
-  ok(all.length < 450, `yakın görünümde şekil sayısı makul (${all.length})`);
-  // Bitişik minare/portal: cephesi izleyiciye bakıyorsa binadan sonra (önde), bakmıyorsa önce çizilir
-  const mainPoly: [number, number][] = [[-235, -200], [72, -200], [72, 130], [60, 165], [-235, 165]];
-  ok(nearestEdgeFaces(new Cam(1, 0, 0, -35), mainPoly, [-80, 165]) && !nearestEdgeFaces(new Cam(1, 0, 0, 145), mainPoly, [-80, 165]),
-    'güney kapısı minaresi: güneyden bakınca önde, kuzeyden bakınca binanın arkasında');
-  ok(nearestEdgeFaces(new Cam(1, 0, 0, -35), mainPoly, [-235, -40]) === (cam0WestFaces()), 'batı kapısı minaresi cepheyle tutarlı');
+  // OSM'nin ~820 parçası birleştirmeden sonra; Saat Kulesi yarı saydam katmanda
+  ok(all.length < 900, `yakın görünümde şekil sayısı makul (${all.length}; yarı saydam ${near.ghost.length})`);
+  const md = buildMadinah(new Cam(1.6, 200, 300, -35));
+  ok(!/NaN|Infinity/.test(JSON.stringify(md)), 'Nebevî sahnesi geçerli');
 }
 
-function cam0WestFaces() { const c = new Cam(1, 0, 0, -35); return c.depthOf(-1, 0) > 0; }
+// ── Gerçek 3D veri (OpenStreetMap): çözme, minareler, dışbükey bölme, çizim sırası, birleştirme ──
+{
+  const mk = decodeOsm3d(HARAM_3D);
+  const md = decodeOsm3d(NABAWI_3D);
+  ok(mk.parts.length === 823 && mk.outer.length === 3 && mk.inner.length === 1, `Haram verisi: ${mk.parts.length} parça, ${mk.outer.length} dış hat, ${mk.inner.length} avlu`);
+  ok(md.marks.length === 10 && md.marks.filter((m) => m[2] > 100).length === 6, `Nebevî: 10 minare (6 × 104 m, 4 × 70 m)`);
+  ok(mk.parts.every((p) => p.h1 > p.h0 || p.h1 === p.h0) && Math.max(...mk.parts.map((p) => p.h1)) === 601, 'Saat Kulesi alemi 601 m; ters yükseklik kalmadı');
+  const { towers } = findTowers(mk.parts);
+  ok(towers.length === 13 && towers.filter((t) => t.top > 130).length === 4, `Haram'da 13 minare bulundu (${towers.length}; 4'ü genişlemede ${towers.filter((t) => t.top > 130).map((t) => t.top).join('/')} m)`);
+  const ring = mk.parts.find((p) => p.h0 === 0 && p.h1 === 9.5)!;
+  const pcs = convexPieces(ring.pts);
+  const areaSum = pcs.reduce((a, q) => a + Math.abs(signedArea(q.pts)), 0);
+  ok(pcs.length > 1 && Math.abs(areaSum - Math.abs(signedArea(ring.pts))) < 1 && pcs.every((q) => q.pts.length >= 3), `Mataf halkası ${pcs.length} dışbükey parçaya bölündü (alan korunur)`);
+  // İki kutu: önde (güneyde) olan sonra çizilir; dönünce sıra değişir
+  const box = (y: number, c: string) => `0 100 F 0 - ${c} ${c} p 0 ${y} 100 0 0 100 -100 0`;
+  const data = decodeOsm3d(`pal #ff0000 #0000ff\n${box(0, '0')}\n${box(300, '1')}`);
+  const mdl = buildModel({ data, paint: (p) => ({ wall: p.wall!, roof: p.roof === 'F' ? p.wall! : '#000000' }) });
+  const firstFill = (rot: number) => {
+    const f0 = (drawModel(new Cam(1, 0, 0, rot), mdl).below[0] as { fill: string }).fill;
+    return parseInt(f0.slice(1, 3), 16) > parseInt(f0.slice(5, 7), 16) ? 'red' : 'blue';
+  };
+  ok(firstFill(0) === 'red' && firstFill(180) === 'blue', 'ressam sırası: güneydeki kutu güneyden bakınca sonra, kuzeyden bakınca önce çizilir');
+  // Birleştirme: araya giren farklı renkli örtüşen şekil sırayı korur
+  const sq = (x: number, fill: string) => ({ t: 'poly' as const, pts: `${x},0 ${x + 10},0 ${x + 10},10 ${x},10`, fill });
+  const merged = mergePrims([sq(0, '#ff0000'), sq(5, '#0000ff'), sq(9, '#ff0000'), sq(100, '#ff0000')]);
+  ok(merged.length === 3 && merged[0].t === 'poly' && (merged[2] as { d?: string }).d?.split('M').length === 3, `birleştirme sırayı korur (${merged.length} öğe)`);
+}
 
 // ── Ezan bildirimleri planı ──
 {

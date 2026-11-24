@@ -78,7 +78,7 @@ function seeds(now: number): Report[] {
   };
   s.push({ id: 'seed-mk1-off', gateId: 'mk-1', kind: 'report', status: 'closed', userId: 'official', userName: 'Genel Kurum', official: true, createdAt: now - 70 * MIN, comment: 'Bakım çalışması nedeniyle giriş kapalı.' });
   add('mk-1', 'closed', 5, 12);
-  add('mk-19', 'closed', 4, 25);
+  add('mk-100', 'crowded', 4, 25);
   add('mk-62', 'crowded', 4, 6);
   add('mk-45', 'exitOnly', 3, 9);
   add('mk-79', 'open', 3, 4);

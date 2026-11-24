@@ -179,15 +179,17 @@ export function extrude(
  * Minare (ekrana dik çizilir; minareler her yönden aynı görünür): kare kaide, sekizgen gövde,
  * üç şerefe, kameriye (açık köşk), sivri külah ve altın hilâl. Işık soldan: gövdede yatay geçiş.
  */
-export function minaret(cam: Cam, x: number, y: number, h: number): Prim[] {
+export function minaret(cam: Cam, x: number, y: number, h: number, from = 0): Prim[] {
   const [bx, by] = cam.P(x, y, 0);
+  const fr = Math.max(0, Math.min(0.6, from / h)); // gövde bu orandan (ör. çatıdan) başlar
   const [, ty] = cam.P(x, y, h);
   const H = by - ty;
   const w = Math.max(2.4, 5.2 * cam.k);
-  const Y = (fr: number) => by - H * fr;
+  const Y = (t: number) => by - H * t;
   const out: Prim[] = [];
   // Gövde: kademeli silüet (kaide → gövde → üst gövde → kameriye)
-  const secs: [number, number, number][] = [[0, 0.3, 1], [0.3, 0.62, 0.8], [0.62, 0.8, 0.68], [0.8, 0.885, 0.62]];
+  const secs = ([[0, 0.3, 1], [0.3, 0.62, 0.8], [0.62, 0.8, 0.68], [0.8, 0.885, 0.62]] as [number, number, number][])
+    .filter(([, b]) => b > fr).map(([a, b, s]) => [Math.max(a, fr), b, s] as [number, number, number]);
   const left = secs.map(([a, b, s]) => [[bx - (w * s) / 2, Y(a)], [bx - (w * s) / 2, Y(b)]] as [number, number][]).flat();
   const right = [...secs].reverse().map(([a, b, s]) => [[bx + (w * s) / 2, Y(b)], [bx + (w * s) / 2, Y(a)]] as [number, number][]).flat();
   const body = [...left, ...right];
@@ -197,12 +199,12 @@ export function minaret(cam: Cam, x: number, y: number, h: number): Prim[] {
     stroke: '#C2B9A9', sw: 0.5,
   });
   // Şerefeler
-  const bal = (fr: number, s: number) => {
+  const bal = (at: number, s: number) => {
     const bw = w * s * 1.32;
     const bh = Math.max(1, H * 0.013);
-    out.push({ t: 'rect', x: bx - bw / 2, y: Y(fr) - bh, w: bw, h: bh, fill: '#E4DED3', stroke: '#B5AC9C', sw: 0.4 });
+    out.push({ t: 'rect', x: bx - bw / 2, y: Y(at) - bh, w: bw, h: bh, fill: '#E4DED3', stroke: '#B5AC9C', sw: 0.4 });
   };
-  bal(0.3, 0.8);
+  if (fr < 0.3) bal(0.3, 0.8);
   bal(0.62, 0.68);
   bal(0.8, 0.62);
   // Kameriye açıklıkları ve gövde pencereleri
@@ -213,9 +215,9 @@ export function minaret(cam: Cam, x: number, y: number, h: number): Prim[] {
   }
   if (w >= 6) {
     const ws: string[] = [];
-    for (const fr of [0.16, 0.46, 0.71]) {
+    for (const wf of [0.16, 0.46, 0.71].filter((v) => v > fr)) {
       const sw = w * 0.1;
-      ws.push(`M${f(bx - sw / 2)} ${f(Y(fr))} L${f(bx + sw / 2)} ${f(Y(fr))} L${f(bx + sw / 2)} ${f(Y(fr + 0.05))} L${f(bx - sw / 2)} ${f(Y(fr + 0.05))} Z`);
+      ws.push(`M${f(bx - sw / 2)} ${f(Y(wf))} L${f(bx + sw / 2)} ${f(Y(wf))} L${f(bx + sw / 2)} ${f(Y(wf + 0.05))} L${f(bx - sw / 2)} ${f(Y(wf + 0.05))} Z`);
     }
     out.push({ t: 'path', d: ws.join(' '), fill: '#A39885', nfill: '#E9C46A' });
   }

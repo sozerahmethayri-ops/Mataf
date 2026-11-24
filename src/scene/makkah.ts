@@ -1,144 +1,114 @@
-// Mescid-i Haram gerçek ölçekli sahnesi (metre). Ölçüler: Kâbe 12,86×11,03×13,1 m;
-// Osmanlı revakı 192×132 m; Mes'a 394×40 m; Saat Kulesi 601 m; minareler 92–139 m.
-// Genişleme bloklarının dış hatları yayımlanmış alanlardan oranlanmış tahminlerdir.
-import { clockTower, dome, domeField, facade, nearestEdgeFaces, portal, roofGrid, wallPrims } from './haramArch';
+// Mescid-i Haram: OpenStreetMap'in gerçek 3D bina parçalarından (© OpenStreetMap katkıcıları, ODbL).
+// Dış hat, Mataf avlusu, Mes'a, Kral Abdullah genişlemesi, 13 minare, kubbeler ve Ebrâcü'l-Beyt (Saat Kulesi)
+// OSM'deki konum, yükseklik ve çatı biçimleriyle çizilir; Kâbe ayrıntılı kendi modelimizdir (tavaf asistanıyla ortak).
+import { GATES, type Pt } from '@/data/sites';
+import { HARAM_3D } from '@/data/osm/haram3d';
+import { KAABA_POLY, MAQAM, hijrBand } from '@/services/tawaf';
 import { buildKaaba } from './kaaba';
-import { Cam, ellipsePl, extrude, flat, line, minaret, rect, rrect, visibleWalls, type Prim } from './oblique';
-import type { Pt } from '@/data/sites';
+import { Cam, mixHex, type Prim } from './oblique';
+import { arcades, buildModel, decodeOsm3d, drawModel, hull, type Model, type Paint, type Part } from './osm3d';
 
-/** `ghost`: Haram'ın önünde yükselen Saat Kulesi kompleksi — harita bunu yarı saydam çizer ki rota ve kapılar örtülmesin. */
-/** Kameraya en yakın köşenin derinliği (ressam sıralaması için; harita dönünce de doğru). */
-const front = (cam: Cam, poly: Pt[]) => Math.max(...poly.map(([x, y]) => cam.depthOf(x, y)));
+const f = (v: number) => v.toFixed(1);
+const GOLDISH = /^#(ffcc00|ffd700|d4af37)$/i;
+
+/** OSM renklerini sahnenin açık mermer tonlarına yaklaştırır (kubbeler OSM'de turuncu işaretli; gerçekte açık renk). */
+function paint(p: Part): Paint {
+  const tone = (c: string | null, t: number) => {
+    if (!c) return null;
+    if (GOLDISH.test(c)) return '#D4AF37';
+    if (c.toLowerCase() === '#ff6414') return '#E2DDD3';
+    if (c.toLowerCase() === '#277db5') return '#A8C1CF';
+    return mixHex(c, '#F2EDE4', t);
+  };
+  const wall = tone(p.wall, 0.42) ?? '#E6E0D4';
+  const roof = tone(p.roofC, 0.22) ?? mixHex(wall, '#FFFFFF', 0.4);
+  return { wall, roof, edge: true };
+}
+
+/** Saat bölümünün dört yüzüne kadran; en tepeye hilâl. */
+function extra(cam: Cam, p: Part): Prim[] {
+  const out: Prim[] = [];
+  if (p.h0 === 426 && p.h1 === 469 && cam.k >= 0.12) {
+    const n = p.pts.length;
+    const edges = p.pts.map((a, i) => ({ a, b: p.pts[(i + 1) % n], len: Math.hypot(p.pts[(i + 1) % n][0] - a[0], p.pts[(i + 1) % n][1] - a[1]) }))
+      .sort((x, y) => y.len - x.len).slice(0, 4);
+    const c: Pt = [p.pts.reduce((s, q) => s + q[0], 0) / n, p.pts.reduce((s, q) => s + q[1], 0) / n];
+    for (const e of edges) {
+      const t: Pt = [(e.b[0] - e.a[0]) / e.len, (e.b[1] - e.a[1]) / e.len];
+      const m: Pt = [(e.a[0] + e.b[0]) / 2, (e.a[1] + e.b[1]) / 2];
+      let nrm: Pt = [t[1], -t[0]];
+      if ((m[0] - c[0]) * nrm[0] + (m[1] - c[1]) * nrm[1] < 0) nrm = [-nrm[0], -nrm[1]];
+      if (cam.depthOf(nrm[0], nrm[1]) <= 0.05) continue;
+      const at = (u: number, h: number) => cam.P(m[0] + t[0] * u + nrm[0] * 0.4, m[1] + t[1] * u + nrm[1] * 0.4, h);
+      const ring = (r: number) => Array.from({ length: 28 }, (_, i) => {
+        const a = (i / 28) * Math.PI * 2;
+        const [x, y] = at(r * Math.cos(a), 447.5 + r * Math.sin(a));
+        return `${i ? 'L' : 'M'}${f(x)} ${f(y)}`;
+      }).join(' ') + ' Z';
+      out.push({ t: 'path', d: ring(20.5), fill: '#D4AF37', keep: true });
+      out.push({ t: 'path', d: ring(18), fill: '#FDFCF8', nfill: '#E8F7EE' });
+      if (cam.k >= 0.35) {
+        const [cx, cy] = at(0, 447.5);
+        const [hx, hy] = at(6, 456);
+        const [mx, my] = at(-2, 462);
+        out.push({ t: 'path', d: `M${f(cx)} ${f(cy)} L${f(hx)} ${f(hy)} M${f(cx)} ${f(cy)} L${f(mx)} ${f(my)}`, stroke: '#2B2B2B', sw: Math.max(0.8, 1.2 * cam.k), fill: 'none' });
+      }
+    }
+  }
+  if (p.h1 >= 600) {
+    // Alemin tepesindeki hilâl
+    const cx = p.circ ? p.circ.x : p.pts[0][0];
+    const cy0 = p.circ ? p.circ.y : p.pts[0][1];
+    const [sx, sy] = cam.P(cx, cy0, p.h1);
+    const r = Math.max(2, 6 * cam.k);
+    const cy = sy - r * 0.9;
+    out.push({ t: 'path', d: `M${f(sx - r)} ${f(cy)} A${f(r)} ${f(r)} 0 0 0 ${f(sx + r)} ${f(cy)} A${f(r * 1.3)} ${f(r * 1.3)} 0 0 1 ${f(sx - r)} ${f(cy)} Z`, fill: '#D4AF37', keep: true });
+  }
+  return out;
+}
+
+const nearGate = (p: Pt) => GATES.some((g) => g.city === 'makkah' && Math.hypot(p[0] - g.pos[0], p[1] - g.pos[1]) < 12);
+
+let model: Model | null = null;
+let plaza: Pt[] = [];
+function getModel(): Model {
+  if (model) return model;
+  const data = decodeOsm3d(HARAM_3D);
+  const hb = hijrBand();
+  const kaabaFp = hull([...KAABA_POLY, ...hb.outer, [MAQAM[0] - 1.5, MAQAM[1] - 1.5], [MAQAM[0] + 1.5, MAQAM[1] + 1.5]]);
+  model = buildModel({
+    data,
+    mass: {
+      h: 21, wall: '#E9E3D7', roof: '#F7F4EF',
+      decorate: (cam, ws) => arcades(cam, ws, 21, [{ h0: 1.2, h1: 8.5, w: 3.4, step: 6.8 }, { h0: 12, h1: 18.5, w: 2.6, step: 6.8 }], nearGate),
+      floor: (cam) => data.inner.map((h) => ({ t: 'poly', pts: h.map(([x, y]) => cam.P(x, y).map(f).join(',')).join(' '), fill: '#FFFFFF' }) as Prim),
+    },
+    paint,
+    // Kâbe, Hicr ve Makam yerine kendi ayrıntılı modelimiz
+    skip: (p) => p.pts.every(([x, y]) => Math.hypot(x, y) < 17),
+    extra,
+    towers: { fromTiers: true, tone: (c) => (GOLDISH.test(c) ? '#D4AF37' : mixHex(c, '#F4F0E9', 0.55)) },
+    more: [{ fp: kaabaFp, h0: 0, h1: 13.1, size: 14, draw: (cam) => { const kb = buildKaaba(cam, { shadow: cam.k >= 2 }); return [...kb.under, ...kb.body]; } }],
+    ghost: (c) => c[1] > 240,
+  });
+  // Mescidin çevresindeki beyaz mermer meydan: ana bina + Mes'a + genişleme (30 m pay)
+  const pts = [...data.outer[0], ...data.outer[1]];
+  plaza = hull(pts.flatMap(([x, y]) => Array.from({ length: 8 }, (_, i) => [x + 30 * Math.cos((i * Math.PI) / 4), y + 30 * Math.sin((i * Math.PI) / 4)] as Pt)));
+  return model;
+}
 
 export function buildMakkah(cam: Cam): { below: Prim[]; above: Prim[]; ghost: Prim[] } {
-  const P = cam.P.bind(cam);
-  const below: Prim[] = [];
-  const above: Prim[] = [];
-  const ghost: Prim[] = [];
-  const k = cam.k;
-
-  for (const [a, b] of [
-    [[-700, 205], [700, 205]], [[-300, -900], [-300, 900]], [[170, -900], [170, 900]], [[-700, -600], [700, -600]],
-  ] as [Pt, Pt][]) below.push(line(cam, a, b, '#FFFFFF', 16 * k));
-  below.push(flat(cam, rect(-285, -590, 150, 235), '#FAF8F4'));
-
-  type Obj = { d: number; prims: Prim[]; ghost?: boolean };
-  const objs: Obj[] = [];
-  const ka: Pt[] = [[-240, -555], [70, -555], [70, -240], [-240, -240]];
-  const masa: Pt[] = [[72, -290], [118, -290], [118, 104], [72, 104]];
-  const main: Pt[] = [[-235, -200], [72, -200], [72, 130], [60, 165], [-235, 165]];
-  const ottoOuter = rrect(-66, -96, 66, 96, 6);
-  const hosts = { main, ka, masa };
-  type Host = keyof typeof hosts;
-
-  // Kapı portalları (iki minare arasında) ve minareler — bağlı oldukları binaya göre önde/arkada çizilir
-  type Att = { host: Host; at: Pt; prims: Prim[] };
-  const att: Att[] = [];
-  const PORTALS: { host: Host; a: Pt; b: Pt; out: Pt; h: number }[] = [
-    { host: 'main', a: [-235, -32], b: [-235, -3], out: [-1, 0], h: 31 }, // Kral Fahd Kapısı (79)
-    { host: 'main', a: [-44, 165], b: [-76, 165], out: [0, 1], h: 31 }, // Kral Abdülaziz Kapısı (1)
-    { host: 'main', a: [-154, -200], b: [-181, -200], out: [0, -1], h: 29 }, // kuzey kapısı
-    { host: 'ka', a: [-69, -555], b: [-101, -555], out: [0, -1], h: 47 }, // Kral Abdullah Kapısı (100)
-  ];
-  for (const g of PORTALS) att.push({ host: g.host, at: [(g.a[0] + g.b[0]) / 2, (g.a[1] + g.b[1]) / 2], prims: portal(cam, g.a, g.b, g.out, 7, g.h) });
-  const MINARETS: [number, number, number, Host][] = [
-    [-235, -40, 92, 'main'], [-235, 5, 92, 'main'], [-80, 165, 92, 'main'], [-40, 165, 92, 'main'], [-185, -200, 92, 'main'], [-150, -200, 92, 'main'],
-    [108, 104, 92, 'masa'], [100, -290, 92, 'masa'], [-105, -555, 139, 'ka'], [-65, -555, 139, 'ka'],
-  ];
-  for (const [x, y, h, host] of MINARETS) att.push({ host, at: [x, y], prims: minaret(cam, x, y, h) });
-  const attOf = (host: Host, front: boolean) => att
-    .filter((a) => a.host === host && nearestEdgeFaces(cam, hosts[host], a.at) === front)
-    .sort((p, q) => cam.depthOf(...p.at) - cam.depthOf(...q.at))
-    .flatMap((a) => a.prims);
-  const busy = (p: Pt) => PORTALS.some((g) => Math.hypot(p[0] - (g.a[0] + g.b[0]) / 2, p[1] - (g.a[1] + g.b[1]) / 2) < 20) || MINARETS.some(([x, y]) => Math.hypot(p[0] - x, p[1] - y) < 6);
-
-  // Kral Abdullah genişlemesi
-  objs.push({ d: front(cam, ka), prims: [
-    ...attOf('ka', false),
-    ...extrude(cam, ka, 0, 35, '#F4F1EB', '#E6E0D5', '#C9C0B0', [], '#DCD4C6', { grad: true }),
-    ...[roofGrid(cam, -237, -552, 67, -243, 35, 16)].filter((x): x is Prim => !!x),
-    ...facade(cam, visibleWalls(cam, ka), 35, [{ h0: 1.5, h1: 11, w: 4, step: 8 }, { h0: 15, h1: 23, w: 3, step: 8 }, { h0: 26, h1: 32, w: 2.4, step: 8 }], { skipNear: busy }),
-    ...attOf('ka', true),
-  ] });
-  // Mes'a (Safâ–Merve): iki katlı galeri, Safâ ve Merve kubbeleri
-  objs.push({ d: front(cam, masa), prims: [
-    ...attOf('masa', false),
-    ...extrude(cam, masa, 0, 30, '#EDE6D9', '#E2DACC', '#C6BCAB', [], '#DCD4C6', { grad: true }),
-    ...facade(cam, visibleWalls(cam, masa), 30, [{ h0: 1.5, h1: 10, w: 3.4, step: 6 }, { h0: 15, h1: 25, w: 3.4, step: 6 }], { skipNear: busy }),
-    ...dome(cam, 95, 82, 30, 10.5, 'marble'),
-    ...dome(cam, 95, -270, 30, 8, 'marble'),
-    ...attOf('masa', true),
-  ] });
-  // Saat Kulesi kompleksi (yarı saydam): kaide, yan kuleler ve ana kule
-  objs.push({ d: front(cam, rect(-150, 250, 85, 410)), ghost: true, prims: extrude(cam, rect(-150, 250, 85, 410), 0, 70, '#EFEAE2', '#DED6C9', '#C2B9A8', [], '#DCD4C6', { grad: true }) });
-  for (const [x0, y0, x1, y1, h] of [[25, 262, 70, 300, 250], [-140, 262, -95, 300, 240], [25, 362, 70, 402, 230], [-140, 362, -95, 402, 220]]) {
-    const pl = rect(x0, y0, x1, y1);
-    const [cx, cy] = [(x0 + x1) / 2, (y0 + y1) / 2];
-    objs.push({ d: front(cam, pl), ghost: true, prims: [
-      ...extrude(cam, pl, 70, h, '#ECE6DC', '#DDD5C8', '#C3BAA9', [], '#DCD4C6', { grad: true }),
-      ...dome(cam, cx, cy, h, 12, 'marble'),
-    ] });
-  }
-  for (const t of clockTower(cam)) objs.push({ ...t, ghost: true });
-  objs.sort((a, b) => a.d - b.d);
-  const mainD = front(cam, main);
-
-  // Osmanlı revakı (kurşun kubbeli) ve açık avlu (Mataf)
-  const inner: Prim[] = [];
-  inner.push(flat(cam, ottoOuter, '#FFFFFF'));
-  for (const r of [22, 36, 50]) {
-    const pts = ellipsePl(0, 0, r, r, 48).map(([x, y]) => P(x, y));
-    inner.push({ t: 'poly', pts: pts.map(([a, b]) => `${a.toFixed(1)},${b.toFixed(1)}`).join(' '), fill: 'none', stroke: '#ECE6DC', sw: 0.8 });
-  }
-  const sahn = rrect(-52, -82, 52, 82, 10);
-  inner.push(...extrude(cam, ottoOuter, 0, 12, '#ECE5D7', '#E2DACC', '#C8BFAF', [sahn], '#DCD4C6', { grad: k >= 1 }));
-  if (k >= 1.2) inner.push(...facade(cam, visibleWalls(cam, [], [sahn]), 12, [{ h0: 0.5, h1: 7.5, w: 3.6, step: 4.5 }]));
-  const domes: Pt[] = [];
-  for (let dx = -60; dx <= 63; dx += 9)
-    for (let dy = -90; dy <= 93; dy += 9) {
-      if (Math.abs(dx) < 56 && Math.abs(dy) < 86) continue;
-      if (Math.abs(dx) > 62 || Math.abs(dy) > 92) continue;
-      domes.push([dx, dy]);
-    }
-  inner.push(...domeField(cam, domes, 12, 3.1));
-
-  // Kâbe: gerçek ölçü ve yön, Hatîm ve Makam'la (tavaf asistanıyla aynı model)
-  const kaaba = buildKaaba(cam, { shadow: k >= 2 });
-
-  // Ana bina (Suudi genişlemeleri): iç avlu duvarları → revak → Kâbe → çatı → dış cepheler
-  const sub = (pl: Pt[]) => pl.map(([x, y], i) => { const [a, b] = P(x, y, 22); return `${i ? 'L' : 'M'}${a.toFixed(1)} ${b.toFixed(1)}`; }).join(' ') + ' Z';
-  const outerWalls = visibleWalls(cam, main);
-  const mainGroup: Prim[] = [
-    ...attOf('main', false),
-    ...wallPrims(cam, visibleWalls(cam, [], [ottoOuter]), 0, 22, '#EFEAE1', '#CBC2B2'),
-    ...inner,
-    ...kaaba.under, ...kaaba.body,
-    { t: 'path', d: [main, ottoOuter].map(sub).join(' '), fill: '#F7F4EF', stroke: '#DCD4C6', sw: 0.8, rule: 'evenodd' },
-    ...[roofGrid(cam, -232, -197, 69, 162, 22, 16, [[-70, -100, 70, 100], [60, 130, 75, 170]])].filter((x): x is Prim => !!x),
-    ...(k >= 0.9 ? [{ t: 'path', d: sub(offsetRect(main, 3)), fill: 'none', stroke: '#E6E0D5', sw: Math.max(0.5, 0.6 * k) } as Prim] : []),
-    ...wallPrims(cam, outerWalls, 0, 22, '#F3EEE6', '#CBC2B2'),
-    ...facade(cam, outerWalls, 22, [{ h0: 1.2, h1: 8.5, w: 3.4, step: 6.8 }, { h0: 12, h1: 18.5, w: 2.6, step: 6.8 }], { skipNear: busy }),
-    ...attOf('main', true),
-  ];
-
-  for (const o of objs) if (o.d < mainD) (o.ghost ? ghost : below).push(...o.prims);
-  below.push(...mainGroup);
-  for (const o of objs) if (o.d >= mainD) (o.ghost ? ghost : above).push(...o.prims);
-  return { below, above, ghost };
+  const m = getModel();
+  const ground: Prim[] = [{ t: 'poly', pts: plaza.map(([x, y]) => cam.P(x, y).map(f).join(',')).join(' '), fill: '#FAF8F4' }];
+  const { below, ghost } = drawModel(cam, m);
+  return { below: [...ground, ...below], above: [], ghost };
 }
 
-/** Çatı kenarındaki korkuluk çizgisi için çokgeni içe kaydırır (yaklaşık). */
-function offsetRect(pl: Pt[], d: number): Pt[] {
-  const cx = pl.reduce((s, p) => s + p[0], 0) / pl.length;
-  const cy = pl.reduce((s, p) => s + p[1], 0) / pl.length;
-  return pl.map(([x, y]) => [x + Math.sign(cx - x) * d, y + Math.sign(cy - y) * d]);
-}
-
-/** Ana ekranda sığdırılacak çekirdek alan: revak + Mes'a + çevre yolu. */
-export const MAKKAH_CORE: Pt[] = [[-262, -222], [140, -222], [140, 195], [-262, 195]];
+/** Ana ekranda sığdırılacak çekirdek alan: ana bina, Mes'a ve Kral Abdullah Kapısı. */
+export const MAKKAH_CORE: Pt[] = [[-262, -345], [185, -345], [185, 212], [-262, 212]];
 
 export const MAKKAH_LABELS = [
   { key: 'kaaba', pos: [0, 0] as Pt, h: 13.1, text: { tr: 'Kâbe · 13,1 m', en: 'Kaaba · 13.1 m', ar: 'الكعبة' } },
-  { key: 'masa', pos: [118, -220] as Pt, h: 30, text: { tr: "Mes'a · 394 m", en: "Mas'a · 394 m", ar: 'المسعى' } },
-  { key: 'tower', pos: [-30, 326] as Pt, h: 601, text: { tr: 'Saat Kulesi · 601 m', en: 'Clock Tower · 601 m', ar: 'برج الساعة' } },
+  { key: 'masa', pos: [112, -110] as Pt, h: 30, text: { tr: "Mes'a · Safâ–Merve", en: "Mas'a · Safa–Marwah", ar: 'المسعى' } },
+  { key: 'tower', pos: [-66, 486] as Pt, h: 601, text: { tr: 'Saat Kulesi · 601 m', en: 'Clock Tower · 601 m', ar: 'برج الساعة' } },
 ];

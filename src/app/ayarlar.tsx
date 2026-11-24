@@ -99,7 +99,7 @@ export default function Settings() {
       <SectionTitle>{t('settings.about')}</SectionTitle>
       <Card tint={C.surface}>
         <Text style={T.body}>MATAF {Constants.expoConfig?.version ?? ''}</Text>
-        <Text style={T.small}>Harita ölçüleri yayımlanmış değerlerden; dış hatlar yaklaşık. Resmî kurumun canlı verisiyle değiştirilecek. © OpenStreetMap katkıcıları.</Text>
+        <Text style={T.small}>Mescid-i Haram ve Mescid-i Nebevî’nin 3D biçimi, kapı yerleri ve çevredeki binalar OpenStreetMap’in 3D bina verisinden (© OpenStreetMap katkıcıları, ODbL); doğruluğu bu veri kadardır. Kâbe ve Yeşil Kubbe ayrıntılı kendi modelimizdir.</Text>
         <Text style={[T.small, { color: C.accent, fontWeight: '700' }]} onPress={() => Linking.openURL('https://www.openstreetmap.org/copyright')}>OpenStreetMap lisansı ↗</Text>
       </Card>
     </Screen>

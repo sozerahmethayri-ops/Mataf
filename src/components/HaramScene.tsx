@@ -14,6 +14,20 @@ import { Prims } from './SvgPrims';
 import { Icon } from './Icon';
 
 const BASE_K: Record<City, number> = { makkah: 0.6, madinah: 0.56 };
+
+/** Son kurulan sahneler (şehir, ölçek adımı, açı): geri dönüşlerde anında. */
+const sceneCache = new Map<string, ReturnType<typeof buildMakkah>>();
+function sceneFor(city: City, kq: number, rotDeg: number) {
+  const key = `${city}|${kq.toFixed(4)}|${rotDeg}`;
+  let s = sceneCache.get(key);
+  if (!s) {
+    const cam = new Cam(kq, 0, 0, rotDeg);
+    s = city === 'makkah' ? buildMakkah(cam) : buildMadinah(cam);
+    if (sceneCache.size >= 6) sceneCache.delete(sceneCache.keys().next().value as string);
+    sceneCache.set(key, s);
+  }
+  return s;
+}
 const AnimatedPath = Animated.createAnimatedComponent(Path);
 
 // İşaret ölçüleri (px)
@@ -83,7 +97,11 @@ export function HaramScene(props: SceneProps) {
     return Cam.centeredOn(BASE_K[city] * zoom, [fx, fy], width * ax, height * ay, rotDeg);
   }, [fitKey, city, zoom, fx, fy, width, height, ax, ay, vt, vb, vl, vr, rotDeg]);
   const k = cam.k;
-  const scene = useMemo(() => (city === 'makkah' ? buildMakkah(cam) : buildMadinah(cam)), [city, cam]);
+  // Sahne ölçeği %6'lık adımlara yuvarlanıp orijinde kurulur; kaydırma ve küçük ölçek farkı SVG dönüşümüyle
+  // uygulanır. Böylece konum güncellemeleri ve küçük yakınlaştırmalar sahneyi yeniden kurdurmaz.
+  const kq = Math.pow(1.06, Math.round(Math.log(k) / Math.log(1.06)));
+  const scene = useMemo(() => sceneFor(city, kq, rotDeg), [city, kq, rotDeg]);
+  const sceneTf = `translate(${cam.ox.toFixed(2)} ${cam.oy.toFixed(2)}) scale(${(k / kq).toFixed(4)})`;
 
   // Kaydırma (tek parmak) ve iki parmakla büyütme/döndürme. Hareket sırasında görüntü 2D dönüşümle
   // anında izler; parmaklar kalkınca sahne yeni ölçek ve açıyla gerçek 3D olarak yeniden çizilir.
@@ -162,7 +180,7 @@ export function HaramScene(props: SceneProps) {
     ...(userXY ? [{ x: userXY[0] - 22, y: userXY[1] - 22, w: 44, h: 44 }] : []),
     // Kâbe / Yeşil Kubbe üzerine etiket binmesin
     ...(() => {
-      const [x, y] = city === 'makkah' ? P([0, 0], 7) : P([30, 152], 14);
+      const [x, y] = city === 'makkah' ? P([0, 0], 7) : P(MADINAH_LABELS[0].pos, 16);
       const r = Math.max(9, 12 * k);
       return [{ x: x - r, y: y - r, w: 2 * r, h: 2 * r, owner: city === 'makkah' ? 'kaaba' : 'dome' }];
     })(),
@@ -188,13 +206,15 @@ export function HaramScene(props: SceneProps) {
     <View style={[{ width, height, overflow: 'hidden', backgroundColor: C.mapGround }, WEB_NO_TOUCH]} {...responder.panHandlers}>
       <Animated.View style={{ position: 'absolute', left: 0, top: 0, width, height, transform: [...pan.getTranslateTransform(), { scale: pinch }, { rotate: twistDeg }] }}>
         <Svg width={width} height={height} accessibilityLabel="3D harita">
-          <Prims prims={scene.below} />
-          <Prims prims={scene.above} />
-          {scene.ghost.length > 0 && (
-            <G opacity={xray ? 0.42 : 1}>
-              <Prims prims={scene.ghost} />
-            </G>
-          )}
+          <G transform={sceneTf}>
+            <Prims prims={scene.below} />
+            <Prims prims={scene.above} />
+            {scene.ghost.length > 0 && (
+              <G opacity={xray ? 0.42 : 1}>
+                <Prims prims={scene.ghost} />
+              </G>
+            )}
+          </G>
           {doneD && <Path d={doneD} stroke="#B8BCC4" strokeWidth={7} strokeLinecap="round" fill="none" />}
           {routeD && (
             <G>
@@ -264,6 +284,8 @@ export function HaramScene(props: SceneProps) {
           <Text style={{ fontSize: 10, fontWeight: '700', color: C.ink2 }}>{scaleM} m</Text>
         </View>
         <View style={{ width: scaleM * k, height: 5, borderWidth: 1.5, borderTopWidth: 0, borderColor: C.ink }} />
+        {/* 3D bina verisi OpenStreetMap'ten (ODbL): atıf haritada görünür olmalı */}
+        <Text style={{ fontSize: 8, color: C.ink2, marginTop: 3 }}>© OpenStreetMap</Text>
       </View>
     </View>
   );

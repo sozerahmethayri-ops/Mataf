@@ -1,6 +1,7 @@
 // Mescid-i Haram ve Mescid-i Nebevî için yerel koordinat sistemi (metre).
-// x = doğu (+), y = güney (+). Orijin: Mekke'de Kâbe, Medine'de bina merkezi.
-// Ölçüler yayımlanmış değerlerden; dış hatlar ve kapı yerleri yaklaşık (docs/VERI-KAYNAKLARI.md).
+// x = doğu (+), y = güney (+). Orijin: Mekke'de Kâbe'nin merkezi, Medine'de binanın güney kenarına yakın sabit nokta.
+// Bina dış hatları ve kapı yerleri OpenStreetMap'ten (© OpenStreetMap katkıcıları, ODbL); kapı numaraları
+// Genel Kurum'un kullandığı yaygın numaralardır (docs/VERI-KAYNAKLARI.md).
 
 export type City = 'makkah' | 'madinah';
 export type Pt = [number, number];
@@ -26,9 +27,9 @@ export type Destination = {
 };
 
 export const ANCHORS: Record<City, { lat: number; lng: number; name: ML }> = {
-  // Kâbe merkezi
-  makkah: { lat: 21.42252, lng: 39.82621, name: { tr: 'Mescid-i Haram', en: 'Masjid al-Haram', ar: 'المسجد الحرام' } },
-  // Mescid-i Nebevî bina merkezi (yaklaşık)
+  // Kâbe merkezi (OSM'deki Kâbe çokgeninin merkezi)
+  makkah: { lat: 21.4225165, lng: 39.826182, name: { tr: 'Mescid-i Haram', en: 'Masjid al-Haram', ar: 'المسجد الحرام' } },
+  // Mescid-i Nebevî: Yeşil Kubbe'nin ~10 m güneybatısı (OSM verisinin orijini)
   madinah: { lat: 24.4675, lng: 39.6114, name: { tr: 'Mescid-i Nebevî', en: "Prophet's Mosque", ar: 'المسجد النبوي' } },
 };
 
@@ -43,31 +44,29 @@ export function toLocal(city: City, lat: number, lng: number): Pt {
 }
 export const dist = (a: Pt, b: Pt) => Math.hypot(a[0] - b[0], a[1] - b[1]);
 
+// Kapılar: konum OSM'deki giriş noktası (bina dış hattının üstünde); `out` 18 m dışarıda, `inner` 25 m içeride.
 export const GATES: Gate[] = [
-  { id: 'mk-1', city: 'makkah', no: '1', name: { tr: 'Kral Abdülaziz Kapısı', en: 'King Abdulaziz Gate', ar: 'باب الملك عبدالعزيز' }, side: { tr: 'Güney · Ecyad / Saat Kulesi', en: 'South · Ajyad / Clock Tower', ar: 'الجنوب · أجياد' }, pos: [-60, 165], out: [-60, 195], inner: [-45, 110] },
-  { id: 'mk-79', city: 'makkah', no: '79', name: { tr: 'Kral Fahd Kapısı', en: 'King Fahd Gate', ar: 'باب الملك فهد' }, side: { tr: 'Batı', en: 'West', ar: 'الغرب' }, pos: [-235, -18], out: [-262, -18], inner: [-110, -10] },
-  { id: 'mk-62', city: 'makkah', no: '62', name: { tr: 'Umre Kapısı', en: 'Umrah Gate', ar: 'باب العمرة' }, side: { tr: 'Kuzeybatı', en: 'North-west', ar: 'الشمال الغربي' }, pos: [-168, -200], out: [-168, -222], inner: [-80, -95] },
-  { id: 'mk-45', city: 'makkah', no: '45', name: { tr: 'Fetih Kapısı', en: 'Al-Fath Gate', ar: 'باب الفتح' }, side: { tr: 'Kuzey · Merve tarafı', en: 'North · Marwah side', ar: 'الشمال · جهة المروة' }, pos: [40, -200], out: [40, -222], inner: [20, -100] },
-  { id: 'mk-19', city: 'makkah', no: '19', name: { tr: 'Selam Kapısı (bodrum)', en: 'Al-Salam Gate (basement)', ar: 'باب السلام' }, side: { tr: "Doğu · Mes'a yanı", en: "East · by the Mas'a", ar: 'الشرق · بجوار المسعى' }, pos: [118, -40], out: [140, -40], inner: [60, -20] },
-  { id: 'mk-100', city: 'makkah', no: '100', name: { tr: 'Kral Abdullah Kapısı', en: 'King Abdullah Gate', ar: 'باب الملك عبدالله' }, side: { tr: 'Kuzey · yeni genişleme', en: 'North · new expansion', ar: 'الشمال · التوسعة' }, pos: [-85, -555], out: [-85, -578], inner: [-60, -110] },
-  { id: 'md-21', city: 'madinah', no: '21', name: { tr: 'Kral Fahd Kapısı', en: 'King Fahd Gate', ar: 'باب الملك فهد' }, side: { tr: 'Kuzey', en: 'North', ar: 'الشمال' }, pos: [0, -190], out: [0, -215], inner: [0, -150] },
-  { id: 'md-1', city: 'madinah', no: '1', name: { tr: 'Bab-üs Selam', en: 'Bab al-Salam', ar: 'باب السلام' }, side: { tr: 'Batı · eski çekirdek', en: 'West · old core', ar: 'الغرب' }, pos: [-46, 160], out: [-70, 160], inner: [-20, 158] },
-  { id: 'md-41', city: 'madinah', no: '41', name: { tr: 'Bab el-Bakî', en: 'Bab al-Baqi', ar: 'باب البقيع' }, side: { tr: "Doğu · Hücre-i Saadet'e en yakın", en: 'East · nearest the Prophet’s chamber', ar: 'الشرق' }, pos: [46, 160], out: [70, 160], inner: [20, 158] },
-  { id: 'md-37', city: 'madinah', no: '37', name: { tr: 'Bab Mekke', en: 'Makkah Gate', ar: 'باب مكة' }, side: { tr: 'Güney · Ravza girişi avlusu', en: 'South · Rawdah entry courtyard', ar: 'الجنوب' }, pos: [-95, 130], out: [-95, 160], inner: [-95, 100] },
+  { id: 'mk-1', city: 'makkah', no: '1', name: { tr: 'Kral Abdülaziz Kapısı', en: 'King Abdulaziz Gate', ar: 'باب الملك عبدالعزيز' }, side: { tr: 'Güney · Ecyad / Saat Kulesi', en: 'South · Ajyad / Clock Tower', ar: 'الجنوب · أجياد' }, pos: [-35, 163], out: [-39, 180], inner: [-30, 138] },
+  { id: 'mk-79', city: 'makkah', no: '79', name: { tr: 'Kral Fahd Kapısı', en: 'King Fahd Gate', ar: 'باب الملك فهد' }, side: { tr: 'Güneybatı', en: 'South-west', ar: 'الجنوب الغربي' }, pos: [-221, 142], out: [-236, 152], inner: [-200, 128] },
+  { id: 'mk-62', city: 'makkah', no: '62', name: { tr: 'Umre Kapısı', en: 'Umrah Gate', ar: 'باب العمرة' }, side: { tr: 'Batı', en: 'West', ar: 'الغرب' }, pos: [-167, -36], out: [-185, -40], inner: [-143, -31] },
+  { id: 'mk-45', city: 'makkah', no: '45', name: { tr: 'Fetih Kapısı', en: 'Al-Fath Gate', ar: 'باب الفتح' }, side: { tr: 'Kuzey · Şamiye avlusu', en: 'North · Shamiya courtyard', ar: 'الشمال · الشامية' }, pos: [34, -166], out: [37, -183], inner: [29, -141] },
+  { id: 'mk-100', city: 'makkah', no: '100', name: { tr: 'Kral Abdullah Kapısı', en: 'King Abdullah Gate', ar: 'باب الملك عبدالله' }, side: { tr: 'Kuzeybatı · yeni genişleme', en: 'North-west · new expansion', ar: 'الشمال الغربي · التوسعة' }, pos: [-212, -318], out: [-222, -333], inner: [-199, -297] },
+  { id: 'md-1', city: 'madinah', no: '1', name: { tr: 'Bab-üs Selam', en: 'Bab al-Salam', ar: 'باب السلام' }, side: { tr: 'Batı · Ravza ziyareti girişi', en: 'West · Rawdah visit entrance', ar: 'الغرب · مدخل الروضة' }, pos: [-75, 7], out: [-93, 7], inner: [-50, 7] },
+  { id: 'md-41', city: 'madinah', no: '41', name: { tr: 'Bab el-Bakî', en: 'Bab al-Baqi', ar: 'باب البقيع' }, side: { tr: "Doğu · Hücre-i Saadet'in yanı (çıkış)", en: 'East · beside the Prophet’s chamber (exit)', ar: 'الشرق · بجوار الحجرة' }, pos: [20, 5], out: [38, 5], inner: [-5, 5] },
+  { id: 'md-37', city: 'madinah', no: '37', name: { tr: 'Bab Mekke', en: 'Makkah Gate', ar: 'باب مكة' }, side: { tr: 'Güney · doğu kanat', en: 'South · east wing', ar: 'الجنوب' }, pos: [109, -30], out: [109, -12], inner: [109, -55] },
+  { id: 'md-21', city: 'madinah', no: '21', name: { tr: 'Kral Fahd Kapıları (20–22)', en: 'King Fahd Gates (20–22)', ar: 'باب الملك فهد' }, side: { tr: 'Kuzey · ana giriş', en: 'North · main entrance', ar: 'الشمال' }, pos: [-25, -268], out: [-25, -286], inner: [-25, -243] },
+  { id: 'md-7', city: 'madinah', no: '7', name: { tr: 'Kral Suud Kapıları (7–9)', en: 'King Saud Gates (7–9)', ar: 'باب الملك سعود' }, side: { tr: 'Batı', en: 'West', ar: 'الغرب' }, pos: [-228, -85], out: [-246, -85], inner: [-203, -85] },
+  { id: 'md-33', city: 'madinah', no: '33', name: { tr: 'Kral Abdülaziz Kapıları (33–35)', en: 'King Abdulaziz Gates (33–35)', ar: 'باب الملك عبدالعزيز' }, side: { tr: 'Doğu · Bakî tarafı', en: 'East · Baqi side', ar: 'الشرق · جهة البقيع' }, pos: [182, -86], out: [200, -86], inner: [157, -86] },
 ];
 
 export const DESTINATIONS: Destination[] = [
   { id: 'mataf', city: 'makkah', label: 'dest.mataf', pos: [-30, -2], inside: true },
-  { id: 'safa', city: 'makkah', label: 'dest.safa', pos: [95, 95], inside: true },
-  { id: 'rawdah', city: 'madinah', label: 'dest.rawdah', pos: [-95, 172], inside: false },
-  { id: 'baqi', city: 'madinah', label: 'dest.baqi', pos: [215, 40], inside: false },
+  { id: 'safa', city: 'makkah', label: 'dest.safa', pos: [116, 92], inside: true },
+  // Ravza: Hücre-i Saadet (Yeşil Kubbe) ile minber arası
+  { id: 'rawdah', city: 'madinah', label: 'dest.rawdah', pos: [-12, -8], inside: true },
+  // Bakî'nin batı girişi
+  { id: 'baqi', city: 'madinah', label: 'dest.baqi', pos: [222, 40], inside: false },
 ];
 
-// Binanın dışından dolaşan yürüme halkası (saat yönünde).
-export const RINGS: Record<City, Pt[]> = {
-  makkah: [[-262, -222], [-85, -222], [40, -222], [140, -300], [140, -40], [140, 130], [80, 195], [-60, 195], [-262, 195], [-262, -18]],
-  madinah: [[-175, -215], [0, -215], [180, -215], [180, 0], [180, 200], [46, 200], [-95, 200], [-175, 200], [-175, 0]],
-};
-
 /** Mescid çevresinde değilse kullanılacak demo başlangıç konumu. */
-export const DEMO_START: Record<City, Pt> = { makkah: [-330, 60], madinah: [-20, -250] };
+export const DEMO_START: Record<City, Pt> = { makkah: [-330, 60], madinah: [-60, -330] };

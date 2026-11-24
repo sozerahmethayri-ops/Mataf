@@ -4,15 +4,25 @@
 
 - **Kâbe:** 12,86 × 11,03 m taban, 13,1 m yükseklik (Wikipedia).
 - **Osmanlı revakı:** dış ölçü 192 × 132 m (Archnet).
-- **Mes'a:** 394 m uzunluk, 40 m genişlik, 4 kat (İki Kutsal Mescid İşleri Genel Kurumu). Safa, Kâbe'nin ≈130 m güneydoğusunda.
+- **Mes'a:** 394 m uzunluk, 40 m genişlik, 4 kat (İki Kutsal Mescid İşleri Genel Kurumu). Safa, Kâbe'nin ≈150 m güneydoğusunda.
 - **Saat Kulesi:** 601 m. **Mescid-i Haram minareleri:** en yüksek 139 m.
 - **Mescid-i Nebevî:** bina ≈ 98.500 m², avlular 235.000 m² (Saudipedia); zemin kat 12,55 m; 18 m çaplı 27 sürgülü kubbe; yeni minareler ≈105 m; 250 şemsiye, 143.000 m² gölge.
 - **Ravza:** ziyaret saatleri Suudi Basın Ajansı, 20 Ekim 2026 duyurusu; Nusuk izni, içeride 20 dk, yeni izin 365 gün sonra.
 
+## OpenStreetMap'ten alınanlar (© OpenStreetMap katkıcıları, ODbL)
+
+- **3D binalar:** Mescid-i Haram'ın dış hattı ve Mataf avlusu, Mes'a, Kral Abdullah genişlemesi, 13 minare,
+  kubbeler ve Ebrâcü'l-Beyt (Saat Kulesi, 601 m); Mescid-i Nebevî'nin dış hattı, 10 minare (6 × 104 m, 4 × 70 m),
+  Yeşil Kubbe'nin yeri ve çapı, çevredeki yapılar ve Cennetü'l-Bakî sınırı. Ayrıntı: `scripts/osm-3d.md`.
+- **Kapı konumları:** OSM giriş noktaları. Mekke: Kral Abdülaziz (1), Kral Fahd (79), Umre (62), Fetih (45),
+  Kral Abdullah (100). Medine: Bab-üs Selam (1), Bab el-Bakî (41), Bab Mekke (37), Kral Fahd (20–22),
+  Kral Suud (7–9), Kral Abdülaziz (33–35). Mekke kapı numaraları yaygın kullanılan numaralardır
+  (OSM'de Umre ve Fetih kapıları 40 ve 30 olarak işli; kaynaklar arasında fark var).
+- **Yürüme rotası:** gerçek dış hatların çevresinden en kısa yol (görünürlük ağı).
+
 ## Tahmin / örnek olanlar (değiştirilmeli)
 
-- Genişleme bloklarının dış hatları ve Kâbe'ye göre konumları, Mescid-i Nebevî bina oranı, Yeşil Kubbe yüksekliği (~27 m), eski minareler (~72 m), Bakî sınırı.
-- **Kapı konumları** yaklaşık; kapı numaraları gerçektir (Mekke: 1, 19, 45, 62, 79, 100; Medine: 1, 21, 37, 41).
+- Yeşil Kubbe'nin yüksekliği (≈26 m, fotoğraflara göre), Medine'deki şemsiyelerin dizilişi, yüksekliği OSM'de olmayan otellerin yüksekliği.
 - Mescit içi hizmet noktaları (`src/data/content.ts → PLACES`) **örnek veridir**.
 - Yerel demo modundaki bildirim ve yorumlar örnek veridir.
 - Mescit merkez koordinatları (`ANCHORS`) yaklaşıktır.
@@ -20,7 +30,7 @@
 ## Gerçek veriye geçiş
 
 1. **Resmî kaynak:** İki Kutsal Mescid İşleri Genel Kurumu'nun akıllı haritası (950+ ilgi noktası, 650+ QR, canlı kapanma/rota). Veri paylaşımı veya lisans görüşmesi gerekir. Web: alharamain.gov.sa
-2. **OpenStreetMap:** bina ayak izleri ve girişler (ODbL). Overpass ile çekilip `src/scene/*` dış hatları güncellenebilir.
+2. **OpenStreetMap:** 3D bina parçaları ve girişler (ODbL) — kullanılıyor; güncelleme adımları `scripts/osm-3d.md`.
 3. **Sütun kod tabelaları** (350 adet; renk + numara + harf): iç mekânda konum düzeltme için.
 4. **3D model:** Google Photorealistic 3D Tiles (Mekke/Medine kapsamı ayrıca kontrol edilmeli) veya lisanslı modeller.
 5. **Mescid-i Nebevî resmî 360° tur:** vr.qurancomplex.gov.sa/msq/ (Kral Fahd Mushaf-ı Şerif Basım Kompleksi). Uygulama içine gömmek için izin gerekir.
