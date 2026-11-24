@@ -52,7 +52,7 @@ export default function TafsirScreen() {
         {same.map((x) => (
           <Pressable key={x.id} onPress={() => setPrefs({ tafsir: x.id })} accessibilityRole="radio" accessibilityState={{ selected: x.id === prefs.tafsir }}
             style={{ height: 32, paddingHorizontal: 12, borderRadius: 16, justifyContent: 'center', backgroundColor: x.id === prefs.tafsir ? C.ink : C.surface }}>
-            <Text style={{ fontSize: 12.5, fontWeight: '600', color: x.id === prefs.tafsir ? '#FFFFFF' : C.ink }}>{x.name}</Text>
+            <Text style={{ fontSize: 12.5, fontWeight: '600', color: x.id === prefs.tafsir ? C.onInk : C.ink }}>{x.name}</Text>
           </Pressable>
         ))}
       </View>

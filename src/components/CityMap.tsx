@@ -16,6 +16,8 @@ export function CityMap({ center, pois, hotel, gates, route, onLongPress, onPoiP
       initialRegion={{ latitude: center.lat, longitude: center.lng, latitudeDelta: 0.014, longitudeDelta: 0.014 }}
       showsUserLocation
       showsCompass
+      zoomEnabled
+      rotateEnabled
       showsBuildings
       pitchEnabled
       onLongPress={(e: LongPressEvent) => onLongPress?.({ lat: e.nativeEvent.coordinate.latitude, lng: e.nativeEvent.coordinate.longitude })}>

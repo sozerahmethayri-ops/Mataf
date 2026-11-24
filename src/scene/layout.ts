@@ -17,9 +17,9 @@ export const NO_INSETS: Viewport = { top: 0, bottom: 0, left: 0, right: 0 };
  */
 export function fitCamera(
   points: Pt[], width: number, height: number, vp: Viewport,
-  { pad = 16, headroom = 0, kMin = 0.3, kMax = 2.2, zoom = 1 } = {},
+  { pad = 16, headroom = 0, kMin = 0.3, kMax = 2.2, zoom = 1, rotDeg = -35 } = {},
 ): Cam {
-  const unit = new Cam(1, 0, 0);
+  const unit = new Cam(1, 0, 0, rotDeg);
   let x0 = Infinity, x1 = -Infinity, y0 = Infinity, y1 = -Infinity;
   for (const [x, y] of points) {
     const [sx, sy] = unit.P(x, y);
@@ -31,7 +31,7 @@ export function fitCamera(
   const k = Math.min(kMax, Math.max(kMin, fitK)) * zoom;
   const sx = vp.left + pad + aw / 2;
   const sy = vp.top + pad + headroom + ah / 2;
-  return new Cam(k, sx - k * (x0 + x1) / 2, sy - k * (y0 + y1) / 2);
+  return new Cam(k, sx - k * (x0 + x1) / 2, sy - k * (y0 + y1) / 2, rotDeg);
 }
 
 /** Etiket genişliği tahmini (px). */

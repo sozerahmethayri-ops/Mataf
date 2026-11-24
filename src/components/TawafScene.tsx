@@ -56,7 +56,7 @@ export function TawafScene({
       {LABELS.map((l) => {
         const b = placed[l.id];
         if (!b) return null;
-        const bg = l.tone === 'green' ? C.green : l.tone === 'gold' ? '#FFF7DB' : 'rgba(255,255,255,0.95)';
+        const bg = l.tone === 'green' ? C.green : l.tone === 'gold' ? '#FFF7DB' : C.overlay;
         const fg = l.tone === 'green' ? '#FFFFFF' : l.tone === 'gold' ? '#7A5B00' : C.ink2;
         return (
           <View key={l.id} pointerEvents="none" style={{ position: 'absolute', left: b.x, top: b.y, width: b.w, height: b.h, borderRadius: 10, backgroundColor: bg, alignItems: 'center', justifyContent: 'center' }}>

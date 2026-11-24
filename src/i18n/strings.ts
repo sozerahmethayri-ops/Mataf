@@ -10,6 +10,7 @@ export const LANGS: { code: Lang; label: string; rtl: boolean }[] = [
 const tr = {
   'tab.map': 'Harita',
   'tab.gates': 'Kapılar',
+  'tab.transport': 'Ulaşım',
   'tab.quran': "Kur'an",
   'tab.times': 'Vakitler',
   'tab.hadith': 'Hadis & Dua',
@@ -186,7 +187,7 @@ const tr = {
 type Dict = Partial<Record<keyof typeof tr, string>>;
 
 const en: Dict = {
-  'tab.map': 'Map', 'tab.gates': 'Gates', 'tab.quran': 'Quran', 'tab.times': 'Prayer', 'tab.hadith': 'Hadith & Dua',
+  'tab.map': 'Map', 'tab.gates': 'Gates', 'tab.transport': 'Transport', 'tab.quran': 'Quran', 'tab.times': 'Prayer', 'tab.hadith': 'Hadith & Dua',
   'city.makkah': 'Makkah', 'city.madinah': 'Madinah',
   'map.search': 'Where do you want to go?', 'map.mosque': 'Mosque', 'map.city': 'City',
   'map.start': 'Start navigation', 'map.report': 'Report gate', 'map.via': 'via {gate}', 'map.walk': '{min} min · {m} m walk',
@@ -239,7 +240,7 @@ const en: Dict = {
 };
 
 const ar: Dict = {
-  'tab.map': 'الخريطة', 'tab.gates': 'الأبواب', 'tab.quran': 'القرآن', 'tab.times': 'المواقيت', 'tab.hadith': 'الحديث والدعاء',
+  'tab.map': 'الخريطة', 'tab.gates': 'الأبواب', 'tab.transport': 'التنقل', 'tab.quran': 'القرآن', 'tab.times': 'المواقيت', 'tab.hadith': 'الحديث والدعاء',
   'city.makkah': 'مكة', 'city.madinah': 'المدينة',
   'map.search': 'إلى أين تريد الذهاب؟', 'map.mosque': 'المسجد', 'map.city': 'المدينة',
   'map.start': 'ابدأ الملاحة', 'map.report': 'بلّغ عن باب', 'map.via': 'عبر {gate}', 'map.walk': '{min} د · {m} م سيرًا',

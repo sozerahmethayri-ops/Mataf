@@ -124,10 +124,10 @@ export default function SurahReader() {
           renderItem={({ item: a, index }) => {
             const active = now?.idx === index;
             return (
-              <View style={{ paddingVertical: 14, paddingHorizontal: active ? 10 : 0, marginHorizontal: active ? -10 : 0, borderRadius: 14, backgroundColor: active ? C.accentSoft : 'transparent', borderBottomWidth: active ? 0 : 1, borderBottomColor: '#F1EFEB', gap: 8 }}>
+              <View style={{ paddingVertical: 14, paddingHorizontal: active ? 10 : 0, marginHorizontal: active ? -10 : 0, borderRadius: 14, backgroundColor: active ? C.accentSoft : 'transparent', borderBottomWidth: active ? 0 : 1, borderBottomColor: C.border, gap: 8 }}>
                 <View style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 12 }}>
-                  <View style={{ width: 28, height: 28, borderRadius: 14, borderWidth: 1.5, borderColor: C.route, alignItems: 'center', justifyContent: 'center', marginTop: 6, backgroundColor: active ? C.route : 'transparent' }}>
-                    <Text style={{ fontSize: 11, fontWeight: '700', color: active ? '#FFFFFF' : C.accent }}>{a.n}</Text>
+                  <View style={{ width: 28, height: 28, borderRadius: 14, borderWidth: 1.5, borderColor: C.route, alignItems: 'center', justifyContent: 'center', marginTop: 6, backgroundColor: active ? C.accent : 'transparent' }}>
+                    <Text style={{ fontSize: 11, fontWeight: '700', color: active ? C.onAccent : C.accent }}>{a.n}</Text>
                   </View>
                   <Text style={[T.arabic, { flex: 1 }]}>{a.ar}</Text>
                 </View>
@@ -151,10 +151,10 @@ export default function SurahReader() {
             <Icon name={player.playing ? 'pause' : 'play'} size={18} color="#FFFFFF" fill="#FFFFFF" />
           </Pressable>
           <View style={{ flex: 1 }}>
-            {audioErr ? <Text style={{ color: '#FFFFFF', fontSize: 13 }}>{pick(L.audioErr, lang)}</Text> : (
+            {audioErr ? <Text style={{ color: C.onInk, fontSize: 13 }}>{pick(L.audioErr, lang)}</Text> : (
               <>
-                <Text style={{ color: '#FFFFFF', fontSize: 14, fontWeight: '700' }} numberOfLines={1}>{surahName(n, lang)} · {now ? (ayahs?.[now.idx]?.n ?? now.idx + 1) : ''}</Text>
-                <Text style={{ color: '#C9CCD3', fontSize: 12 }} numberOfLines={1}>{now?.phase === 'meal' ? `${pick(L.meal, lang)} · ${mealName ?? ''}` : reciterName}</Text>
+                <Text style={{ color: C.onInk, fontSize: 14, fontWeight: '700' }} numberOfLines={1}>{surahName(n, lang)} · {now ? (ayahs?.[now.idx]?.n ?? now.idx + 1) : ''}</Text>
+                <Text style={{ color: C.onInk, opacity: 0.75, fontSize: 12 }} numberOfLines={1}>{now?.phase === 'meal' ? `${pick(L.meal, lang)} · ${mealName ?? ''}` : reciterName}</Text>
               </>
             )}
           </View>

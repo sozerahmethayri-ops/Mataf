@@ -35,8 +35,8 @@ export function DuaBlock({ d, tint = C.accentSoft, compact, right }: { d: DuaTex
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 2 }}>
         <Pressable onPress={toggle} accessibilityRole="button" accessibilityLabel={pick(playing ? L.stop : L.listen, lang)}
           style={{ flexDirection: 'row', alignItems: 'center', gap: 6, height: 36, paddingHorizontal: 12, borderRadius: 18, backgroundColor: playing ? C.accent : C.bg }}>
-          <Icon name={playing ? 'stop' : 'play'} size={14} color={playing ? '#FFFFFF' : C.accent} fill={playing ? '#FFFFFF' : C.accent} />
-          <Text style={{ fontSize: 13, fontWeight: '700', color: playing ? '#FFFFFF' : C.accent }}>{pick(playing ? L.stop : L.listen, lang)}</Text>
+          <Icon name={playing ? 'stop' : 'play'} size={14} color={playing ? C.onAccent : C.accent} fill={playing ? C.onAccent : C.accent} />
+          <Text style={{ fontSize: 13, fontWeight: '700', color: playing ? C.onAccent : C.accent }}>{pick(playing ? L.stop : L.listen, lang)}</Text>
         </Pressable>
         <Text style={[T.small, { flex: 1 }]} numberOfLines={2}>{d.ref}{'\n'}{pick(d.quran ? L.reciter : L.tts, lang)}</Text>
         {right}

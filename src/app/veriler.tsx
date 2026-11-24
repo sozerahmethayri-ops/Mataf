@@ -34,7 +34,7 @@ export default function DataSources() {
   return (
     <Screen>
       <Header back title={t('data.title')} subtitle={t('data.sub')} />
-      <Card tint={busy || loading ? C.accentSoft : '#EEF7F4'}>
+      <Card tint={busy || loading ? C.accentSoft : C.openTint}>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
           {busy || loading ? <ActivityIndicator color={C.accent} /> : null}
           <View style={{ flex: 1 }}>
@@ -48,7 +48,7 @@ export default function DataSources() {
       {SOURCES.map((s) => (
         <ListRow key={s.id} title={s.title}
           subtitle={`${s.id === 'reports' ? (backend === 'supabase' ? 'Supabase · canlı' : 'Yerel demo · bu cihaz') : s.meta}${ages[s.id] ? ` · ${ago(ages[s.id], t)}` : ''}`}
-          right={<View style={{ paddingHorizontal: 9, paddingVertical: 4, borderRadius: 10, backgroundColor: s.live ? C.openTint : '#F1F5F9' }}>
+          right={<View style={{ paddingHorizontal: 9, paddingVertical: 4, borderRadius: 10, backgroundColor: s.live ? C.openTint : C.surface }}>
             <Text style={{ fontSize: 11, fontWeight: '700', color: s.live ? C.open : '#334155' }}>{s.live ? '● Canlı' : 'Sürümlü'}</Text>
           </View>} />
       ))}

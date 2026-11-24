@@ -5,7 +5,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Icon, type IconName } from '@/components/Icon';
 import { IconBtn, StatusPill, T } from '@/components/ui';
-import { C } from '@/constants/theme';
+import { C, tone } from '@/constants/theme';
 import { PLACES, type PlaceCat } from '@/data/content';
 import { GATES, dist } from '@/data/sites';
 import { pick, useI18n } from '@/i18n';
@@ -14,12 +14,13 @@ import { useApp } from '@/services/AppContext';
 import { localPosition, useLocation } from '@/services/location';
 import { useReports } from '@/services/ReportsContext';
 
-const CATS: { id: PlaceCat; key: Key; icon: IconName; fg: string; bg: string }[] = [
+// Renkler çizim anında okunur (tema değişince güncel kalsın diye fonksiyon)
+const catList = (): { id: PlaceCat; key: Key; icon: IconName; fg: string; bg: string }[] => [
   { id: 'gate', key: 'cat.gate', icon: 'gate', fg: C.open, bg: C.openTint },
-  { id: 'zamzam', key: 'cat.zamzam', icon: 'water', fg: '#1D4ED8', bg: C.userTint },
-  { id: 'wc', key: 'cat.wc', icon: 'wc', fg: '#334155', bg: '#F1F5F9' },
-  { id: 'lift', key: 'cat.lift', icon: 'lift', fg: '#7C3AED', bg: '#F3EEFF' },
-  { id: 'access', key: 'cat.access', icon: 'wheel', fg: '#0E7490', bg: '#E6F6FA' },
+  { id: 'zamzam', key: 'cat.zamzam', icon: 'water', fg: C.user, bg: C.userTint },
+  { id: 'wc', key: 'cat.wc', icon: 'wc', ...tone('#334155', '#F1F5F9') },
+  { id: 'lift', key: 'cat.lift', icon: 'lift', ...tone('#7C3AED', '#F3EEFF') },
+  { id: 'access', key: 'cat.access', icon: 'wheel', ...tone('#0E7490', '#E6F6FA') },
   { id: 'aid', key: 'cat.aid', icon: 'aid', fg: C.closed, bg: C.closedTint },
   { id: 'lost', key: 'cat.lost', icon: 'lost', fg: C.limited, bg: C.limitedTint },
   { id: 'meet', key: 'cat.meet', icon: 'pin', fg: C.accent, bg: C.accentTint },
@@ -27,6 +28,7 @@ const CATS: { id: PlaceCat; key: Key; icon: IconName; fg: string; bg: string }[]
 
 export default function Search() {
   const { t, lang } = useI18n();
+  const CATS = useMemo(() => catList(), []);
   const { city } = useApp();
   const { summaries } = useReports();
   const { fix } = useLocation();
@@ -76,7 +78,7 @@ export default function Search() {
           const c = CATS.find((x) => x.id === p.cat)!;
           return (
             <Pressable key={p.id} onPress={() => (p.gateId ? router.push({ pathname: '/kapi/[id]', params: { id: p.gateId } }) : router.push('/navigasyon'))}
-              style={{ minHeight: 60, flexDirection: 'row', alignItems: 'center', gap: 12, borderBottomWidth: 1, borderBottomColor: '#F1EFEB' }}>
+              style={{ minHeight: 60, flexDirection: 'row', alignItems: 'center', gap: 12, borderBottomWidth: 1, borderBottomColor: C.border }}>
               <View style={{ width: 40, height: 40, borderRadius: 12, backgroundColor: c.bg, alignItems: 'center', justifyContent: 'center' }}><Icon name={c.icon} color={c.fg} size={18} /></View>
               <View style={{ flex: 1 }}>
                 <Text style={{ fontSize: 14, fontWeight: '600', color: C.ink }}>{p.name}</Text>

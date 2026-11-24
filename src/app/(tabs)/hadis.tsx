@@ -47,10 +47,10 @@ export default function HadithDua() {
           <Icon name="kaaba" size={24} color="#FFFFFF" />
         </View>
         <View style={{ flex: 1 }}>
-          <Text style={{ color: '#FFFFFF', fontSize: 16, fontWeight: '700' }}>{pick(L.tawaf, lang)}</Text>
-          <Text style={{ color: '#C9CCD3', fontSize: 12.5 }}>{pick(L.tawafSub, lang)}</Text>
+          <Text style={{ color: C.onInk, fontSize: 16, fontWeight: '700' }}>{pick(L.tawaf, lang)}</Text>
+          <Text style={{ color: C.onInk, opacity: 0.75, fontSize: 12.5 }}>{pick(L.tawafSub, lang)}</Text>
         </View>
-        <Icon name="chevron" size={18} color="#FFFFFF" />
+        <Icon name="chevron" size={18} color={C.onInk} />
       </Pressable>
       <Card>
         <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>

@@ -195,10 +195,10 @@ export default function TawafScreen() {
   const zoneInfo = zone ? ZONES[zone] : undefined;
   const suggestion = TAWAF_DHIKR[lap.laps % TAWAF_DHIKR.length];
   const pill = demo
-    ? { text: pick(denied ? L.denied : L.demo, lang), bg: '#EEF0F3', fg: C.muted }
+    ? { text: pick(denied ? L.denied : L.demo, lang), bg: C.surface, fg: C.muted }
     : lap.quality === 'good' ? { text: `${pick(L.gpsGood, lang)} · ±${Math.round(fix?.acc ?? 0)} m`, bg: C.openTint, fg: C.open }
       : lap.quality === 'weak' ? { text: pick(L.gpsWeak, lang), bg: C.limitedTint, fg: C.limited }
-        : { text: pick(L.gpsNone, lang), bg: '#EEF0F3', fg: C.muted };
+        : { text: pick(L.gpsNone, lang), bg: C.surface, fg: C.muted };
 
   return (
     <View style={{ flex: 1, backgroundColor: C.bg }}>
@@ -222,10 +222,10 @@ export default function TawafScreen() {
         </View>
         <Pressable onPress={() => setPrefs({ follow: !prefs.follow })} accessibilityRole="switch" accessibilityState={{ checked: prefs.follow }} accessibilityLabel={pick(L.follow, lang)}
           style={[{ position: 'absolute', right: 10, top: 10, width: 40, height: 40, borderRadius: 20, backgroundColor: prefs.follow ? C.user : C.bg, alignItems: 'center', justifyContent: 'center' }, shadow]}>
-          <Icon name="compass" size={20} color={prefs.follow ? '#FFFFFF' : C.ink} />
+          <Icon name="compass" size={20} color={prefs.follow ? C.onInk : C.ink} />
         </Pressable>
         {phase === 'active' && (
-          <View style={[{ position: 'absolute', right: 10, bottom: 10, paddingHorizontal: 10, paddingVertical: 6, borderRadius: 12, backgroundColor: 'rgba(255,255,255,0.94)' }]}>
+          <View style={[{ position: 'absolute', right: 10, bottom: 10, paddingHorizontal: 10, paddingVertical: 6, borderRadius: 12, backgroundColor: C.overlay }]}>
             <Text style={T.small}>{pick(L.lapLen, lang)} {Math.round(lapLength(ringR) / 10) * 10} m</Text>
           </View>
         )}
@@ -240,7 +240,7 @@ export default function TawafScreen() {
               {TAWAF_TYPES.map((x) => (
                 <Pressable key={x.id} onPress={() => setPrefs({ type: x.id })} accessibilityRole="radio" accessibilityState={{ selected: prefs.type === x.id }}
                   style={{ height: 36, paddingHorizontal: 14, borderRadius: 18, justifyContent: 'center', backgroundColor: prefs.type === x.id ? C.ink : C.surface }}>
-                  <Text style={{ fontSize: 13, fontWeight: '600', color: prefs.type === x.id ? '#FFFFFF' : C.ink }}>{pick(x.name, lang)}</Text>
+                  <Text style={{ fontSize: 13, fontWeight: '600', color: prefs.type === x.id ? C.onInk : C.ink }}>{pick(x.name, lang)}</Text>
                 </Pressable>
               ))}
             </View>
@@ -299,7 +299,7 @@ export default function TawafScreen() {
                 </View>
                 <Pressable onPress={() => setPrefs({ auto: !prefs.auto })} accessibilityRole="switch" accessibilityState={{ checked: prefs.auto }}
                   style={{ flexDirection: 'row', alignItems: 'center', gap: 8, alignSelf: 'flex-start', paddingVertical: 4 }}>
-                  <View style={{ width: 34, height: 20, borderRadius: 10, backgroundColor: prefs.auto ? C.open : '#D5D8DE', padding: 2, alignItems: prefs.auto ? 'flex-end' : 'flex-start' }}>
+                  <View style={{ width: 34, height: 20, borderRadius: 10, backgroundColor: prefs.auto ? C.open : C.borderStrong, padding: 2, alignItems: prefs.auto ? 'flex-end' : 'flex-start' }}>
                     <View style={{ width: 16, height: 16, borderRadius: 8, backgroundColor: '#FFFFFF' }} />
                   </View>
                   <Text style={T.small}>{pick(prefs.auto ? L.auto : L.manual, lang)}</Text>
@@ -367,7 +367,7 @@ function LapCounter({ laps, started, lang }: { laps: number; started: boolean; l
           const now = started && i === laps;
           return (
             <View key={i} style={{ flex: 1, height: 30, borderRadius: 8, alignItems: 'center', justifyContent: 'center', backgroundColor: done ? C.accent : now ? C.accentTint : C.surface, borderWidth: now ? 2 : 0, borderColor: C.route }}>
-              <Text style={{ fontSize: 13, fontWeight: '700', color: done ? '#FFFFFF' : now ? C.accent : C.muted }}>{i + 1}</Text>
+              <Text style={{ fontSize: 13, fontWeight: '700', color: done ? C.onAccent : now ? C.accent : C.muted }}>{i + 1}</Text>
             </View>
           );
         })}

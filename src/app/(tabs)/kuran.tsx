@@ -41,7 +41,7 @@ export default function QuranList() {
           contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 24 }}
           renderItem={({ item: s }) => (
             <Pressable onPress={() => router.push({ pathname: '/kuran/[sure]', params: { sure: String(s.number) } })}
-              style={{ minHeight: 60, flexDirection: 'row', alignItems: 'center', gap: 12, borderBottomWidth: 1, borderBottomColor: '#F1EFEB' }}>
+              style={{ minHeight: 60, flexDirection: 'row', alignItems: 'center', gap: 12, borderBottomWidth: 1, borderBottomColor: C.border }}>
               <View style={{ width: 36, height: 36, borderRadius: 18, borderWidth: 1.5, borderColor: C.route, alignItems: 'center', justifyContent: 'center' }}>
                 <Text style={{ fontSize: 12, fontWeight: '700', color: C.accent }}>{s.number}</Text>
               </View>

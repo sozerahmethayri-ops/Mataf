@@ -1,6 +1,7 @@
 import { router } from 'expo-router';
 import { useMemo, useState } from 'react';
 import { Linking, Pressable, ScrollView, Text, View } from 'react-native';
+import Svg, { Path } from 'react-native-svg';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { HaramScene } from '@/components/HaramScene';
@@ -15,6 +16,7 @@ import { localPosition, useLocation } from '@/services/location';
 import { useReports } from '@/services/ReportsContext';
 import { planRoute } from '@/services/routing';
 import { MADINAH_CORE } from '@/scene/madinah';
+import { Cam } from '@/scene/oblique';
 import { MAKKAH_CORE } from '@/scene/makkah';
 
 export default function MapScreen() {
@@ -25,6 +27,7 @@ export default function MapScreen() {
   const { fix } = useLocation();
   const [size, setSize] = useState({ w: 390, h: 600 });
   const [zoom, setZoom] = useState(1);
+  const [rot, setRot] = useState(-35); // harita dönüşü (°); 0 = kuzey yukarı
   const [recenter, setRecenter] = useState(0);
   const [sheetH, setSheetH] = useState(150);
 
@@ -37,7 +40,7 @@ export default function MapScreen() {
   const nearestGate = GATES.filter((g) => g.city === city).sort((a, b) => dist(a.pos, user) - dist(b.pos, user))[0];
   // Üstteki arama + çipler ve alttaki panel haritayı kaplar; harita kalan alana sığdırılır.
   const topH = insets.top + 8 + 52 + 10 + 40 + 6;
-  const ctrl = { w: 44, h: 44 * 2 + 8 + 44, right: 12, bottom: sheetH + 12 };
+  const ctrl = { w: 44, h: 44 * 2 + 8 + 44 + 8 + 44, right: 12, bottom: sheetH + 12 };
   const fit = [...(city === 'makkah' ? MAKKAH_CORE : MADINAH_CORE), ...(plan?.points ?? [user]), dest.pos];
 
   return (
@@ -51,6 +54,8 @@ export default function MapScreen() {
         viewport={{ top: topH, bottom: sheetH, left: 0, right: 0 }}
         avoid={[{ x: size.w - ctrl.right - ctrl.w, y: size.h - ctrl.bottom - ctrl.h, w: ctrl.w, h: ctrl.h }]}
         recenterKey={recenter}
+        rotDeg={rot}
+        onTransform={(sc, dr) => { setZoom((z) => Math.min(4, Math.max(0.6, z * sc))); setRot((r) => r + dr); }}
         route={plan?.points}
         user={user}
         dest={dest.pos}
@@ -78,13 +83,14 @@ export default function MapScreen() {
             {(['makkah', 'madinah'] as const).map((c) => (
               <Pressable key={c} onPress={() => setCity(c)} accessibilityRole="button" accessibilityState={{ selected: city === c }}
                 style={{ height: 34, paddingHorizontal: 12, borderRadius: 17, justifyContent: 'center', backgroundColor: city === c ? C.ink : 'transparent' }}>
-                <Text style={{ fontSize: 13, fontWeight: city === c ? '700' : '500', color: city === c ? '#FFFFFF' : C.muted }}>{t(c === 'makkah' ? 'city.makkah' : 'city.madinah')}</Text>
+                <Text style={{ fontSize: 13, fontWeight: city === c ? '700' : '500', color: city === c ? C.onInk : C.muted }}>{t(c === 'makkah' ? 'city.makkah' : 'city.madinah')}</Text>
               </Pressable>
             ))}
           </View>
           {DESTINATIONS.filter((d) => d.city === city).map((d) => (
             <Chip key={d.id} label={t(d.label).split(' · ')[0]} active={d.id === dest.id} onPress={() => setDestId(d.id)} />
           ))}
+          <Chip label={t('tab.gates')} dot={C.closed} onPress={() => router.push('/kapilar')} />
           {city === 'makkah' && <Chip label={lang === 'en' ? 'Tawaf assistant' : lang === 'ar' ? 'مساعد الطواف' : 'Tavaf asistanı'} dot={C.route} onPress={() => router.push('/tavaf')} />}
           <Chip label={t('map.city')} onPress={() => router.push('/sehir')} />
           {city === 'madinah' && <Chip label="Ravza" onPress={() => router.push('/ravza')} />}
@@ -96,15 +102,17 @@ export default function MapScreen() {
       <View style={{ position: 'absolute', right: ctrl.right, bottom: ctrl.bottom, gap: 8, alignItems: 'center' }}>
         <View style={[{ width: ctrl.w, borderRadius: ctrl.w / 2, backgroundColor: C.bg, overflow: 'hidden' }, shadow]}>
           <IconBtn name="plus" label={t('map.zoomIn')} tint={C.bg} onPress={() => setZoom((z) => Math.min(3, z * 1.4))} />
-          <View style={{ height: 1, marginHorizontal: 10, backgroundColor: '#ECEAE6' }} />
+          <View style={{ height: 1, marginHorizontal: 10, backgroundColor: C.border }} />
           <IconBtn name="minus" label={t('map.zoomOut')} tint={C.bg} onPress={() => setZoom((z) => Math.max(0.7, z / 1.4))} />
         </View>
+        <CompassBtn rot={rot} label={lang === 'en' ? 'Rotate north up' : lang === 'ar' ? 'اتجاه الشمال للأعلى' : 'Kuzeyi yukarı al'}
+          onPress={() => setRot((r) => (Math.abs(((r % 360) + 360) % 360) < 1 ? -35 : 0))} />
         <IconBtn name="locate" label={t('map.recenter')} tint={C.bg} color={C.user} elevated onPress={() => { setZoom(1); setRecenter((n) => n + 1); }} />
       </View>
 
       <View onLayout={(e) => setSheetH(Math.round(e.nativeEvent.layout.height))}
         style={[{ position: 'absolute', left: 0, right: 0, bottom: 0, backgroundColor: C.bg, borderTopLeftRadius: 22, borderTopRightRadius: 22, paddingHorizontal: 16, paddingTop: 8, paddingBottom: 12, gap: 10 }, shadow]}>
-        <View style={{ alignSelf: 'center', width: 36, height: 4, borderRadius: 2, backgroundColor: '#E2E0DC' }} />
+        <View style={{ alignSelf: 'center', width: 36, height: 4, borderRadius: 2, backgroundColor: C.borderStrong }} />
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
           <View style={{ flex: 1, gap: 2 }}>
             <Text style={T.h2} numberOfLines={1}>{t(dest.label)}</Text>
@@ -132,5 +140,25 @@ export default function MapScreen() {
         </View>
       </View>
     </View>
+  );
+}
+
+/** Pusula: iğne haritadaki kuzeyi gösterir; dokununca kuzey yukarı / eğik görünüm arasında geçer. */
+function CompassBtn({ rot, label, onPress }: { rot: number; label: string; onPress: () => void }) {
+  // Kuzeyin ekrandaki yönü: plan rot° döner, eğik izdüşüm derinliği SA kadar basar
+  const c = new Cam(1, 0, 0, rot);
+  const [x0, y0] = c.P(0, 0);
+  const [x1, y1] = c.P(0, -100);
+  const deg = (Math.atan2(x1 - x0, -(y1 - y0)) * 180) / Math.PI;
+  return (
+    <Pressable onPress={onPress} accessibilityRole="button" accessibilityLabel={label}
+      style={[{ width: 44, height: 44, borderRadius: 22, backgroundColor: C.bg, alignItems: 'center', justifyContent: 'center' }, shadow]}>
+      <View style={{ transform: [{ rotate: `${Math.round(deg)}deg` }], alignItems: 'center' }}>
+        <Svg width={16} height={30} viewBox="0 0 16 30">
+          <Path d="M8 1 L14 15 L2 15 Z" fill={C.closed} />
+          <Path d="M8 29 L14 15 L2 15 Z" fill={C.muted} />
+        </Svg>
+      </View>
+    </Pressable>
   );
 }

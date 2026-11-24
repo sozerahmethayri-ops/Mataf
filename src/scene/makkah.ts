@@ -1,10 +1,14 @@
 // Mescid-i Haram gerçek ölçekli sahnesi (metre). Ölçüler: Kâbe 12,86×11,03×13,1 m;
 // Osmanlı revakı 192×132 m; Mes'a 394×40 m; Saat Kulesi 601 m; minareler 92–139 m.
 // Genişleme bloklarının dış hatları yayımlanmış alanlardan oranlanmış tahminlerdir.
-import { Cam, ellipsePl, extrude, flat, line, minaret, rect, rot, rrect, type Prim } from './oblique';
+import { KAABA_POLY } from '@/services/tawaf';
+import { Cam, ellipsePl, extrude, flat, line, minaret, rect, rrect, type Prim } from './oblique';
 import type { Pt } from '@/data/sites';
 
 /** `ghost`: Haram'ın önünde yükselen Saat Kulesi kompleksi — harita bunu yarı saydam çizer ki rota ve kapılar örtülmesin. */
+/** Kameraya en yakın köşenin derinliği (ressam sıralaması için; harita dönünce de doğru). */
+const front = (cam: Cam, poly: Pt[]) => Math.max(...poly.map(([x, y]) => cam.depthOf(x, y)));
+
 export function buildMakkah(cam: Cam): { below: Prim[]; above: Prim[]; ghost: Prim[] } {
   const P = cam.P.bind(cam);
   const below: Prim[] = [];
@@ -20,21 +24,21 @@ export function buildMakkah(cam: Cam): { below: Prim[]; above: Prim[]; ghost: Pr
   type Obj = { d: number; prims: Prim[]; main?: boolean; ghost?: boolean };
   const objs: Obj[] = [];
   const ka: Pt[] = [[-240, -555], [70, -555], [70, -240], [-240, -240]];
-  objs.push({ d: Cam.depth(-85, -240), prims: extrude(cam, ka, 0, 35, '#F4F1EB', '#DCD5C8', '#CEC6B7') });
+  objs.push({ d: front(cam, ka), prims: extrude(cam, ka, 0, 35, '#F4F1EB', '#DCD5C8', '#CEC6B7') });
   const masa: Pt[] = [[72, -290], [118, -290], [118, 104], [72, 104]];
-  objs.push({ d: Cam.depth(95, 104), prims: extrude(cam, masa, 0, 30, '#EDE6D9', '#D9D1C3', '#CBC2B2') });
+  objs.push({ d: front(cam, masa), prims: extrude(cam, masa, 0, 30, '#EDE6D9', '#D9D1C3', '#CBC2B2') });
   const main: Pt[] = [[-235, -200], [72, -200], [72, 130], [60, 165], [-235, 165]];
   const ottoOuter = rrect(-66, -96, 66, 96, 6);
-  const mainD = Cam.depth(-80, 165);
+  const mainD = front(cam, main);
   objs.push({ d: mainD, prims: extrude(cam, main, 0, 22, '#F7F4EF', '#DDD6CA', '#CFC6B6', [ottoOuter]), main: true });
-  objs.push({ d: Cam.depth(-30, 410), ghost: true, prims: extrude(cam, rect(-150, 250, 85, 410), 0, 70, '#EFEAE2', '#D8D0C2', '#C8BFAF') });
+  objs.push({ d: front(cam, rect(-150, 250, 85, 410)), ghost: true, prims: extrude(cam, rect(-150, 250, 85, 410), 0, 70, '#EFEAE2', '#D8D0C2', '#C8BFAF') });
   // Saat Kulesi ve yan kuleler
-  objs.push({ d: Cam.depth(-30, 354), ghost: true, prims: extrude(cam, rect(-58, 298, -2, 354), 70, 450, '#E9E3D8', '#D6CEBF', '#C4BBAA') });
-  objs.push({ d: Cam.depth(-30, 346) + 0.1, ghost: true, prims: extrude(cam, rect(-50, 306, -10, 346), 450, 530, '#EFE9DF', '#DDD5C7', '#CBC2B1') });
+  objs.push({ d: front(cam, rect(-58, 298, -2, 354)), ghost: true, prims: extrude(cam, rect(-58, 298, -2, 354), 70, 450, '#E9E3D8', '#D6CEBF', '#C4BBAA') });
+  objs.push({ d: front(cam, rect(-58, 298, -2, 354)) + 0.1, ghost: true, prims: extrude(cam, rect(-50, 306, -10, 346), 450, 530, '#EFE9DF', '#DDD5C7', '#CBC2B1') });
   for (const [x0, y0, x1, y1, h] of [[25, 262, 70, 300, 250], [-140, 262, -95, 300, 240], [25, 362, 70, 402, 230], [-140, 362, -95, 402, 220]])
-    objs.push({ d: Cam.depth((x0 + x1) / 2, y1), ghost: true, prims: extrude(cam, rect(x0, y0, x1, y1), 70, h, '#ECE6DC', '#D8D0C2', '#C6BDAD') });
+    objs.push({ d: front(cam, rect(x0, y0, x1, y1)), ghost: true, prims: extrude(cam, rect(x0, y0, x1, y1), 70, h, '#ECE6DC', '#D8D0C2', '#C6BDAD') });
   for (const [x, y, h] of [[-235, -40, 92], [-235, 5, 92], [-80, 165, 92], [-40, 165, 92], [-185, -200, 92], [-150, -200, 92], [108, 104, 92], [100, -290, 92], [-105, -555, 139], [-65, -555, 139]])
-    objs.push({ d: Cam.depth(x, y) + 0.05, prims: minaret(cam, x, y, h) });
+    objs.push({ d: cam.depthOf(x, y) + 0.05, prims: minaret(cam, x, y, h) });
   objs.sort((a, b) => a.d - b.d);
 
   // Osmanlı revakı ve açık avlu (Mataf)
@@ -54,8 +58,8 @@ export function buildMakkah(cam: Cam): { below: Prim[]; above: Prim[]; ghost: Pr
       inner.push({ t: 'ell', cx, cy: cy - 0.8, rx: 3.1 * k, ry: 1.9 * k, fill: '#BDB8AE' });
     }
 
-  // Kâbe: köşeler yaklaşık ana yönlere bakar
-  const kb = rot(rect(-6.43, -5.515, 6.43, 5.515), 45);
+  // Kâbe: gerçek ölçü ve yön (tavaf asistanıyla aynı geometri)
+  const kb = KAABA_POLY;
   const kaaba = [
     ...extrude(cam, kb, 0, 13.1, '#2F3036', '#202126', '#131418', [], '#131418'),
     ...extrude(cam, kb, 8.6, 9.6, '#2F3036', '#C9A227', '#B08B1C', [], 'none'),

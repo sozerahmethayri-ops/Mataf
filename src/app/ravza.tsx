@@ -17,7 +17,7 @@ export default function Rawdah() {
         <Btn title={t('rawdah.nusuk')} kind="secondary" icon="external" onPress={() => Linking.openURL(RAWDAH.nusukUrl)} />
       </Card>
 
-      <Card style={{ backgroundColor: '#F3F8F4', borderColor: '#D6E8DB' }}>
+      <Card style={{ backgroundColor: C.openTint, borderColor: C.border }}>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 14 }}>
           <View style={{ width: 56, height: 56, borderRadius: 18, backgroundColor: C.green, alignItems: 'center', justifyContent: 'center' }}>
             <Icon name="tour" color="#FFFFFF" size={30} width={1.8} />
@@ -47,7 +47,7 @@ export default function Rawdah() {
       {RAWDAH.steps.map((s, i) => (
         <View key={i} style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
           <View style={{ width: 26, height: 26, borderRadius: 13, backgroundColor: C.accent, alignItems: 'center', justifyContent: 'center' }}>
-            <Text style={{ color: '#FFFFFF', fontWeight: '700', fontSize: 12 }}>{i + 1}</Text>
+            <Text style={{ color: C.onAccent, fontWeight: '700', fontSize: 12 }}>{i + 1}</Text>
           </View>
           <Text style={[T.body, { flex: 1 }]}>{s}</Text>
         </View>

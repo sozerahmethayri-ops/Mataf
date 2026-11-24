@@ -43,13 +43,13 @@ export default function PrayerTimes() {
         <Text style={T.body}>Konum izni bekleniyor…</Text>
       ) : (
         <>
-          <View style={{ padding: 18, borderRadius: 20, backgroundColor: C.accentSoft, borderWidth: 1, borderColor: '#FBDCC8', gap: 10 }}>
+          <View style={{ padding: 18, borderRadius: 20, backgroundColor: C.accentSoft, borderWidth: 1, borderColor: C.accentTint, gap: 10 }}>
             <Text style={{ fontSize: 12, fontWeight: '700', color: C.accent, textTransform: 'uppercase', letterSpacing: 0.7 }}>{t('times.next')}</Text>
             <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline' }}>
               <Text style={{ fontSize: 32, fontWeight: '700', color: C.ink }}>{t(`pray.${nx!.key}` as const)}</Text>
               <Text style={{ fontSize: 32, fontWeight: '700', color: C.accent }}>{fmtTime(nx!.at, loc.tz)}</Text>
             </View>
-            <View style={{ height: 6, borderRadius: 3, backgroundColor: '#FBDCC8', overflow: 'hidden' }}>
+            <View style={{ height: 6, borderRadius: 3, backgroundColor: C.accentTint, overflow: 'hidden' }}>
               <View style={{ width: `${prog * 100}%`, height: 6, backgroundColor: C.route }} />
             </View>
             <Text style={{ fontSize: 13, fontWeight: '700', color: C.ink, textAlign: 'right' }}>
@@ -60,7 +60,7 @@ export default function PrayerTimes() {
             {PRAYERS.map((p, i) => {
               const on = nx?.key === p;
               return (
-                <View key={p} style={{ height: 52, flexDirection: 'row', alignItems: 'center', borderBottomWidth: i < 5 ? 1 : 0, borderBottomColor: '#F1EFEB' }}>
+                <View key={p} style={{ height: 52, flexDirection: 'row', alignItems: 'center', borderBottomWidth: i < 5 ? 1 : 0, borderBottomColor: C.border }}>
                   <Text style={{ flex: 1, fontSize: 15, fontWeight: on ? '700' : '500', color: on ? C.accent : p === 'sunrise' ? C.muted : C.ink }}>{t(`pray.${p}` as const)}</Text>
                   <Text style={{ fontSize: 15, fontWeight: on ? '700' : '600', color: on ? C.accent : C.ink, fontVariant: ['tabular-nums'] }}>{fmtTime(tt![p], loc.tz)}</Text>
                 </View>
@@ -74,6 +74,9 @@ export default function PrayerTimes() {
         title={lang === 'en' ? 'Nearest mosque' : lang === 'ar' ? 'أقرب مسجد' : 'En yakın cami'}
         subtitle={lang === 'en' ? 'Anywhere in the world · distance, direction, directions' : lang === 'ar' ? 'في أي مكان في العالم · المسافة والاتجاه' : 'Dünyanın her yerinde · mesafe, yön ve yol tarifi'}
         onPress={() => router.push('/cami')} left={<Icon name="pin" color={C.green} />} />
+      <ListRow title={lang === 'en' ? 'Adhan notifications' : lang === 'ar' ? 'إشعارات الأذان' : 'Ezan bildirimleri'}
+        subtitle={lang === 'en' ? 'Reminder before adhan, sound, your own adhan' : lang === 'ar' ? 'تذكير قبل الأذان، الصوت، أذانك الخاص' : 'Ezandan önce hatırlatma, ses, kendi ezan kaydınız'}
+        onPress={() => router.push('/bildirimler')} left={<Icon name="bell" color={C.accent} />} />
       <ListRow title={t('settings.method')} subtitle={METHODS.find((x) => x.id === method)?.label} onPress={() => router.push('/ayarlar')} left={<Icon name="settings" color={C.muted} />} />
     </Screen>
   );

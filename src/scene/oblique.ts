@@ -2,9 +2,6 @@
 // zemin derinliği k·sinα, yükseklik k·cosα. Plan, ekranda -35° döndürülür.
 import type { Pt } from '@/data/sites';
 
-const TH = (-35 * Math.PI) / 180;
-const CT = Math.cos(TH);
-const STH = Math.sin(TH);
 export const SA = 0.58;
 export const CA = Math.sqrt(1 - SA * SA);
 
@@ -33,9 +30,6 @@ export class Cam {
   /** İzleyiciye yakınlık (büyük = önde). */
   depthOf(x: number, y: number) {
     return x * this.st + y * this.ct;
-  }
-  static depth(x: number, y: number) {
-    return x * STH + y * CT;
   }
   /** Ekrandaki (sx, sy) noktasına `p` noktasını oturtan kamera. */
   static centeredOn(k: number, p: Pt, sx: number, sy: number, rotDeg = -35) {

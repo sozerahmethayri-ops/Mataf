@@ -10,7 +10,7 @@ import { pick, useI18n } from '@/i18n';
 import { useApp } from '@/services/AppContext';
 import { useReports } from '@/services/ReportsContext';
 
-const PALETTE = [C.accent, C.open, '#1D4ED8', '#7C3AED'];
+const PALETTE = ['#C2410C', '#0F766E', '#1D4ED8', '#7C3AED']; // beyaz harfli avatarlar: her temada okunur
 
 export default function GateDetail() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -63,9 +63,9 @@ export default function GateDetail() {
 
           {status !== 'open' && alt && (
             <Pressable onPress={() => { setCity(alt.city); router.push('/navigasyon'); }}
-              style={{ flexDirection: 'row', alignItems: 'center', gap: 12, padding: 12, borderRadius: 18, borderWidth: 1.5, borderColor: '#FBDCC8', backgroundColor: C.accentSoft }}>
+              style={{ flexDirection: 'row', alignItems: 'center', gap: 12, padding: 12, borderRadius: 18, borderWidth: 1.5, borderColor: C.accentTint, backgroundColor: C.accentSoft }}>
               <View style={{ width: 40, height: 40, borderRadius: 12, backgroundColor: C.accent, alignItems: 'center', justifyContent: 'center' }}>
-                <Text style={{ color: '#FFFFFF', fontWeight: '700' }}>{alt.no}</Text>
+                <Text style={{ color: C.onAccent, fontWeight: '700' }}>{alt.no}</Text>
               </View>
               <View style={{ flex: 1 }}>
                 <Text style={{ fontSize: 12, fontWeight: '700', color: C.accent }}>{t('detail.nearestOpen')}</Text>
@@ -91,7 +91,7 @@ export default function GateDetail() {
 
           <Text style={[T.h2, { marginTop: 4 }]}>{t('detail.comments')} <Text style={T.muted}>· {comments.length}</Text></Text>
           {comments.map((c, i) => (
-            <View key={c.id} style={{ flexDirection: 'row', gap: 10, paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: '#F1EFEB' }}>
+            <View key={c.id} style={{ flexDirection: 'row', gap: 10, paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: C.border }}>
               <View style={{ width: 36, height: 36, borderRadius: 18, backgroundColor: PALETTE[i % PALETTE.length], alignItems: 'center', justifyContent: 'center' }}>
                 <Text style={{ color: '#FFFFFF', fontWeight: '700' }}>{c.userName.charAt(0)}</Text>
               </View>
@@ -113,7 +113,7 @@ export default function GateDetail() {
             </View>
           ))}
         </ScrollView>
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, padding: 12, borderTopWidth: 1, borderTopColor: '#EEECE8' }}>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, padding: 12, borderTopWidth: 1, borderTopColor: C.border }}>
           <IconBtn name="camera" label={t('report.photo')} onPress={() => router.push({ pathname: '/bildir', params: { gate: gate.id } })} />
           <TextInput value={draft} onChangeText={setDraft} placeholder={t('detail.write')} placeholderTextColor={C.muted} onSubmitEditing={send} returnKeyType="send"
             style={{ flex: 1, height: 44, borderWidth: 1, borderColor: C.borderStrong, borderRadius: 22, paddingHorizontal: 16, fontSize: 14, color: C.ink }} />
@@ -125,6 +125,6 @@ export default function GateDetail() {
 }
 
 function Tag({ text }: { text: string }) {
-  return <View style={{ paddingHorizontal: 9, paddingVertical: 4, borderRadius: 10, backgroundColor: '#FFFFFF' }}><Text style={{ fontSize: 11, fontWeight: '700', color: C.ink }}>{text}</Text></View>;
+  return <View style={{ paddingHorizontal: 9, paddingVertical: 4, borderRadius: 10, backgroundColor: C.bg }}><Text style={{ fontSize: 11, fontWeight: '700', color: C.ink }}>{text}</Text></View>;
 }
 

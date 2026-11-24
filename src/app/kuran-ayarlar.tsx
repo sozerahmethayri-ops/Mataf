@@ -94,7 +94,7 @@ function LangChips({ langs, value, onChange }: { langs: string[]; value: string;
       {langs.map((l) => (
         <Pressable key={l} onPress={() => onChange(l)} accessibilityRole="radio" accessibilityState={{ selected: value === l }}
           style={{ height: 34, paddingHorizontal: 12, borderRadius: 17, justifyContent: 'center', backgroundColor: value === l ? C.ink : C.surface }}>
-          <Text style={{ fontSize: 13, fontWeight: '600', color: value === l ? '#FFFFFF' : C.ink }}>{LANG_NAMES[l] ?? l}</Text>
+          <Text style={{ fontSize: 13, fontWeight: '600', color: value === l ? C.onInk : C.ink }}>{LANG_NAMES[l] ?? l}</Text>
         </Pressable>
       ))}
     </ScrollView>
@@ -105,8 +105,8 @@ function Option({ label, sub, selected, onPress, check }: { label: string; sub?:
   return (
     <Pressable onPress={onPress} accessibilityRole={check ? 'checkbox' : 'radio'} accessibilityState={check ? { checked: selected } : { selected }}
       style={{ minHeight: 48, flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 14, paddingVertical: 8, borderRadius: 14, backgroundColor: selected ? C.accentSoft : C.surface }}>
-      <View style={{ width: 22, height: 22, borderRadius: check ? 6 : 11, borderWidth: 2, borderColor: selected ? C.accent : '#C9CCD3', backgroundColor: selected ? C.accent : 'transparent', alignItems: 'center', justifyContent: 'center' }}>
-        {selected ? <Icon name="check" size={13} color="#FFFFFF" width={3} /> : null}
+      <View style={{ width: 22, height: 22, borderRadius: check ? 6 : 11, borderWidth: 2, borderColor: selected ? C.accent : C.borderStrong, backgroundColor: selected ? C.accent : 'transparent', alignItems: 'center', justifyContent: 'center' }}>
+        {selected ? <Icon name="check" size={13} color={C.onAccent} width={3} /> : null}
       </View>
       <View style={{ flex: 1 }}>
         <Text style={{ fontSize: 15, fontWeight: '600', color: C.ink }}>{label}</Text>

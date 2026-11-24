@@ -3,11 +3,17 @@ import { planRoute } from '../src/services/routing';
 import { summarize, type Report, type GateStatus } from '../src/services/reports';
 import { DEMO_START } from '../src/data/sites';
 import { fitCamera, overlaps, placeLabels } from '../src/scene/layout';
-import { MAKKAH_CORE } from '../src/scene/makkah';
+import { MAKKAH_CORE, buildMakkah } from '../src/scene/makkah';
 import { CORNERS, KAABA_POLY, adjustLap, bearingOf, initialLap, pointAt, startManual, stepLap, zoneOf, type Fix, type LapState } from '../src/services/tawaf';
 import { globalAyah, surahLength } from '../src/services/quranIndex';
 import { DUA_LIB, isQuranRef } from '../src/data/duas';
 import { OVERPASS_ENDPOINTS, bearingDeg, distanceM, findMosques, parseOverpass, type El, type Fetcher } from '../src/services/mosques';
+import { PALETTES, colorsFor, contrast, type PaletteId } from '../src/constants/theme';
+import { DEFAULT_NOTIF, notifText, planNotifications } from '../src/services/adhanPlan';
+import type { PrayerKey } from '../src/services/prayer';
+import { Cam } from '../src/scene/oblique';
+import { buildMadinah } from '../src/scene/madinah';
+import { decodePolyline, legKind, mapsUrl, parseMotis, parseOsrm, parsePhoton, planTransit, roughRoute, transitUserAgent, uberUrl, meters } from '../src/services/transport';
 
 const now = Date.now();
 const r = (gateId: string, status: GateStatus, user: string, minsAgo: number, official = false): Report =>
@@ -167,4 +173,134 @@ async function mosqueChecks() {
   ok(b > 150 && b < 153 && d > 2350 && d < 2450, `yön/mesafe: İstanbul → Kâbe ${b.toFixed(1)}° (kıble), ${Math.round(d)} km`);
 }
 
-mosqueChecks().then(() => process.exit(fails ? 1 : 0));
+
+// ── Tema: her palet açık/koyu kipte WCAG AA (4.5:1) kontrastı sağlamalı ──
+for (const dark of [false, true]) for (const p of Object.keys(PALETTES) as PaletteId[]) {
+  const c = colorsFor(dark, p);
+  const pairs: [string, number][] = [
+    ['onAccent/accent', contrast(c.onAccent, c.accent)], ['accent/bg', contrast(c.accent, c.bg)],
+    ['accent/accentSoft', contrast(c.accent, c.accentSoft)], ['accent/accentTint', contrast(c.accent, c.accentTint)],
+    ['ink/surface', contrast(c.ink, c.surface)], ['muted/bg', contrast(c.muted, c.bg)], ['muted/surface', contrast(c.muted, c.surface)],
+    ['onInk/ink', contrast(c.onInk, c.ink)], ['closed/closedTint', contrast(c.closed, c.closedTint)], ['open/openTint', contrast(c.open, c.openTint)],
+    ['limited/limitedTint', contrast(c.limited, c.limitedTint)], ['user/userTint', contrast(c.user, c.userTint)],
+    ['white/green', contrast('#FFFFFF', c.green)], ['ink/limitedFill', contrast('#17181C', c.limitedFill)],
+    ...(dark ? [] : [['green/bg', contrast(c.green, c.bg)] as [string, number]]),
+  ];
+  const bad = pairs.filter(([, v]) => v < 4.5);
+  ok(!bad.length, `kontrast ${dark ? 'koyu' : 'açık'}/${p}${bad.length ? ': ' + bad.map(([k, v]) => `${k}=${v.toFixed(2)}`).join(' ') : ''}`);
+}
+
+// ── Harita döndürme: derinlik sırası ekrandaki konumla aynı olmalı, sahne her açıda kurulmalı ──
+{
+  const rnd = rng(7);
+  let mism = 0;
+  for (const rot of [-35, 0, 45, 90, 180, 270, 333]) {
+    const cam = new Cam(1.3, 200, 300, rot);
+    for (let i = 0; i < 200; i++) {
+      const a: [number, number] = [rnd() * 600 - 300, rnd() * 600 - 300];
+      const b: [number, number] = [rnd() * 600 - 300, rnd() * 600 - 300];
+      const dd = cam.depthOf(a[0], a[1]) - cam.depthOf(b[0], b[1]);
+      const dy = cam.P(a[0], a[1])[1] - cam.P(b[0], b[1])[1];
+      if (Math.abs(dd) > 1e-6 && Math.sign(dd) !== Math.sign(dy)) mism++;
+    }
+  }
+  ok(mism === 0, `dönen kamerada önde olan nokta ekranda aşağıda (${mism} uyumsuz)`);
+  const lens = [0, 90, 180, 270].map((rot) => { const m = buildMakkah(new Cam(1, 0, 0, rot)); return m.below.length + m.above.length + m.ghost.length; });
+  // Arka yüzler gizlendiği için parça sayısı açıya göre birkaç adet oynar
+  ok(lens.every((n) => Math.abs(n - lens[0]) <= lens[0] * 0.05 && n > 20), `Mekke sahnesi her açıda kurulur (${lens.join(',')})`);
+  const md = [0, 135, 225].map((rot) => { const m = buildMadinah(new Cam(1, 0, 0, rot)); return Object.values(m).flat().length; });
+  ok(md.every((n) => Math.abs(n - md[0]) <= md[0] * 0.05 && n > 10), `Medine sahnesi her açıda kurulur (${md.join(',')})`);
+  // Kuzey oku: ana yönlerde dönüş açısıyla aynı; ara açılarda eğik izdüşüm nedeniyle yatıklaşır
+  const needle = (rot: number) => { const c = new Cam(1, 0, 0, rot); const [x0, y0] = c.P(0, 0); const [x1, y1] = c.P(0, -100); return (Math.atan2(x1 - x0, -(y1 - y0)) * 180) / Math.PI; };
+  ok([0, 90, 180, -90].every((r) => Math.abs(((needle(r) - r + 540) % 360) - 180) < 0.01), 'pusula: 0/90/180/-90° dönüşte iğne aynı açıda');
+  ok(needle(-35) < -35 && needle(-35) > -90, `pusula: varsayılan eğik görünümde kuzey sola yatık (${needle(-35).toFixed(1)}°)`);
+}
+
+// ── Ezan bildirimleri planı ──
+{
+  // Sahte vakitler: her gün 05:00, 06:20, 12:10, 15:30, 18:00, 19:30 (yerel)
+  const fake = (d: Date): Record<PrayerKey, Date> => {
+    const at = (h: number, m: number) => new Date(d.getFullYear(), d.getMonth(), d.getDate(), h, m);
+    return { fajr: at(5, 0), sunrise: at(6, 20), dhuhr: at(12, 10), asr: at(15, 30), maghrib: at(18, 0), isha: at(19, 30) };
+  };
+  const now0 = new Date(2026, 10, 24, 12, 5); // 12:05 — öğleye 5 dk var
+  const on = { ...DEFAULT_NOTIF, enabled: true };
+  ok(planNotifications(fake, now0, DEFAULT_NOTIF).length === 0, 'bildirim kapalıyken plan boş');
+  const p = planNotifications(fake, now0, on);
+  ok(p.length === 60, `iOS sınırı: en çok 60 bildirim (${p.length})`);
+  ok(p.every((x, i) => i === 0 || x.at >= p[i - 1].at), 'plan zamana göre sıralı');
+  ok(p.every((x) => x.at.getTime() > now0.getTime()), 'geçmiş zamana bildirim kurulmaz');
+  ok(p[0].prayer === 'dhuhr' && p[0].kind === 'at', `11:55'teki "10 dk önce" geçti; ilk bildirim öğle vakti (${p[0].prayer}/${p[0].kind})`);
+  ok(new Set(p.map((x) => x.id)).size === p.length, 'kimlikler benzersiz');
+  ok(!p.some((x) => x.prayer === 'sunrise'), 'güneş varsayılan kapalı');
+  const sun = planNotifications(fake, now0, { ...on, prayers: { ...on.prayers, sunrise: true } });
+  ok(sun.some((x) => x.prayer === 'sunrise' && x.kind === 'before') && !sun.some((x) => x.prayer === 'sunrise' && x.kind === 'at'), 'güneş için yalnız "önce" uyarısı');
+  const b = p.find((x) => x.kind === 'before')!;
+  ok(b.prayerAt.getTime() - b.at.getTime() === 10 * 60000, '"10 dk önce" doğru zamanda');
+  const only = planNotifications(fake, now0, { ...on, before: 0, prayers: { fajr: true, sunrise: false, dhuhr: false, asr: false, maghrib: false, isha: false } }, { days: 3 });
+  ok(only.length === 2 && only.every((x) => x.prayer === 'fajr' && x.kind === 'at'), `yalnız sabah, vaktinde: bugünkü geçti → 3 günde 2 bildirim (${only.length})`);
+  const nan = planNotifications((d) => ({ ...fake(d), isha: new Date(NaN) }), now0, on, { days: 2 });
+  ok(!nan.some((x) => x.prayer === 'isha'), 'hesaplanamayan vakit (kutup) atlanır');
+  const tx = notifText(b, 'tr', '15:30', 10);
+  ok(/10 dk/.test(tx.title) && /15:30/.test(tx.body), `bildirim metni: "${tx.title}" / "${tx.body}"`);
+  const fx = notifText({ ...p[0], prayer: 'fajr', kind: 'at' }, 'en', '05:00', 0);
+  ok(/better than sleep/.test(fx.body), 'sabah ezanı metni');
+}
+
+// ── Ulaşım: yer arama, yürüme/araç, toplu taşıma ayrıştırma ──
+{
+  const ph = parsePhoton({ features: [
+    { geometry: { coordinates: [39.8262, 21.4225] }, properties: { osm_type: 'W', osm_id: 1, name: 'المسجد الحرام', city: 'مكة', country: 'السعودية', osm_value: 'mosque' } },
+    { geometry: { coordinates: [29.0, 41.0] }, properties: { osm_type: 'N', osm_id: 2, street: 'İstiklal Caddesi', housenumber: '12', city: 'İstanbul', country: 'Türkiye' } },
+  ] });
+  ok(ph.length === 2 && ph[0].lat === 21.4225 && ph[0].lng === 39.8262 && ph[0].sub === 'مكة, السعودية', 'Photon: ad, alt satır, koordinat sırası (lon,lat)');
+  ok(ph[1].name === 'İstiklal Caddesi 12' && ph[1].sub === 'İstanbul, Türkiye', `Photon: adı olmayan adres sokak+numara (${ph[1].name})`);
+  const os = parseOsrm({ routes: [{ distance: 1234, duration: 900, geometry: { coordinates: [[39.82, 21.42], [39.83, 21.43]] } }] });
+  ok(!!os && os.meters === 1234 && os.coords[1].lat === 21.43, 'OSRM: mesafe/süre/geometri');
+  ok(parseOsrm({ routes: [] }) === null, 'OSRM: rota yoksa null');
+  const rr = roughRoute({ lat: 21.4225, lng: 39.8262 }, { lat: 21.4325, lng: 39.8262 }, 'foot');
+  ok(rr.approximate && Math.abs(rr.meters - 1.3 * 1112) < 15, `yedek tahmin: kuş uçuşu×1.3 (${Math.round(rr.meters)} m)`);
+  ok(Math.abs(meters({ lat: 41.0082, lng: 28.9784 }, { lat: 21.4225, lng: 39.8262 }) - distanceM({ lat: 41.0082, lng: 28.9784 }, { lat: 21.4225, lng: 39.8262 })) < 1, 'iki mesafe fonksiyonu aynı sonucu verir');
+  // Google kodlama örneği (precision 5): "_p~iF~ps|U_ulLnnqC_mqNvxq`@" → (38.5,-120.2),(40.7,-120.95),(43.252,-126.453)
+  const dp = decodePolyline('_p~iF~ps|U_ulLnnqC_mqNvxq`@', 5);
+  ok(dp.length === 3 && Math.abs(dp[0].lat - 38.5) < 1e-9 && Math.abs(dp[2].lng + 126.453) < 1e-9, 'çoklu çizgi çözücü (Google örneği)');
+  ok(legKind('SUBWAY') === 'metro' && legKind('BUS') === 'bus' && legKind('HIGHSPEED_RAIL') === 'train' && legKind('WALK') === 'walk' && legKind('FERRY') === 'ferry' && legKind('AIRPLANE') === 'other', 'ulaşım türü sınıflandırma');
+  const motis = {
+    itineraries: [{
+      duration: 1980, startTime: '2026-11-24T10:00:00Z', endTime: '2026-11-24T10:33:00Z', transfers: 1,
+      legs: [
+        { mode: 'WALK', startTime: '2026-11-24T10:00:00Z', endTime: '2026-11-24T10:05:00Z', duration: 300, distance: 380, from: { name: 'START', lat: 41, lon: 29 }, to: { name: 'Taksim', lat: 41.01, lon: 29 } },
+        { mode: 'SUBWAY', routeShortName: 'M2', headsign: 'Yenikapı', agencyName: 'Metro İstanbul', routeColor: '009845', routeTextColor: 'FFFFFF', startTime: '2026-11-24T10:05:00Z', endTime: '2026-11-24T10:20:00Z', duration: 900, intermediateStops: [{}, {}, {}], from: { name: 'Taksim', lat: 41.01, lon: 29 }, to: { name: 'Vezneciler', lat: 41.0, lon: 28.96 }, legGeometry: { points: '_p~iF~ps|U_ulLnnqC', precision: 5 } },
+        { mode: 'BUS', displayName: '28', startTime: '2026-11-24T10:22:00Z', endTime: '2026-11-24T10:33:00Z', duration: 660, routeColor: 'nope', from: { name: 'Vezneciler', lat: 41.0, lon: 28.96 }, to: { name: 'END', lat: 41.02, lon: 28.94 } },
+      ],
+    }],
+  };
+  const it = parseMotis(motis);
+  ok(it.length === 1 && it[0].minutes === 33 && it[0].transfers === 1, 'MOTIS: süre ve aktarma');
+  const [w, m2, bus] = it[0].legs;
+  ok(w.kind === 'walk' && w.minutes === 5 && w.meters === 380, 'MOTIS: yürüme bacağı');
+  ok(m2.kind === 'metro' && m2.line === 'M2' && m2.color === '#009845' && m2.stops === 3 && m2.coords.length === 2, 'MOTIS: metro hattı, renk, durak, geometri');
+  ok(bus.kind === 'bus' && bus.line === '28' && bus.color === undefined && bus.coords.length === 2, 'MOTIS: geçersiz renk yok sayılır, geometri yoksa iki uç');
+  ok(parseMotis({}).length === 0, 'MOTIS: boş yanıt');
+  ok(transitUserAgent('0.4.0', 'mail@example.org') === 'MATAF/0.4.0 (mail@example.org)', 'Transitous User-Agent biçimi');
+  const g = mapsUrl({ lat: 21.4, lng: 39.8 }, 'transit', 'android', { lat: 21.5, lng: 39.9 });
+  ok(g.includes('travelmode=transit') && g.includes('origin=21.5,39.9') && g.includes('destination=21.4,39.8'), 'Google Haritalar toplu taşıma bağlantısı');
+  ok(mapsUrl({ lat: 21.4, lng: 39.8 }, 'walk', 'ios').includes('dirflg=w'), 'Apple Haritalar yürüme bağlantısı');
+  ok(uberUrl({ lat: 21.4, lng: 39.8 }, 'Mescid-i Haram').includes('dropoff[nickname]=Mescid-i%20Haram'), 'Uber bağlantısı');
+}
+
+async function transitChecks() {
+  let seen: { url: string; ua?: string } | null = null;
+  const f = async (url: string, init?: { headers?: Record<string, string> }) => {
+    seen = { url, ua: init?.headers?.['User-Agent'] };
+    return { ok: true, status: 200, json: async () => ({ itineraries: [] }) };
+  };
+  const r1 = await planTransit({ lat: 41, lng: 29 }, { lat: 41.02, lng: 28.94 }, { lang: 'tr', contact: 'a@b.c', version: '0.4.0', fetcher: f, time: new Date('2026-11-24T10:00:00Z') });
+  const s1 = seen as { url: string; ua?: string } | null;
+  ok(r1.length === 0 && !!s1 && s1.url.includes('/api/v6/plan?fromPlace=41.000000,29.000000') && s1.url.includes('time=2026-11-24T10%3A00%3A00.000Z') && s1.ua === 'MATAF/0.4.0 (a@b.c)', 'Transitous isteği: uç nokta, zaman, User-Agent');
+  let threw = false;
+  try { await planTransit({ lat: 0, lng: 0 }, { lat: 1, lng: 1 }, { lang: 'en', contact: 'x', version: '1', fetcher: async () => ({ ok: false, status: 429, json: async () => ({}) }) }); } catch { threw = true; }
+  ok(threw, 'Transitous hata kodu (429) yakalanır');
+}
+
+mosqueChecks().then(transitChecks).then(() => process.exit(fails ? 1 : 0));

@@ -51,7 +51,7 @@ export function buildMadinah(cam: Cam): { below: Prim[]; above: Prim[]; ghost: P
       umb.push([x, y]);
     }
   }
-  umb.sort((a, b) => Cam.depth(a[0], a[1]) - Cam.depth(b[0], b[1]));
+  umb.sort((a, b) => cam.depthOf(a[0], a[1]) - cam.depthOf(b[0], b[1]));
   const isFront = (u: Pt) => u[1] > 130 || u[0] < -147;
   for (const u of umb) if (!isFront(u)) below.push(...umbrella(u[0], u[1]));
 
@@ -88,7 +88,7 @@ export function buildMadinah(cam: Cam): { below: Prim[]; above: Prim[]; ghost: P
     [-147, -190, 105], [147, -190, 105], [-147, 130, 105], [147, 130, 105], [-18, -190, 105], [18, -190, 105],
     [-46, 176, 72], [46, 176, 72], [-46, 48, 72], [46, 48, 72],
   ];
-  mins.sort((a, b) => Cam.depth(a[0], a[1]) - Cam.depth(b[0], b[1]));
+  mins.sort((a, b) => cam.depthOf(a[0], a[1]) - cam.depthOf(b[0], b[1]));
   for (const [x, y, h] of mins) above.push(...minaret(cam, x, y, h));
   return { below, above, ghost: [] };
 }

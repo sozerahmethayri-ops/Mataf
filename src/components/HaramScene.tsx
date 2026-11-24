@@ -1,5 +1,5 @@
-import { useEffect, useMemo, useState } from 'react';
-import { Animated, Easing, PanResponder, Pressable, Text, View } from 'react-native';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { Animated, Easing, PanResponder, Platform, Pressable, Text, View, type ViewStyle } from 'react-native';
 import Svg, { G, Path } from 'react-native-svg';
 
 import { C } from '@/constants/theme';
@@ -21,6 +21,9 @@ const PIN = 28; // kapı dairesi
 const STEM = 10;
 const LABEL_H = 18;
 const DEST_H = 24;
+const PIN_CLOSED = '#B42318';
+const PIN_OPEN = '#0F766E';
+const PIN_LIMITED = '#F5A524';
 
 export type SceneProps = {
   city: City;
@@ -39,6 +42,10 @@ export type SceneProps = {
   recenterKey?: number;
   /** Haram'ın önündeki yüksek yapıları (Saat Kulesi) yarı saydam çiz. */
   xray?: boolean;
+  /** Haritanın dönüşü (°, saat yönü). Varsayılan -35 (eğik kuzey). */
+  rotDeg?: number;
+  /** İki parmak hareketi bitince: yakınlaştırma çarpanı ve dönüş farkı (°). */
+  onTransform?: (scale: number, rotDelta: number) => void;
   route?: Pt[];
   traveled?: Pt[];
   user?: Pt;
@@ -54,10 +61,13 @@ export type SceneProps = {
 
 const round5 = (p: Pt): Pt => [Math.round(p[0] / 5) * 5, Math.round(p[1] / 5) * 5];
 
+const WEB_NO_TOUCH = (Platform.OS === 'web' ? { touchAction: 'none' } : null) as ViewStyle | null;
+
 export function HaramScene(props: SceneProps) {
   const {
     city, width, height, zoom = 1, focus = [0, 0], focusAt = [0.5, 0.45], fit, viewport = NO_INSETS, avoid = [], recenterKey = 0, xray = true,
     route, traveled, user, dest, destLabel, summaries, routeGateId, onGatePress, labels = true, pannable = true,
+    rotDeg = -35, onTransform,
   } = props;
   const { lang } = useI18n();
   const [fx, fy] = focus;
@@ -68,22 +78,61 @@ export function HaramScene(props: SceneProps) {
   const cam = useMemo(() => {
     if (fitKey) {
       const pts = JSON.parse(fitKey) as Pt[];
-      return fitCamera(pts, width, height, { top: vt, bottom: vb, left: vl, right: vr }, { zoom, headroom: 28, kMin: 0.35, kMax: 1.6 });
+      return fitCamera(pts, width, height, { top: vt, bottom: vb, left: vl, right: vr }, { zoom, headroom: 28, kMin: 0.35, kMax: 1.6, rotDeg });
     }
-    return Cam.centeredOn(BASE_K[city] * zoom, [fx, fy], width * ax, height * ay);
-  }, [fitKey, city, zoom, fx, fy, width, height, ax, ay, vt, vb, vl, vr]);
+    return Cam.centeredOn(BASE_K[city] * zoom, [fx, fy], width * ax, height * ay, rotDeg);
+  }, [fitKey, city, zoom, fx, fy, width, height, ax, ay, vt, vb, vl, vr, rotDeg]);
   const k = cam.k;
   const scene = useMemo(() => (city === 'makkah' ? buildMakkah(cam) : buildMadinah(cam)), [city, cam]);
 
-  // Kaydırma (pan): React durumu yerine Animated değer — kaydırırken sahne yeniden çizilmez.
+  // Kaydırma (tek parmak) ve iki parmakla büyütme/döndürme. Hareket sırasında görüntü 2D dönüşümle
+  // anında izler; parmaklar kalkınca sahne yeni ölçek ve açıyla gerçek 3D olarak yeniden çizilir.
   const [pan] = useState(() => new Animated.ValueXY({ x: 0, y: 0 }));
+  const [pinch] = useState(() => new Animated.Value(1));
+  const [twist] = useState(() => new Animated.Value(0));
+  const transformCb = useRef(onTransform);
+  useEffect(() => { transformCb.current = onTransform; });
   useEffect(() => { pan.setValue({ x: 0, y: 0 }); pan.setOffset({ x: 0, y: 0 }); }, [pan, cam, recenterKey]);
-  const responder = useMemo(() => PanResponder.create({
-    onMoveShouldSetPanResponder: (_, g) => pannable && (Math.abs(g.dx) > 6 || Math.abs(g.dy) > 6),
+  const responder = useMemo(() => {
+    const g = { mode: 'none' as 'none' | 'pinch', d0: 1, a0: 0, scale: 1, rot: 0 }; // hareket boyunca geçici durum
+    // transformCb yalnız dokunma olayında (parmak kalkınca) okunur, çizim sırasında değil.
+    // eslint-disable-next-line react-hooks/refs
+    return PanResponder.create({
+    onStartShouldSetPanResponder: (e) => pannable && e.nativeEvent.touches.length >= 2,
+    onMoveShouldSetPanResponder: (e, s) => pannable && (e.nativeEvent.touches.length >= 2 || Math.abs(s.dx) > 6 || Math.abs(s.dy) > 6),
     onPanResponderGrant: () => pan.extractOffset(),
-    onPanResponderMove: Animated.event([null, { dx: pan.x, dy: pan.y }], { useNativeDriver: false }),
-    onPanResponderRelease: () => pan.flattenOffset(),
-  }), [pan, pannable]);
+    onPanResponderMove: (e, s) => {
+      const t = e.nativeEvent.touches;
+      if (t.length >= 2) {
+        const dx = t[1].pageX - t[0].pageX;
+        const dy = t[1].pageY - t[0].pageY;
+        const d = Math.max(1, Math.hypot(dx, dy));
+        const a = (Math.atan2(dy, dx) * 180) / Math.PI;
+        if (g.mode !== 'pinch') { g.mode = 'pinch'; g.d0 = d; g.a0 = a; }
+        g.scale = Math.min(3, Math.max(0.35, d / g.d0));
+        g.rot = ((a - g.a0 + 540) % 360) - 180;
+        pinch.setValue(g.scale);
+        twist.setValue(g.rot);
+      } else if (g.mode === 'none') {
+        pan.setValue({ x: s.dx, y: s.dy });
+      }
+    },
+    onPanResponderRelease: () => {
+      pan.flattenOffset();
+      if (g.mode === 'pinch') {
+        // Küçük titremeleri yok say: %4'ten az ölçek, 4°'den az dönüş
+        const sc = Math.abs(g.scale - 1) < 0.04 ? 1 : g.scale;
+        const rt = Math.abs(g.rot) < 4 ? 0 : g.rot;
+        if (sc !== 1 || rt !== 0) transformCb.current?.(sc, rt);
+        pinch.setValue(1);
+        twist.setValue(0);
+      }
+      g.mode = 'none';
+    },
+    onPanResponderTerminationRequest: () => false,
+    });
+  }, [pan, pinch, twist, pannable]);
+  const twistDeg = twist.interpolate({ inputRange: [-360, 360], outputRange: ['-360deg', '360deg'] });
 
   // Akan turuncu iz
   const [dash] = useState(() => new Animated.Value(0));
@@ -135,8 +184,9 @@ export function HaramScene(props: SceneProps) {
   const destStem = destXY && destBox && Math.abs(destBox.x + destBox.w / 2 - destXY[0]) < 1 && destBox.y + destBox.h <= destXY[1] - 6;
 
   return (
-    <View style={{ width, height, overflow: 'hidden', backgroundColor: C.mapGround }} {...responder.panHandlers}>
-      <Animated.View style={{ position: 'absolute', left: 0, top: 0, width, height, transform: pan.getTranslateTransform() }}>
+    // Web önizlemesinde tarayıcının kendi sayfa yakınlaştırması iki parmak hareketini yutmasın
+    <View style={[{ width, height, overflow: 'hidden', backgroundColor: C.mapGround }, WEB_NO_TOUCH]} {...responder.panHandlers}>
+      <Animated.View style={{ position: 'absolute', left: 0, top: 0, width, height, transform: [...pan.getTranslateTransform(), { scale: pinch }, { rotate: twistDeg }] }}>
         <Svg width={width} height={height} accessibilityLabel="3D harita">
           <Prims prims={scene.below} />
           <Prims prims={scene.above} />
@@ -159,7 +209,7 @@ export function HaramScene(props: SceneProps) {
           const b = placed[l.key];
           if (!b) return null;
           return (
-            <View key={l.key} pointerEvents="none" style={{ position: 'absolute', left: b.x, top: b.y, width: b.w, height: b.h, borderRadius: 9, backgroundColor: 'rgba(255,255,255,0.94)', alignItems: 'center', justifyContent: 'center' }}>
+            <View key={l.key} pointerEvents="none" style={{ position: 'absolute', left: b.x, top: b.y, width: b.w, height: b.h, borderRadius: 9, backgroundColor: C.overlay, alignItems: 'center', justifyContent: 'center' }}>
               <Text numberOfLines={1} style={{ fontSize: 10, fontWeight: '700', color: C.ink2 }}>{pick(l.text, lang)}</Text>
             </View>
           );
@@ -169,8 +219,9 @@ export function HaramScene(props: SceneProps) {
           if (x < -20 || x > width + 20 || y < -10 || y > height + 50) return null;
           const s = summaries[g.id]?.status ?? 'open';
           const isRoute = g.id === routeGateId;
-          const bg = isRoute ? C.accent : s === 'closed' ? C.closed : s === 'open' ? C.open : C.limitedFill;
-          const fg = s !== 'open' && s !== 'closed' && !isRoute ? C.ink : '#FFFFFF';
+          // İşaret renkleri temadan bağımsız (koyu haritada da doygun kalsın); rota kapısı palet rengini alır
+          const bg = isRoute ? C.accent : s === 'closed' ? PIN_CLOSED : s === 'open' ? PIN_OPEN : PIN_LIMITED;
+          const fg = isRoute ? C.onAccent : s !== 'open' && s !== 'closed' ? '#17181C' : '#FFFFFF';
           return (
             <Pressable key={g.id} accessibilityRole="button" accessibilityLabel={`${pick(g.name, lang)} · ${s}`} onPress={() => onGatePress?.(g.id)} hitSlop={6}
               style={{ position: 'absolute', left: x - PIN / 2, top: y - PIN - STEM, width: PIN, height: PIN + STEM, alignItems: 'center' }}>
@@ -178,7 +229,7 @@ export function HaramScene(props: SceneProps) {
                 <Text style={{ color: fg, fontSize: g.no.length > 2 ? 9 : 11, fontWeight: '700' }}>{g.no}</Text>
                 {s === 'closed' && (
                   <View style={{ position: 'absolute', right: -6, top: -6, width: 14, height: 14, borderRadius: 7, backgroundColor: '#FFFFFF', alignItems: 'center', justifyContent: 'center' }}>
-                    <Icon name="close" size={9} color={C.closed} width={4} />
+                    <Icon name="close" size={9} color={PIN_CLOSED} width={4} />
                   </View>
                 )}
               </View>
@@ -193,8 +244,8 @@ export function HaramScene(props: SceneProps) {
             <View pointerEvents="none" style={{ position: 'absolute', left: destXY[0] - 6, top: destXY[1] - 6, width: 12, height: 12, borderRadius: 6, backgroundColor: C.accent, borderWidth: 2, borderColor: '#FFFFFF' }} />
             {destBox && destLabel ? (
               <View pointerEvents="none" style={{ position: 'absolute', left: destBox.x, top: destBox.y, width: destBox.w, height: DEST_H, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 4, borderRadius: DEST_H / 2, backgroundColor: C.accent, borderWidth: 2, borderColor: '#FFFFFF' }}>
-                <Icon name="flag" size={12} color="#FFFFFF" width={2.4} />
-                <Text numberOfLines={1} style={{ fontSize: 11, fontWeight: '700', color: '#FFFFFF' }}>{destLabel}</Text>
+                <Icon name="flag" size={12} color={C.onAccent} width={2.4} />
+                <Text numberOfLines={1} style={{ fontSize: 11, fontWeight: '700', color: C.onAccent }}>{destLabel}</Text>
               </View>
             ) : null}
           </>
@@ -207,7 +258,7 @@ export function HaramScene(props: SceneProps) {
         )}
       </Animated.View>
 
-      <View pointerEvents="none" style={{ position: 'absolute', left: vl + 12, bottom: vb + 10, backgroundColor: 'rgba(255,255,255,0.92)', borderRadius: 10, paddingHorizontal: 8, paddingVertical: 5 }}>
+      <View pointerEvents="none" style={{ position: 'absolute', left: vl + 12, bottom: vb + 10, backgroundColor: C.overlay, borderRadius: 10, paddingHorizontal: 8, paddingVertical: 5 }}>
         <View style={{ flexDirection: 'row', justifyContent: 'space-between', width: Math.max(44, scaleM * k) }}>
           <Text style={{ fontSize: 10, fontWeight: '700', color: C.ink2 }}>0</Text>
           <Text style={{ fontSize: 10, fontWeight: '700', color: C.ink2 }}>{scaleM} m</Text>

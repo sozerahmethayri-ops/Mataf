@@ -2,12 +2,15 @@
 
 Mekke ve Medine'deki ziyaretçiler için iOS ve Android uygulaması:
 
-- **Gerçek ölçekli 3D harita** — Mescid-i Haram (Kâbe, Mataf, Mes'a, Saat Kulesi) ve Mescid-i Nebevî (Yeşil Kubbe, şemsiyeler, minareler), metre cinsinden; 100 m ölçek çubuğu.
+- **Gerçek ölçekli 3D harita** — Mescid-i Haram (Kâbe, Mataf, Mes'a, Saat Kulesi) ve Mescid-i Nebevî (Yeşil Kubbe, şemsiyeler, minareler), metre cinsinden; 100 m ölçek çubuğu. **İki parmakla büyütülür ve döndürülür**; pusula düğmesi kuzeyi yukarı alır / eğik görünüme döner.
 - **Kapı kapanmalarına göre rota** — ziyaretçiler kapı durumunu bildirir, yorum yazar, onaylar; kapalı kapılar rotadan otomatik çıkar. Resmî duyuru her zaman önceliklidir.
 - **Turuncu izle navigasyon** — sıradaki dönüş, kalan mesafe, kapı kapanınca "rota güncellendi" uyarısı. Mescid çevresinde değilseniz demo yürüyüş.
 - **Şehir haritası** — oteller, yemek, eczane, otobüs, taksi, hastane (OpenStreetMap); otelinizi kaydedip mescide yaya rotası.
 - **En yakın cami (dünyanın her yerinde)** — ana ekrandaki yeşil "Cami" düğmesiyle tek dokunuşta: konumunuza en yakın cami/mescit, mesafe, yürüme süresi, yönü gösteren ok (telefonun pusulasıyla döner), telefonun harita uygulamasında yürüyüş tarifi, uygulama içi rota ve sıradaki namaz vakti. Veri OpenStreetMap'ten gelir; 1,5 km'den başlayıp 60 km'ye kadar arar, sunucu yanıt vermezse yedek sunuculara geçer, internet yokken son aramayı gösterir.
+- **Ulaşım (her ülkede)** — "Buradasınız" adresi ve konum paylaşma; adres/otel/istasyon arama ya da haritaya uzun basarak hedef; **yürüme**, **toplu taşıma** (metro, otobüs, tramvay, tren — hat renkleri, aktarmalar, duraklar) ve **araç/taksi** (süre, mesafe, Uber, telefonun haritasında yol tarifi). "Şoföre göster" kartı hedefi Arapça, Urduca ve İngilizce ricayla büyük yazar. Haram, Nebevî, otel ve en yakın cami hızlı hedeflerdir.
 - **Namaz vakitleri ve kıble pusulası** — telefonda hesaplanır (Ümmü'l-Kurâ, Diyanet, MWL…), internet gerekmez.
+- **Ezan bildirimleri** — ezandan 5–45 dk önce ve/veya vaktinde; vakit vakit seçim (güneş: sabahın çıkış uyarısı); Zil, Çan, Nağme (Hicaz), Damla ya da telefonun sesi; **kendi ezan kaydınızı** seçip vakit girince tamamını dinleme. Telefon kilitliyken de gelir, internet gerekmez.
+- **Tema** — açık, koyu ya da sistem; 5 renk paleti (Turuncu, Zümrüt, Gece mavisi, Altın, Gül). Tüm paletler WCAG AA kontrastını sağlar (testli).
 - **3D tavaf asistanı** — Kâbe gerçek ölçü ve yönüyle (Hacerü'l-Esved, Rükn-i Irâkî/Şâmî/Yemânî, kapı, Hatîm, Makam-ı İbrâhîm); konumunuz ve bu şavtta yürüdüğünüz yay; Hacerü'l-Esved hizasından başlayan **şavt sayacı** (GPS ile otomatik + elle düzeltme); köşelere geldikçe istilam/selamlama ve dua; **sesli asistan** (şavt duyurusu, "Rabbenâ âtinâ…" kâri sesiyle); tavaf sonrası adımlar (Makam, 2 rekât, Zemzem, sa'y). Ekran açık kalır, cep kilidi vardır.
 - **Kur'an-ı Kerim** — 114 sûre; **12 kâriden ayet ayet sesli okuma**, **9 dilde sesli meal** (Türkçe Diyanet Vakfı dahil), 50+ dilde 100'ü aşkın meal, Latin harfli okunuş, **30+ dilde tefsir** (Türkçe: Muhtasar, Sa'dî, İbn Kesîr); okunan ayet vurgulanır.
 - **Dua kütüphanesi** — 20 kategori, 100'ü aşkın kayıt (sabah-akşam, namaz sonrası, tavaf, sa'y, hac, Medine, sıkıntı, şifa, tövbe, yolculuk, Kur'an'daki dualar…), arama, kaynak numarası, sesli dinleme. Kur'an'daki dualar seçtiğiniz meal dilinde gelir.
@@ -15,7 +18,7 @@ Mekke ve Medine'deki ziyaretçiler için iOS ve Android uygulaması:
 - **Ravza rehberi** — ziyaret saatleri, Nusuk izni, resmî 360° sanal tur bağlantısı.
 - **Türkçe, İngilizce, Arapça** (Arapça sağdan sola).
 
-> Durum: **0.1.0 — geliştirme sürümü.** Harita dış hatları yayımlanmış ölçülerden oranlanmıştır; kapı yerleri ve mescit içi hizmet noktaları yaklaşıktır / örnektir. Ayrıntı: [docs/VERI-KAYNAKLARI.md](docs/VERI-KAYNAKLARI.md).
+> Durum: **0.4.0 — geliştirme sürümü.** Harita dış hatları yayımlanmış ölçülerden oranlanmıştır; kapı yerleri ve mescit içi hizmet noktaları yaklaşıktır / örnektir. Ayrıntı: [docs/VERI-KAYNAKLARI.md](docs/VERI-KAYNAKLARI.md).
 
 ## Hızlı başlangıç
 
@@ -29,6 +32,8 @@ npx expo start
 ```
 
 Terminalde çıkan QR kodu telefonunuzdaki Expo Go ile okutun. Uygulama birkaç saniyede açılır.
+
+> Expo Go'da ezan bildirimleri çalışır ama uygulamaya özel sesler (Zil, Çan…) ve "Alarmlar ve hatırlatıcılar" ayarı yalnız kendi derlemenizde (aşağıdaki APK / iOS) geçerlidir; Expo Go'da telefonun varsayılan bildirim sesi duyulur.
 
 ### Telefona kurulabilir dosya (APK / iOS) üretmek
 
@@ -57,14 +62,39 @@ EXPO_PUBLIC_SUPABASE_ANON_KEY=eyJ...
 
 4. `npx expo start` ile yeniden başlatın. Ayarlar ekranında "Canlı sunucu (Supabase)" yazmalı.
 
+## Ulaşım ve toplu taşıma
+
+| İş | Kaynak | Koşul |
+|---|---|---|
+| Yer arama, adres | [Photon](https://photon.komoot.io) (OpenStreetMap) | Makul kullanım; yoğun kullanımda kendi Photon sunucunuz |
+| Yürüme / araç rotası | [FOSSGIS OSRM](https://routing.openstreetmap.de) | Makul kullanım; ulaşılamazsa kaba tahmin gösterilir |
+| Toplu taşıma | [Transitous](https://transitous.org) (MOTIS 2, dünya geneli açık GTFS verisi) | **Yalnız açık kaynak + ticari olmayan projeler**, günde ~720 istek altı, uygulamayı tanıtan User-Agent, [kaynak listesine](https://transitous.org/sources/) bağlantı |
+
+Transitous varsayılan olarak **kapalıdır**; kapalıyken metro/otobüs tarifi telefonun harita uygulamasında (Google Haritalar / Apple Haritalar, güncel sefer saatleriyle) açılır. Açmak için depoyu açık kaynak lisansla yayımlayın ve `.env` içine bir iletişim adresi yazın:
+
+```
+EXPO_PUBLIC_TRANSITOUS_CONTACT=ad@ornek.org
+```
+
+Uygulama her isteğe `User-Agent: MATAF/<sürüm> (<iletişim>)` ekler. Ticari yayında kendi [MOTIS](https://github.com/motis-project/motis) sunucunuzu kurun ya da ticari bir tarif servisi kullanın. Mekke–Medine arası Haremeyn treni ve şehir otobüsleri, ilgili açık veri yayımlandığı ölçüde görünür.
+
+## Ezan bildirimleri
+
+- Bildirimler telefonda kurulur (sunucu yok): seçilen konum ve hesaplama yöntemine göre önümüzdeki ~5 gün; uygulama her açıldığında yenilenir (iOS en çok 64 bekleyen bildirime izin verir).
+- Sesler (`assets/sounds/*.wav`) bu projede sentezlenmiştir, telif içermez: `python3 scripts/make-sounds.py assets/sounds`.
+- Tam ezan bildirim sesi olamaz (iOS'ta bildirim sesi en çok 30 sn). Kullanıcı kendi ezan kaydını (mp3/m4a) seçerse, vakit girdiğinde uygulama açıksa ya da bildirime dokununca tamamı çalar; üstte "Durdur" çubuğu çıkar. Uygulamaya hazır ezan kaydı eklemek isterseniz, dağıtım izni olan bir kayıt kullanın.
+- Android'de kesin zamanlı bildirim için `SCHEDULE_EXACT_ALARM` istenir; kullanıcı "Alarmlar ve hatırlatıcılar" iznini kapatırsa bildirim birkaç dakika gecikebilir.
+
 ## Proje yapısı
 
 ```
 src/
-  app/            Ekranlar (Expo Router): (tabs)/ harita, kapılar, Kur'an, vakitler, hadis
-                  kapi/[id] · bildir · navigasyon · arama · sehir · kible · ravza · medine-rehber · veriler · ayarlar
+  app/            Ekranlar (Expo Router): (tabs)/ harita, ulaşım, Kur'an, vakitler, hadis
+                  kapilar · kapi/[id] · bildir · navigasyon · arama · sehir · cami · kible · tavaf · ravza
+                  medine-rehber · veriler · ayarlar · bildirimler (ezan) · kuran-ayarlar · tefsir
   scene/          Gerçek ölçekli 3D çizim motoru (eğik izdüşüm) ve Mekke/Medine sahneleri
-  services/       Bildirim kuralları + Supabase, rota planlama, konum, namaz vakti, Kur'an, hadis, OSM
+  services/       Kapı bildirim kuralları + Supabase, rota planlama, konum, namaz vakti, ezan bildirimleri,
+                  ulaşım (Photon/OSRM/Transitous), cami arama, Kur'an, hadis, tema, OSM
   data/           Kapılar, hedefler, hizmet noktaları, Ravza saatleri, dualar
   i18n/           TR / EN / AR metinleri
 supabase/         Veritabanı şeması
@@ -76,7 +106,8 @@ scripts/          Mantık kontrolü (npm run check)
 
 ```bash
 npm run typecheck   # TypeScript kontrolü
-npm run check       # bildirim kuralları ve kapı kapanınca yeniden rota testleri
+npm run check       # 80'e yakın mantık testi: kapı kuralları, rota, tavaf sayacı, harita döndürme,
+                    # tema kontrastı, ezan bildirim planı, ulaşım (Photon/OSRM/MOTIS) ayrıştırma
 npm run lint
 ```
 
@@ -92,7 +123,9 @@ npm run lint
 
 ## Veri ve lisans notları
 
-- Harita: © OpenStreetMap katkıcıları (ODbL) — uygulamada atıf gösterilir. Yaya rotası: FOSSGIS OSRM.
+- Harita: © OpenStreetMap katkıcıları (ODbL) — uygulamada atıf gösterilir. Yaya/araç rotası: FOSSGIS OSRM. Yer arama: Photon.
+- Toplu taşıma (açıksa): Transitous ve [veri kaynakları](https://transitous.org/sources/) — uygulamada bağlantı gösterilir.
+- Bildirim sesleri: bu projede sentezlendi (`scripts/make-sounds.py`).
 - Kur'an metni ve meal: alquran.cloud (Tanzil). Meal hakları sahiplerine aittir; mağazaya yüklemeden önce kullanılan mealin lisansını kontrol edin.
 - Hadis: fawazahmed0/hadith-api (açık veri). Çevirileri yayından önce bir ilahiyatçıya kontrol ettirin.
 - Resmî kapı/kapanma verisi için İki Kutsal Mescid İşleri Genel Kurumu ile veri anlaşması gerekir (docs/VERI-KAYNAKLARI.md).
@@ -102,4 +135,4 @@ npm run lint
 
 ### English summary
 
-MATAF is an Expo (React Native) app for visitors to Masjid al-Haram and the Prophet's Mosque: true-scale 3D maps, crowd-sourced gate closures with automatic rerouting, turn-by-turn walking guidance, a city map (OpenStreetMap), on-device prayer times and Qibla, Quran, Sahih al-Bukhari and duas, and a Rawdah guide. Run with `npm install && npx expo start` and open in Expo Go. Optional live backend: Supabase (`supabase/schema.sql`, `.env`).
+MATAF is an Expo (React Native) app for visitors to Masjid al-Haram and the Prophet's Mosque: true-scale 3D maps (pinch to zoom, two-finger rotate), crowd-sourced gate closures with automatic rerouting, turn-by-turn walking guidance, a worldwide transport tab (walk, transit via Transitous when enabled, car/taxi, "show the driver" card), nearest mosque anywhere, on-device prayer times, Qibla and adhan notifications (custom sounds, your own adhan recording), light/dark themes with 5 palettes, Quran with audio/translations/tafsir, Sahih al-Bukhari, duas, a 3D tawaf assistant and a Rawdah guide. Run with `npm install && npx expo start` and open in Expo Go. Optional live backend: Supabase (`supabase/schema.sql`, `.env`).

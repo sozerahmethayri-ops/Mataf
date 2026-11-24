@@ -1,9 +1,9 @@
 import { router } from 'expo-router';
 import type { ReactNode } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, View, type StyleProp, type TextStyle, type ViewStyle } from 'react-native';
+import { Platform, Pressable, ScrollView, Switch, Text, View, type StyleProp, type TextStyle, type ViewStyle } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { C, R, S, shadow } from '@/constants/theme';
+import { C, R, S, onThemeChange, shadow } from '@/constants/theme';
 import type { GateStatus } from '@/services/reports';
 import { useI18n } from '@/i18n';
 import type { Key } from '@/i18n/strings';
@@ -45,7 +45,7 @@ export function IconBtn({ name, label, onPress, tint = C.surface, color = C.ink,
 
 export function Btn({ title, onPress, kind = 'primary', icon, style, disabled }: { title: string; onPress?: () => void; kind?: 'primary' | 'secondary' | 'green'; icon?: IconName; style?: StyleProp<ViewStyle>; disabled?: boolean }) {
   const bg = kind === 'primary' ? C.accent : kind === 'green' ? C.green : C.bg;
-  const fg = kind === 'secondary' ? C.ink : '#FFFFFF';
+  const fg = kind === 'secondary' ? C.ink : kind === 'green' ? '#FFFFFF' : C.onAccent;
   return (
     <Pressable accessibilityRole="button" onPress={onPress} disabled={disabled}
       style={({ pressed }) => [{ height: 48, borderRadius: 24, paddingHorizontal: 18, backgroundColor: bg, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, opacity: disabled ? 0.5 : pressed ? 0.8 : 1 }, kind === 'secondary' && { borderWidth: 1.5, borderColor: C.borderStrong }, style]}>
@@ -59,14 +59,23 @@ export function Chip({ label, active, onPress, dot }: { label: string; active?: 
   return (
     <Pressable accessibilityRole="button" accessibilityState={{ selected: !!active }} onPress={onPress}
       style={[{ height: 38, paddingHorizontal: 14, borderRadius: 19, flexDirection: 'row', alignItems: 'center', gap: 6 }, active ? { backgroundColor: C.ink } : { backgroundColor: C.bg, borderWidth: 1, borderColor: C.borderStrong }]}>
-      {dot && <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: active ? '#FFFFFF' : dot }} />}
-      <Text style={{ fontSize: 13, fontWeight: active ? '700' : '500', color: active ? '#FFFFFF' : C.ink }}>{label}</Text>
+      {dot && <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: active ? C.onInk : dot }} />}
+      <Text style={{ fontSize: 13, fontWeight: active ? '700' : '500', color: active ? C.onInk : C.ink }}>{label}</Text>
     </Pressable>
   );
 }
 
 export function Card({ children, style, tint }: { children: ReactNode; style?: StyleProp<ViewStyle>; tint?: string }) {
   return <View style={[{ padding: S.lg, borderRadius: R.lg, backgroundColor: tint ?? C.bg, borderWidth: tint ? 0 : 1, borderColor: C.border, gap: S.sm }, style]}>{children}</View>;
+}
+
+/** Açma/kapama düğmesi: telefonda ve web önizlemesinde aynı renkler. */
+export function Toggle({ value, onChange, label }: { value: boolean; onChange: (v: boolean) => void; label: string }) {
+  const web = Platform.OS === 'web' ? ({ activeThumbColor: '#FFFFFF', activeTrackColor: C.accent } as object) : {};
+  return (
+    <Switch value={value} onValueChange={onChange} accessibilityLabel={label}
+      trackColor={{ true: C.accent, false: C.borderStrong }} thumbColor="#FFFFFF" ios_backgroundColor={C.borderStrong} {...web} />
+  );
 }
 
 export function SectionTitle({ children }: { children: ReactNode }) {
@@ -89,7 +98,7 @@ export function Segmented<V extends string>({ value, options, onChange }: { valu
   );
 }
 
-export const STATUS_TONE: Record<GateStatus, { fg: string; bg: string; key: Key }> = {
+const statusTone = (): Record<GateStatus, { fg: string; bg: string; key: Key }> => ({
   open: { fg: C.open, bg: C.openTint, key: 'status.open' },
   closed: { fg: C.closed, bg: C.closedTint, key: 'status.closed' },
   crowded: { fg: C.limited, bg: C.limitedTint, key: 'status.crowded' },
@@ -97,7 +106,8 @@ export const STATUS_TONE: Record<GateStatus, { fg: string; bg: string; key: Key 
   entryOnly: { fg: C.limited, bg: C.limitedTint, key: 'status.entryOnly' },
   women: { fg: C.limited, bg: C.limitedTint, key: 'status.women' },
   noAccess: { fg: C.limited, bg: C.limitedTint, key: 'status.noAccess' },
-};
+});
+export const STATUS_TONE = statusTone();
 
 export function StatusPill({ status }: { status: GateStatus }) {
   const { t } = useI18n();
@@ -112,7 +122,7 @@ export function StatusPill({ status }: { status: GateStatus }) {
 export function ListRow({ title, subtitle, onPress, right, left }: { title: string; subtitle?: string; onPress?: () => void; right?: ReactNode; left?: ReactNode }) {
   return (
     <Pressable onPress={onPress} accessibilityRole={onPress ? 'button' : undefined}
-      style={({ pressed }) => [{ minHeight: 56, flexDirection: 'row', alignItems: 'center', gap: S.md, borderBottomWidth: 1, borderBottomColor: '#F1EFEB', paddingVertical: S.sm, opacity: pressed ? 0.7 : 1 }]}>
+      style={({ pressed }) => [{ minHeight: 56, flexDirection: 'row', alignItems: 'center', gap: S.md, borderBottomWidth: 1, borderBottomColor: C.border, paddingVertical: S.sm, opacity: pressed ? 0.7 : 1 }]}>
       {left}
       <View style={{ flex: 1, gap: 2 }}>
         <Text style={{ fontSize: 15, fontWeight: '600', color: C.ink }}>{title}</Text>
@@ -131,7 +141,7 @@ export function ago(ms: number | undefined, t: ReturnType<typeof useI18n>['t']) 
   return t('gates.ago', { t: `${Math.round(m / 60)} sa` });
 }
 
-export const T = StyleSheet.create({
+const buildT = () => ({
   h1: { fontSize: 26, fontWeight: '700', color: C.ink, letterSpacing: -0.3 } as TextStyle,
   h2: { fontSize: 18, fontWeight: '700', color: C.ink } as TextStyle,
   h3: { fontSize: 16, fontWeight: '700', color: C.ink, lineHeight: 22 } as TextStyle,
@@ -140,4 +150,10 @@ export const T = StyleSheet.create({
   small: { fontSize: 12, color: C.muted } as TextStyle,
   section: { fontSize: 12, fontWeight: '700', color: C.muted, textTransform: 'uppercase', letterSpacing: 0.7, marginTop: S.sm } as TextStyle,
   arabic: { fontSize: 24, lineHeight: 40, color: C.ink, textAlign: 'right', writingDirection: 'rtl' } as TextStyle,
+});
+/** Yazı stilleri — tema değişince aynı nesne yeni renklerle güncellenir. */
+export const T = buildT();
+onThemeChange(() => {
+  Object.assign(T, buildT());
+  Object.assign(STATUS_TONE, statusTone());
 });

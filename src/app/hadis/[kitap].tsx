@@ -34,7 +34,7 @@ export default function BukhariBook() {
           keyExtractor={(h) => String(h.number)}
           contentContainerStyle={{ padding: 16, paddingBottom: 32 }}
           renderItem={({ item: h }) => (
-            <View style={{ paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: '#F1EFEB', gap: 6 }}>
+            <View style={{ paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: C.border, gap: 6 }}>
               <Text style={{ fontSize: 12, fontWeight: '700', color: C.accent }}>Buhârî, {h.number}</Text>
               <Text style={lang === 'ar' ? T.arabic : T.body}>{h.text}</Text>
             </View>

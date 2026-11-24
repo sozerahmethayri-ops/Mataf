@@ -15,11 +15,11 @@ export default function TabLayout() {
         headerShown: false,
         tabBarActiveTintColor: C.accent,
         tabBarInactiveTintColor: C.muted,
-        tabBarStyle: { backgroundColor: C.bg, borderTopColor: '#EEECE8' },
+        tabBarStyle: { backgroundColor: C.bg, borderTopColor: C.border },
         tabBarLabelStyle: { fontSize: 11, fontWeight: '600' },
       }}>
       <Tabs.Screen name="index" options={{ title: t('tab.map'), tabBarIcon: icon('map') }} />
-      <Tabs.Screen name="kapilar" options={{ title: t('tab.gates'), tabBarIcon: icon('gate') }} />
+      <Tabs.Screen name="ulasim" options={{ title: t('tab.transport'), tabBarIcon: icon('bus') }} />
       <Tabs.Screen name="kuran" options={{ title: t('tab.quran'), tabBarIcon: icon('book') }} />
       <Tabs.Screen name="vakitler" options={{ title: t('tab.times'), tabBarIcon: icon('clock') }} />
       <Tabs.Screen name="hadis" options={{ title: t('tab.hadith'), tabBarIcon: icon('moon') }} />

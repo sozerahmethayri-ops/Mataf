@@ -67,8 +67,8 @@ export default function Navigation() {
           <Icon name={icon} size={30} color={C.ink} width={2.6} />
         </View>
         <View style={{ flex: 1 }}>
-          <Text style={{ color: '#FFFFFF', fontSize: 26, fontWeight: '700' }}>{arrived ? '✓' : `${step.distM} m`}</Text>
-          <Text style={{ color: '#D5D7DC', fontSize: 13 }}>{instruction}</Text>
+          <Text style={{ color: C.onInk, fontSize: 26, fontWeight: '700' }}>{arrived ? '✓' : `${step.distM} m`}</Text>
+          <Text style={{ color: C.onInk, opacity: 0.8, fontSize: 13 }}>{instruction}</Text>
         </View>
       </View>
 

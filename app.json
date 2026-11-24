@@ -2,7 +2,7 @@
   "expo": {
     "name": "MATAF",
     "slug": "mataf",
-    "version": "0.3.0",
+    "version": "0.4.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "mataf",
@@ -27,7 +27,14 @@
       "package": "app.mataf.navigator",
       "permissions": [
         "ACCESS_COARSE_LOCATION",
-        "ACCESS_FINE_LOCATION"
+        "ACCESS_FINE_LOCATION",
+        "POST_NOTIFICATIONS",
+        "SCHEDULE_EXACT_ALARM",
+        "RECEIVE_BOOT_COMPLETED",
+        "VIBRATE"
+      ],
+      "blockedPermissions": [
+        "android.permission.RECORD_AUDIO"
       ]
     },
     "web": {
@@ -62,6 +69,19 @@
         {
           "microphonePermission": false,
           "enableBackgroundPlayback": true
+        }
+      ],
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/images/notification-icon.png",
+          "color": "#C2410C",
+          "sounds": [
+            "./assets/sounds/zil.wav",
+            "./assets/sounds/can_sesi.wav",
+            "./assets/sounds/nagme.wav",
+            "./assets/sounds/damla.wav"
+          ]
         }
       ]
     ],

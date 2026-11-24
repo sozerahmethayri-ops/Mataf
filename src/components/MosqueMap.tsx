@@ -23,6 +23,8 @@ export function MosqueMap({ user, mosques, selectedId, route, onSelect }: Mosque
       initialRegion={{ latitude: user.lat, longitude: user.lng, latitudeDelta: 0.02, longitudeDelta: 0.02 }}
       showsUserLocation
       showsCompass
+      zoomEnabled
+      rotateEnabled
       showsMyLocationButton>
       {route && route.length > 1 && <Polyline coordinates={route} strokeColor={C.route} strokeWidth={6} />}
       {mosques.slice(0, 25).map((m) => (
