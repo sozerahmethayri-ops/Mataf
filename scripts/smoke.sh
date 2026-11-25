@@ -52,11 +52,11 @@ adb shell input swipe $(( W * 85 / 100 )) $(( H / 2 )) $(( W * 15 / 100 )) $(( H
 step "08-kaydir-ana" 4
 
 i=10
-for r in "kuran/18?b=hatim&a=10" zikir vakitler kible cami sehir ulasim tavaf navigasyon ayarlar hadis-dua; do
+for r in "kuran/18?b=hatim&a=10" zikir vakitler kible cami sehir ulasim tavaf umre say otel acil navigasyon ayarlar hadis-dua; do
   i=$((i + 1))
   open "$r"
   name=$(echo "$r" | cut -d'?' -f1 | tr '/' '-')
-  case "$r" in cami|sehir|ulasim) wait=14 ;; *) wait=7 ;; esac
+  case "$r" in cami|sehir|ulasim|otel|acil) wait=14 ;; *) wait=7 ;; esac
   step "$i-$name" $wait || break
   if [ "$r" = ulasim ]; then
     # Haritayı biraz kaydır: içerik ancak dokununca mı beliriyor?

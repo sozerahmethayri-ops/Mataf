@@ -21,6 +21,7 @@ import {
   type Fix, type LapEvent, type LapState, type ZoneId,
 } from '@/services/tawaf';
 import { DEMO_RADIUS, useTawafFeed } from '@/services/tawafFeed';
+import { markUmreStep } from '@/services/umreProgress';
 import { usePersisted } from '@/services/usePersisted';
 import { duaSpeech, playSequence, stopVoice, type SpeechItem } from '@/services/voice';
 
@@ -61,6 +62,8 @@ const L = {
   lock: { tr: 'Ekranı kilitle', en: 'Lock screen', ar: 'قفل الشاشة' },
   locked: { tr: 'Ekran kilitli — açmak için basılı tutun', en: 'Screen locked — press and hold to unlock', ar: 'الشاشة مقفلة — اضغط مطولًا لفتحها' },
   lapLen: { tr: 'Bu halkada bir şavt ≈', en: 'One round on this ring ≈', ar: 'الشوط في هذه الحلقة ≈' },
+  toSay: { tr: 'Sa’y sayacını aç', en: 'Open the sa‘y counter', ar: 'افتح عدّاد السعي' },
+  toGuide: { tr: 'Umre rehberi', en: 'Umrah guide', ar: 'دليل العمرة' },
   resumed: { tr: 'Yarım kalan tavaf geri yüklendi', en: 'Unfinished tawaf restored', ar: 'تمت استعادة الطواف غير المكتمل' },
 } satisfies Record<string, ML>;
 
@@ -125,6 +128,7 @@ export default function TawafScreen() {
         haptic('done');
         speak([{ kind: 'speak', text: pick(DONE_VOICE, lg), lang: lg }, ...duaSpeech(ISTILAM)]);
         setPhase('done');
+        if (prefsRef.current.type === 'umre') markUmreStep('tavaf').catch(() => undefined);
       }
     }
   };
@@ -348,6 +352,8 @@ export default function TawafScreen() {
                 {a.dua ? <DuaBlock d={a.dua} compact /> : null}
               </View>
             ))}
+            {ramal && <Btn title={pick(L.toSay, lang)} icon="walk" onPress={() => router.push('/say')} />}
+            {prefs.type === 'umre' && <Btn title={pick(L.toGuide, lang)} kind="secondary" icon="list" onPress={() => router.push('/umre')} />}
             <Btn title={pick(L.again, lang)} kind="secondary" onPress={reset} />
           </>
         )}

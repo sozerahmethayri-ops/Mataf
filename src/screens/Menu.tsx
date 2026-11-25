@@ -15,6 +15,7 @@ const GROUPS: { title: { tr: string; en: string; ar: string }; items: Item[] }[]
     title: { tr: 'İbadet', en: 'Worship', ar: 'العبادة' },
     items: [
       { icon: 'clock', title: { tr: 'Namaz vakitleri', en: 'Prayer times', ar: 'مواقيت الصلاة' }, to: '/vakitler' },
+      { icon: 'list', title: { tr: 'Umre rehberi', en: 'Umrah guide', ar: 'دليل العمرة' }, to: '/umre' },
       { icon: 'compass', title: { tr: 'Kıble', en: 'Qibla', ar: 'القبلة' }, to: '/kible' },
       { icon: 'beads', title: { tr: 'Zikirmatik', en: 'Dhikr counter', ar: 'المسبحة' }, to: '/zikir' },
       { icon: 'book', title: { tr: "Kur'an-ı Kerîm", en: 'The Quran', ar: 'القرآن الكريم' }, to: '/kuran' },
@@ -28,6 +29,8 @@ const GROUPS: { title: { tr: string; en: string; ar: string }; items: Item[] }[]
     items: [
       { icon: 'map', title: { tr: 'Haram / Nebevî haritası', en: 'Haram / Nabawi map', ar: 'خريطة الحرم' }, to: '/harita' },
       { icon: 'kaaba', title: { tr: 'Tavaf asistanı', en: 'Tawaf assistant', ar: 'مساعد الطواف' }, to: '/tavaf' },
+      { icon: 'walk', title: { tr: 'Sa’y sayacı', en: 'Sa‘y counter', ar: 'عدّاد السعي' }, to: '/say' },
+      { icon: 'hotel', title: { tr: 'Otelime dön', en: 'Back to my hotel', ar: 'العودة إلى فندقي' }, to: '/otel' },
       { icon: 'gate', title: { tr: 'Kapı durumu', en: 'Gate status', ar: 'حالة الأبواب' }, to: '/kapilar' },
       { icon: 'alert', title: { tr: 'Kapı bildir', en: 'Report a gate', ar: 'الإبلاغ عن باب' }, to: '/bildir' },
       { icon: 'nav', title: { tr: 'Yol tarifi (mescit içi)', en: 'Directions (in the mosque)', ar: 'الاتجاهات' }, to: '/navigasyon' },
@@ -60,7 +63,14 @@ export default function Menu() {
   const insets = useSafeAreaInsets();
   return (
     <ScrollView style={{ flex: 1, backgroundColor: C.bg }} contentContainerStyle={{ paddingTop: insets.top + 12, paddingHorizontal: 16, paddingBottom: 28, gap: 18 }}>
-      <Text style={{ fontSize: fs(26), fontWeight: '700', color: C.ink, letterSpacing: -0.3 }}>{lg === 'ar' ? 'القائمة' : lg === 'en' ? 'Menu' : 'Menü'}</Text>
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+        <Text style={{ flex: 1, fontSize: fs(26), fontWeight: '700', color: C.ink, letterSpacing: -0.3 }}>{lg === 'ar' ? 'القائمة' : lg === 'en' ? 'Menu' : 'Menü'}</Text>
+        <Pressable onPress={() => router.push('/acil')} accessibilityRole="button" accessibilityLabel={lg === 'en' ? 'Emergency' : lg === 'ar' ? 'الطوارئ' : 'Acil durum'}
+          style={({ pressed }) => ({ flexDirection: 'row', alignItems: 'center', gap: 6, height: 38, paddingHorizontal: 14, borderRadius: 19, backgroundColor: C.closed, opacity: pressed ? 0.85 : 1 })}>
+          <Icon name="sos" size={16} color="#FFFFFF" />
+          <Text style={{ fontSize: fs(14), fontWeight: '800', color: '#FFFFFF' }}>{lg === 'en' ? 'Emergency' : lg === 'ar' ? 'الطوارئ' : 'Acil durum'}</Text>
+        </Pressable>
+      </View>
       {GROUPS.map((g) => (
         <View key={g.title.tr} style={{ gap: 8 }}>
           <Text style={{ fontSize: fs(12), fontWeight: '700', color: C.muted, textTransform: 'uppercase', letterSpacing: 0.7 }}>{pick(g.title, lg)}</Text>

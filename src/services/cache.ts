@@ -37,3 +37,16 @@ export async function clearCache(prefix: string) {
   const keys = await AsyncStorage.getAllKeys();
   await AsyncStorage.multiRemove(keys.filter((k) => k.startsWith(`cache:${prefix}`)));
 }
+
+/** Önbelleksiz JSON isteği (zaman aşımıyla); rota ve arama gibi her seferinde değişen istekler için. */
+export async function getJson<T = unknown>(url: string, ms = 12000): Promise<T> {
+  const ctrl = new AbortController();
+  const timer = setTimeout(() => ctrl.abort(), ms);
+  try {
+    const r = await fetch(url, { signal: ctrl.signal, headers: { Accept: 'application/json', ...uaHeaders() } });
+    if (!r.ok) throw new Error(`HTTP ${r.status}`);
+    return (await r.json()) as T;
+  } finally {
+    clearTimeout(timer);
+  }
+}

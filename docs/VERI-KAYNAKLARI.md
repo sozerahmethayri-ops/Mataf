@@ -45,6 +45,9 @@
 | cdn.jsdelivr.net/gh/fawazahmed0/hadith-api | Sahîh-i Buhârî | Açık veri |
 | photon.komoot.io | Şehir yerleri (otel, yemek, eczane, durak, taksi, hastane) ve en yakın cami — OSM etiketine göre ters arama; konum adı | © OpenStreetMap katkıcıları, ODbL — atıf zorunlu; adil kullanım, uygulama kendini `User-Agent` ile tanıtır |
 | overpass-api.de, overpass.kumi.systems, overpass.private.coffee, maps.mail.ru | En yakın cami için yedek (Photon yanıt vermezse) | ODbL; bazı ağlarda Overpass sunucularına hiç ulaşılamıyor — bu yüzden ilk tercih Photon |
+| Suudi Arabistan acil numaraları (911 birleşik hat Mekke, Medine, Riyad, Doğu Bölgesi; 997, 998, 999, 993) | Acil durum ekranı (uygulamaya gömülü) | Kamuya açık bilgi; Kasım 2026'da kontrol edildi (saudilifeguide.com, expatica, gov.uk); her sürümde yeniden bakılmalı |
+| T.C. Cidde Başkonsolosluğu (cidde-bk.mfa.gov.tr) | Acil durum: başkonsolosluk santrali, acil hattı, Mekke Din Hizmetleri Ataşeliği, Konsolosluk Çağrı Merkezi | Resmî site; Kasım 2026'da kontrol edildi |
+| photon.komoot.io (amenity:hospital/clinic) | Acil durum: en yakın hastaneler | ODbL |
 | tiles.openfreemap.org | Uygulama içi online harita (vektör karolar, liberty/dark stilleri) | Ücretsiz, anahtarsız; © OpenMapTiles © OpenStreetMap — haritanın köşesinde atıf |
 | unpkg.com / cdn.jsdelivr.net (maplibre-gl 5.24.1) | Harita çizim kütüphanesi (WebView içinde) | BSD-3; biri açılmazsa diğeri denenir |
 | routing.openstreetmap.de | Yaya rotası | FOSSGIS kullanım koşulları; yoğun kullanımda kendi OSRM sunucunuzu kurun |

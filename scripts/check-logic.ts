@@ -18,6 +18,8 @@ import { NABAWI_3D } from '../src/data/osm/nabawi3d';
 import { buildKaaba } from '../src/scene/kaaba';
 import { buildTawafView } from '../src/scene/tawafScene';
 import { buildMadinah } from '../src/scene/madinah';
+import { MASA_LENGTH, adjustSay, initialSay, nearMasa, pointOnMasa, project, startSayManual, stepSay, type SayState } from '../src/services/say';
+import { UMRE_STEPS, IHRAM_RULES } from '../src/data/umre';
 import { decodePolyline, legKind, mapsUrl, parseMotis, parseOsrm, parsePhoton, planTransit, roughRoute, transitUserAgent, uberUrl, meters } from '../src/services/transport';
 
 const now = Date.now();
@@ -129,6 +131,69 @@ function simulate(o: Sim, st0: LapState = initialLap()) {
   ok(over === 0 && earlyN === 0, `tavaf: ${runs} rastgele iz (r 12–75 m, σ 3–10 m) → fazla sayım ${over}, erken sayım ${earlyN}`);
   const h = adjustLap(adjustLap(startManual(initialLap()), 1), 1);
   ok(h.laps === 2 && adjustLap(h, -1).laps === 1, 'tavaf: elle +1/−1 düzeltme');
+}
+
+// ── Sa'y sayacı: Safâ–Merve gidiş gelişleri, gürültülü GPS ──
+{
+  // Gidiş geliş izi: Safâ (s=0) ile Merve (s=L) arası; uçlarda dönüş için birkaç saniye bekleme
+  const walkSay = (o: { legs: number; sigma: number; acc: number; seed: number; speed?: number; startAt?: 'safa' | 'marwa'; lateral?: number; outliers?: number; linger?: number }, st0: SayState = initialSay()) => {
+    const rr = rng(o.seed); const v = o.speed ?? 1.1;
+    let st = st0; let t = 0; const ev: string[] = []; const lapS: number[] = [];
+    const feed = (s: number) => {
+      let p = pointOnMasa(s);
+      const side = (o.lateral ?? 0) * (rr() - 0.5);
+      p = [p[0] + side + gauss(rr) * o.sigma, p[1] + gauss(rr) * o.sigma];
+      if (o.outliers && rr() < o.outliers) p = [p[0] + (rr() - 0.5) * 400, p[1] + (rr() - 0.5) * 400];
+      const res = stepSay(st, { p, acc: o.acc, t: (t += 1000) }); st = res.st;
+      for (const e of res.events) { ev.push(e.type); if (e.type === 'lap' || e.type === 'done') lapS.push(s); }
+    };
+    let fromSafa = (o.startAt ?? 'safa') === 'safa';
+    for (let i = 0; i < 10; i++) feed(fromSafa ? 3 : MASA_LENGTH - 3);
+    for (let leg = 0; leg < o.legs; leg++) {
+      for (let x = 3; x <= MASA_LENGTH - 3; x += v) feed(fromSafa ? x : MASA_LENGTH - x);
+      for (let i = 0; i < (o.linger ?? 15); i++) feed(fromSafa ? MASA_LENGTH - 3 : 3);
+      fromSafa = !fromSafa;
+    }
+    return { st, ev, lapS };
+  };
+  ok(Math.abs(MASA_LENGTH - 390) < 15, `sa'y: Safâ–Merve ekseni ≈390 m (${Math.round(MASA_LENGTH)})`);
+  ok(nearMasa(pointOnMasa(200)) && !nearMasa([0, 0]) && project(pointOnMasa(100)).lat < 0.01, "sa'y: Mes'a içinde/dışında; izdüşüm");
+  const a = walkSay({ legs: 7, sigma: 0, acc: 5, seed: 1 });
+  ok(a.st.laps === 7 && a.ev[0] === 'start' && a.ev.at(-1) === 'done', `sa'y: temiz iz → 7 şavt, Merve'de biter (${a.st.laps}; ${a.ev.join(',')})`);
+  const b = walkSay({ legs: 7, sigma: 8, acc: 12, seed: 4, lateral: 20 });
+  const bEarly = b.lapS.some((s, i) => (i % 2 === 0 ? s < MASA_LENGTH - 60 : s > 60));
+  ok(b.st.laps === 7 && !bEarly, `sa'y: σ=8 m gürültü, şerit değiştirme → 7 şavt, uca varmadan sayım yok (${b.st.laps}; ${b.lapS.map((s) => Math.round(s)).join(',')})`);
+  const c = walkSay({ legs: 7, sigma: 6, acc: 10, seed: 9, outliers: 0.05 });
+  ok(c.st.laps === 7, `sa'y: %5 sıçrayan ölçüm → yine 7 şavt (${c.st.laps})`);
+  const d = walkSay({ legs: 3, sigma: 6, acc: 10, seed: 2, linger: 240 });
+  ok(d.st.laps === 3, `sa'y: uçta 4 dk bekleme fazladan saymıyor (${d.st.laps}/3)`);
+  const e = walkSay({ legs: 1, sigma: 4, acc: 8, seed: 5, startAt: 'marwa' });
+  ok(e.st.laps === 0 && !e.st.started && e.ev.includes('wrongStart'), `sa'y: Merve'den başlanan ilk yol sayılmaz, uyarı verilir (${e.ev.join(',')})`);
+  const e2 = walkSay({ legs: 2, sigma: 4, acc: 8, seed: 6, startAt: 'marwa' });
+  ok(e2.st.laps === 1 && e2.st.started, `sa'y: Merve → Safâ (sayılmaz) sonra Safâ → Merve = 1 şavt (${e2.st.laps})`);
+  const f = walkSay({ legs: 4, sigma: 30, acc: 55, seed: 3 });
+  ok(f.st.laps === 0 && f.st.quality !== 'good', `sa'y: GPS zayıfken otomatik sayım yok (${f.st.quality})`);
+  const g = walkSay({ legs: 7, sigma: 5, acc: 8, seed: 8, speed: 3.5 });
+  ok(g.st.laps === 7, `sa'y: tekerlekli sandalye/araba hızı (3,5 m/sn) → 7 şavt (${g.st.laps})`);
+  let over = 0, earlyN = 0, runs = 0;
+  for (const sigma of [3, 6, 10, 15]) for (let seed = 1; seed <= 10; seed++) {
+    runs++;
+    const x = walkSay({ legs: 8, sigma, acc: sigma * 1.5, seed: seed * 17 + sigma, lateral: 25, outliers: 0.03 });
+    if (x.st.laps > 7) over++;
+    if (x.lapS.some((s, i) => (i % 2 === 0 ? s < MASA_LENGTH - 70 : s > 70))) earlyN++;
+  }
+  ok(over === 0 && earlyN === 0, `sa'y: ${runs} rastgele iz (σ 3–15 m) → fazla sayım ${over}, erken sayım ${earlyN}`);
+  const h = adjustSay(adjustSay(startSayManual(initialSay()), 1), 1);
+  ok(h.laps === 2 && h.toward === 'marwa' && adjustSay(h, -1).toward === 'safa', "sa'y: elle +1/−1 ve yön");
+}
+
+// ── Umre rehberi içeriği ──
+{
+  const ids = UMRE_STEPS.map((x) => x.id);
+  ok(new Set(ids).size === ids.length && ids[0] === 'mikat' && ids.at(-1) === 'tiras', `umre: adımlar sırayla ve tekil (${ids.join(' → ')})`);
+  ok(UMRE_STEPS.every((x) => x.title.tr && x.title.en && x.todo.length > 0 && x.todo.every((t) => t.tr && t.en)), 'umre: her adımda TR/EN başlık ve yapılacaklar');
+  ok(IHRAM_RULES.length >= 6 && IHRAM_RULES.every((x) => x.rule.tr && x.penalty.tr && x.rule.en && x.penalty.en), 'umre: ihram yasakları ve cezaları dolu');
+  ok(UMRE_STEPS.find((x) => x.id === 'tavaf')?.action?.to === '/tavaf' && UMRE_STEPS.find((x) => x.id === 'say')?.action?.to === '/say', 'umre: tavaf ve sa’y adımları asistanlara bağlı');
 }
 
 // ── Kâbe geometrisi ve bölgeler ──

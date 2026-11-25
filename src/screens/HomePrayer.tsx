@@ -12,6 +12,7 @@ import { C, fs } from '@/constants/theme';
 import { pick, useI18n } from '@/i18n';
 import { hijriText, nextSpecial } from '@/services/hijri';
 import { PRAYERS, fmtTime, nextPrayer, times } from '@/services/prayer';
+import { kmTo } from '@/services/location';
 import { usePrayerPlace, type PlaceId } from '@/services/prayerPlace';
 
 type Lang = 'tr' | 'en' | 'ar';
@@ -29,6 +30,12 @@ const L = {
   zikr: { tr: 'Zikir', en: 'Dhikr', ar: 'الذكر' },
   quran: { tr: "Kur'an", en: 'Quran', ar: 'القرآن' },
   mosque: { tr: 'Cami', en: 'Mosque', ar: 'مسجد' },
+  umre: { tr: 'Umre', en: 'Umrah', ar: 'العمرة' },
+  tawaf: { tr: 'Tavaf', en: 'Tawaf', ar: 'الطواف' },
+  hotel: { tr: 'Otelim', en: 'My hotel', ar: 'فندقي' },
+  sos: { tr: 'Acil', en: 'SOS', ar: 'طوارئ' },
+  rawdah: { tr: 'Ravza', en: 'Rawdah', ar: 'الروضة' },
+  map: { tr: 'Harita', en: 'Map', ar: 'الخريطة' },
   all: { tr: 'Tüm vakitler', en: 'All times', ar: 'كل المواقيت' },
 };
 
@@ -42,6 +49,8 @@ export default function HomePrayer() {
 
   const tt = useMemo(() => times(loc.lat, loc.lng, method, now), [loc.lat, loc.lng, method, now]);
   const nx = nextPrayer(loc.lat, loc.lng, method, now);
+  const nearMakkah = kmTo('makkah', loc) < 80;
+  const pilgrim = nearMakkah || kmTo('madinah', loc) < 80;
   const prog = Math.min(1, Math.max(0, (now.getTime() - nx.prev.getTime()) / (nx.at.getTime() - nx.prev.getTime())));
   const dayKey = now.toDateString();
   const special = useMemo(() => nextSpecial(new Date(dayKey), 120), [dayKey]);
@@ -118,6 +127,17 @@ export default function HomePrayer() {
         <Shortcut icon="book" label={pick(L.quran, lg)} onPress={() => router.push('/kuran')} />
         <Shortcut icon="pin" label={pick(L.mosque, lg)} onPress={() => router.push('/cami')} />
       </View>
+      {/* Mekke ya da Medine'deyken (ya da vakitler oraya göreyken) ziyaretçi kısayolları */}
+      {pilgrim && (
+        <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+          {nearMakkah && <Shortcut icon="list" label={pick(L.umre, lg)} onPress={() => router.push('/umre')} />}
+          {nearMakkah && <Shortcut icon="kaaba" label={pick(L.tawaf, lg)} onPress={() => router.push('/tavaf')} />}
+          <Shortcut icon="hotel" label={pick(L.hotel, lg)} onPress={() => router.push('/otel')} />
+          <Shortcut icon="sos" label={pick(L.sos, lg)} onPress={() => router.push('/acil')} tint={C.closed} />
+          {!nearMakkah && <Shortcut icon="star" label={pick(L.rawdah, lg)} onPress={() => router.push('/ravza')} />}
+          {!nearMakkah && <Shortcut icon="map" label={pick(L.map, lg)} onPress={() => router.push('/harita')} />}
+        </View>
+      )}
       <Pressable onPress={() => router.push('/vakitler')} style={{ alignSelf: 'center', paddingVertical: 6 }}>
         <Text style={{ fontSize: fs(13), color: C.accent, fontWeight: '700' }}>{pick(L.all, lg)} ›</Text>
       </Pressable>
@@ -138,11 +158,11 @@ export function Countdown({ to, size = 40 }: { to: Date; size?: number }) {
   return <Text style={{ fontSize: fs(size), fontWeight: '700', color: C.ink, fontVariant: ['tabular-nums'], letterSpacing: -0.5 }}>{p(h)}:{p(m)}:{p(s)}</Text>;
 }
 
-function Shortcut({ icon, label, onPress }: { icon: IconName; label: string; onPress: () => void }) {
+function Shortcut({ icon, label, onPress, tint }: { icon: IconName; label: string; onPress: () => void; tint?: string }) {
   return (
     <Pressable onPress={onPress} accessibilityRole="button" accessibilityLabel={label} style={({ pressed }) => ({ alignItems: 'center', gap: 6, width: 72, opacity: pressed ? 0.7 : 1 })}>
       <View style={{ width: 54, height: 54, borderRadius: 27, backgroundColor: C.surface, alignItems: 'center', justifyContent: 'center' }}>
-        <Icon name={icon} size={22} color={C.accent} />
+        <Icon name={icon} size={22} color={tint ?? C.accent} />
       </View>
       <Text style={{ fontSize: fs(12), color: C.ink2, fontWeight: '600' }} numberOfLines={1}>{label}</Text>
     </Pressable>

@@ -2,6 +2,10 @@
 
 Mekke ve Medine'deki ziyaretçiler için iOS ve Android uygulaması:
 
+- **Umre rehberi (0.7.0)** — mîkattan tıraşa 7 adım: her adımda yapılacaklar, dualar, sık yapılan hatalar ve Hanefî mezhebine göre cezaları; ihram yasakları listesi, özel durumlar. İlerleme kaydedilir; tavaf ve sa'y asistanları bitince ilgili adımı kendiliğinden işaretler.
+- **Sa'y sayacı (0.7.0)** — Safâ–Merve arası 7 şavt; Mes'a'daysanız GPS ile kendiliğinden sayar (Merve'den başlanan ilk yolu saymaz, uyarır), her zaman elle düzeltilir; Safâ/Merve'de ve yolda okunacak dualar, sesli bildirim, ekran kilidi, önizleme.
+- **Otelime dön (0.7.0)** — oteli bir kez kaydedin (bulunduğunuz yer, isimle arama ya da haritada uzun basma); tek dokunuşla yürüyüş rotası, uzaksa Uber ve şoföre gösterilecek Arapça/Urduca/İngilizce kart; oda, telefon, Arapça ad.
+- **Acil durum (0.7.0)** — 911/997/999/998/993'ü tek dokunuşla arama, konumu WhatsApp'la gönderme, en yakın hastaneler, Türkiye temsilcilikleri (Cidde Başkonsolosluğu acil hattı, Mekke Din Hizmetleri Ataşeliği), sağlık kartı (Arapça başlıklı) ve görevliye gösterilecek Arapça cümleler. Mekke/Medine'deyken ana sayfada Umre, Tavaf, Otelim ve Acil kısayolları çıkar.
 - **Sade açılış: ezan vakitleri** — bir sonraki vakte geri sayım halkası, günün altı vakti, Hicrî tarih ve yaklaşan mübarek gün (Kandiller, Ramazan, Bayramlar); konumunuza, Mekke'ye ya da Medine'ye göre. Ana sayfa olarak başka ekran da seçilebilir (Vakitler, Kur'an, Harita, Tavaf, Zikir, Hadis).
 - **Alt çubuk ve Menü** — ortada Ana sayfa; Harita, Kur'an, Ulaşım ve tüm ekranların toplandığı Menü. Sekmeler arasında kaydırarak geçilir.
 - **Uygulama içi online harita** — şehir, ulaşım ve en yakın cami haritaları OpenStreetMap verisiyle (OpenFreeMap) uygulamanın içinde açılır: binalar, sokaklar, mezarlıklar, yer adları; 2D/3D düğmesi binaları yükseltir. İnternet yoksa sade haritaya geçer.
@@ -26,7 +30,7 @@ Mekke ve Medine'deki ziyaretçiler için iOS ve Android uygulaması:
 - **Ravza rehberi** — ziyaret saatleri, Nusuk izni, resmî 360° sanal tur bağlantısı.
 - **Türkçe, İngilizce, Arapça** (Arapça sağdan sola).
 
-> Durum: **0.6.0 — geliştirme sürümü.** Bina biçimleri ve kapı yerleri OpenStreetMap'ten gelir (doğruluğu bu veri kadardır); mescit içi hizmet noktaları örnektir. Ayrıntı: [docs/VERI-KAYNAKLARI.md](docs/VERI-KAYNAKLARI.md), [scripts/osm-3d.md](scripts/osm-3d.md).
+> Durum: **0.7.0 — geliştirme sürümü.** Bina biçimleri ve kapı yerleri OpenStreetMap'ten gelir (doğruluğu bu veri kadardır); mescit içi hizmet noktaları örnektir. Ayrıntı: [docs/VERI-KAYNAKLARI.md](docs/VERI-KAYNAKLARI.md), [scripts/osm-3d.md](scripts/osm-3d.md).
 
 ## Hızlı başlangıç
 
@@ -107,7 +111,7 @@ Uygulama her isteğe `User-Agent: MATAF/<sürüm> (<iletişim>)` ekler. Ticari y
 ```
 src/
   app/            Rotalar (Expo Router): (tabs)/ harita, Kur'an, ana sayfa (orta), ulaşım, menü
-                  vakitler · zikir · hadis-dua · kapilar · kapi/[id] · bildir · navigasyon · arama · sehir · cami
+                  umre · say · otel · acil · vakitler · zikir · hadis-dua · kapilar · kapi/[id] · bildir · navigasyon · arama · sehir · cami
                   kible · tavaf · ravza · medine-rehber · veriler · ayarlar · bildirimler (ezan) · kuran-ayarlar · tefsir
   screens/        Ekran gövdeleri (ana sayfa seçimi bunları paylaşır): HomePrayer, PrayerTimes, MapScreen,
                   QuranList, Tawaf, Zikir, Menu, HadithScreen
