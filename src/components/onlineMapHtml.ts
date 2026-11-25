@@ -63,6 +63,8 @@ function init(){
     map.addLayer({id:'user-halo',type:'circle',source:'user',paint:{'circle-radius':17,'circle-color':CFG.user,'circle-opacity':0.18}});
     map.addLayer({id:'user',type:'circle',source:'user',paint:{'circle-radius':7,'circle-color':CFG.user,'circle-stroke-color':'#ffffff','circle-stroke-width':2.5}});
     ready=true;post({t:'ready'});if(state)apply(state,true);
+    // Sekme sayfası (ViewPager) içinde WebView ilk anda 0 boyutla kurulabiliyor: birkaç kez boyutu yenile
+    [250,900,2000].forEach(function(ms){setTimeout(function(){map.resize();map.triggerRepaint()},ms)});
   });
   map.on('click',function(e){
     var p=e.point,f=map.queryRenderedFeatures([[p.x-18,p.y-18],[p.x+18,p.y+18]],{layers:['pins']});
@@ -106,6 +108,8 @@ function fit(st,anim){
   map.fitBounds(b,{padding:pad,maxZoom:17.5,duration:anim?600:0});
 }
 window.matafSet=function(st){var first=state===null;apply(st,first)};
+window.matafWake=function(){if(map){map.resize();map.triggerRepaint()}};
+window.addEventListener('resize',function(){if(map)map.resize()});
 loadLib(0);
 </script></body></html>`;
 }

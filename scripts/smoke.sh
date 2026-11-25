@@ -50,6 +50,11 @@ for r in "kuran/18?b=hatim&a=10" zikir vakitler kible cami sehir ulasim tavaf na
   name=$(echo "$r" | cut -d'?' -f1 | tr '/' '-')
   case "$r" in cami|sehir|ulasim) wait=14 ;; *) wait=7 ;; esac
   step "$i-$name" $wait || break
+  if [ "$r" = ulasim ]; then
+    # Haritayı biraz kaydır: içerik ancak dokununca mı beliriyor?
+    adb shell input swipe $(( W / 2 )) $(( H * 30 / 100 )) $(( W / 2 - 60 )) $(( H * 25 / 100 )) 300
+    step "$i-$name-kaydir" 6 || break
+  fi
   case "$r" in cami|sehir|ulasim) step "$i-$name-2" 14 || break ;; esac
 done
 

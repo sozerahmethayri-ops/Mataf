@@ -50,10 +50,18 @@ export function OnlineMap(props: OnlineMapProps) {
   // Ekran 20 sn'den uzun arka planda kalırsa WebView kapatılır (bellek); öne gelince yeniden açılır
   const [sleeping, setSleeping] = useState(false);
   const sleepTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // WebView, sayfa geçişi (sekme kaydırması) bittikten sonra kurulur; ViewPager içinde erken kurulunca boş kalabiliyor
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => {
+    const id = setTimeout(() => setMounted(true), 300);
+    return () => clearTimeout(id);
+  }, []);
   useFocusEffect(useCallback(() => {
     if (sleepTimer.current) clearTimeout(sleepTimer.current);
     setSleeping(false);
+    const wake = setTimeout(() => ref.current?.injectJavaScript('window.matafWake&&window.matafWake();true;'), 400);
     return () => {
+      clearTimeout(wake);
       sleepTimer.current = setTimeout(() => { setSleeping(true); setReady(false); }, 20000);
     };
   }, []));
@@ -95,7 +103,7 @@ export function OnlineMap(props: OnlineMapProps) {
     );
   }
 
-  if (sleeping) return <View style={{ flex: 1, backgroundColor: C.mapGround }} />;
+  if (sleeping || !mounted) return <View style={{ flex: 1, backgroundColor: C.mapGround }} />;
 
   return (
     <View style={{ flex: 1, backgroundColor: C.mapGround }}>
