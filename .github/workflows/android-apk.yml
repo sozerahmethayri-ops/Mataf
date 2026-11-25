@@ -47,6 +47,8 @@ jobs:
         run: |
           V=$(node -p "require('./app.json').expo.version")
           cp android/app/build/outputs/apk/release/app-release.apk "mataf-$V.apk"
+          # Sabit adlı kopya: paylaşılan indirme bağlantısı her sürümde en yeni APK'yı verir
+          cp android/app/build/outputs/apk/release/app-release.apk mataf.apk
           echo "file=mataf-$V.apk" >> "$GITHUB_OUTPUT"
           echo "version=$V" >> "$GITHUB_OUTPUT"
       - uses: actions/upload-artifact@v4
@@ -60,4 +62,6 @@ jobs:
           name: MATAF ${{ steps.name.outputs.version }} (APK)
           body: Telefona kurulabilir Android APK'sı. İndirip açın; "bilinmeyen kaynaklardan yükleme" izni istenirse verin.
           prerelease: true
-          files: ${{ steps.name.outputs.file }}
+          files: |
+            ${{ steps.name.outputs.file }}
+            mataf.apk
