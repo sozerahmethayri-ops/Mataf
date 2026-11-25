@@ -12,10 +12,18 @@ for t in 10 25 45; do
   adb exec-out screencap -p > "smoke/screen-${t}s.png" || true
 done
 if adb shell pidof "$PKG" >/dev/null; then echo "running" > smoke/status.txt; else echo "NOT RUNNING" > smoke/status.txt; fi
-# Sekmeleri gez: alt sekme çubuğuna dokun (Ulaşım, Kur'an, Vakitler, Hadis), sonra Harita
-for x in 324 540 756 972 108; do adb shell input tap $x 2300; sleep 5; done
-adb exec-out screencap -p > smoke/screen-tabs.png || true
-if ! adb shell pidof "$PKG" >/dev/null; then echo "NOT RUNNING after tabs" >> smoke/status.txt; fi
+# Sekmeleri gez: ekran boyutuna göre alt sekme çubuğuna dokun (Ulaşım, Kur'an, Vakitler, Hadis, Harita)
+SIZE=$(adb shell wm size | grep -oE '[0-9]+x[0-9]+' | tail -1)
+W=${SIZE%x*}; H=${SIZE#*x}
+Y=$(( H * 945 / 1000 ))
+i=0
+for f in 300 500 700 900 100; do
+  i=$((i + 1))
+  adb shell input tap $(( W * f / 1000 )) $Y
+  sleep 8
+  adb exec-out screencap -p > "smoke/screen-tab$i.png" || true
+  if ! adb shell pidof "$PKG" >/dev/null; then echo "NOT RUNNING after tab $i" >> smoke/status.txt; break; fi
+done
 adb logcat -d > smoke/logcat.txt
 grep -n -A40 -E "FATAL EXCEPTION|ReactNativeJS.*(Error|Exception)|JavascriptException" smoke/logcat.txt > smoke/crash.txt || echo "çökme kaydı yok ($(cat smoke/status.txt))" > smoke/crash.txt
 cat smoke/status.txt >> smoke/crash.txt
