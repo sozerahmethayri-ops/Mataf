@@ -4,7 +4,7 @@ import { KeyboardAvoidingView, Linking, Platform, Pressable, ScrollView, Text, T
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Header, IconBtn, STATUS_TONE, T, ago } from '@/components/ui';
-import { C } from '@/constants/theme';
+import { C, fs } from '@/constants/theme';
 import { GATES, dist } from '@/data/sites';
 import { pick, useI18n } from '@/i18n';
 import { useApp } from '@/services/AppContext';
@@ -52,7 +52,7 @@ export default function GateDetail() {
         </View>
         <ScrollView contentContainerStyle={{ padding: 16, gap: 12 }} keyboardShouldPersistTaps="handled">
           <View style={{ padding: 14, borderRadius: 18, backgroundColor: tone.bg, gap: 8 }}>
-            <Text style={{ fontSize: 20, fontWeight: '700', color: tone.fg }}>{t(tone.key)}</Text>
+            <Text style={{ fontSize: fs(20), fontWeight: '700', color: tone.fg }}>{t(tone.key)}</Text>
             {official?.comment ? <Text style={T.muted}>{official.comment}</Text> : null}
             <View style={{ flexDirection: 'row', gap: 6, flexWrap: 'wrap' }}>
               {s?.source === 'official' && <Tag text={t('detail.official')} />}
@@ -68,14 +68,14 @@ export default function GateDetail() {
                 <Text style={{ color: C.onAccent, fontWeight: '700' }}>{alt.no}</Text>
               </View>
               <View style={{ flex: 1 }}>
-                <Text style={{ fontSize: 12, fontWeight: '700', color: C.accent }}>{t('detail.nearestOpen')}</Text>
-                <Text style={{ fontSize: 15, fontWeight: '700', color: C.ink }}>{pick(alt.name, lang)}</Text>
+                <Text style={{ fontSize: fs(12), fontWeight: '700', color: C.accent }}>{t('detail.nearestOpen')}</Text>
+                <Text style={{ fontSize: fs(15), fontWeight: '700', color: C.ink }}>{pick(alt.name, lang)}</Text>
               </View>
               <Text style={{ color: C.accent, fontWeight: '700' }}>{t('detail.reroute')}</Text>
             </Pressable>
           )}
 
-          <Text style={{ fontSize: 13, fontWeight: '700', color: C.ink }}>{myVote ? t('detail.thanks') : t('detail.question')}</Text>
+          <Text style={{ fontSize: fs(13), fontWeight: '700', color: C.ink }}>{myVote ? t('detail.thanks') : t('detail.question')}</Text>
           <View style={{ flexDirection: 'row', gap: 8 }}>
             {(['closed', 'open'] as const).map((v) => {
               const on = myVote === v;
@@ -104,10 +104,10 @@ export default function GateDetail() {
                 <View style={{ flexDirection: 'row', gap: 16 }}>
                   {c.lang && c.lang !== lang && (
                     <Pressable onPress={() => Linking.openURL(`https://translate.google.com/?sl=auto&tl=${lang}&text=${encodeURIComponent(c.comment ?? '')}`)}>
-                      <Text style={{ fontSize: 12, fontWeight: '700', color: C.user }}>{t('detail.translate')} ↗</Text>
+                      <Text style={{ fontSize: fs(12), fontWeight: '700', color: C.user }}>{t('detail.translate')} ↗</Text>
                     </Pressable>
                   )}
-                  <Text style={{ fontSize: 12, fontWeight: '600', color: C.muted }}>{t('detail.flag')}</Text>
+                  <Text style={{ fontSize: fs(12), fontWeight: '600', color: C.muted }}>{t('detail.flag')}</Text>
                 </View>
               </View>
             </View>
@@ -116,7 +116,7 @@ export default function GateDetail() {
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, padding: 12, borderTopWidth: 1, borderTopColor: C.border }}>
           <IconBtn name="camera" label={t('report.photo')} onPress={() => router.push({ pathname: '/bildir', params: { gate: gate.id } })} />
           <TextInput value={draft} onChangeText={setDraft} placeholder={t('detail.write')} placeholderTextColor={C.muted} onSubmitEditing={send} returnKeyType="send"
-            style={{ flex: 1, height: 44, borderWidth: 1, borderColor: C.borderStrong, borderRadius: 22, paddingHorizontal: 16, fontSize: 14, color: C.ink }} />
+            style={{ flex: 1, height: 44, borderWidth: 1, borderColor: C.borderStrong, borderRadius: 22, paddingHorizontal: 16, fontSize: fs(14), color: C.ink }} />
           <IconBtn name="send" label="Gönder" tint={C.accent} color="#FFFFFF" onPress={send} />
         </View>
       </KeyboardAvoidingView>
@@ -125,6 +125,6 @@ export default function GateDetail() {
 }
 
 function Tag({ text }: { text: string }) {
-  return <View style={{ paddingHorizontal: 9, paddingVertical: 4, borderRadius: 10, backgroundColor: C.bg }}><Text style={{ fontSize: 11, fontWeight: '700', color: C.ink }}>{text}</Text></View>;
+  return <View style={{ paddingHorizontal: 9, paddingVertical: 4, borderRadius: 10, backgroundColor: C.bg }}><Text style={{ fontSize: fs(11), fontWeight: '700', color: C.ink }}>{text}</Text></View>;
 }
 

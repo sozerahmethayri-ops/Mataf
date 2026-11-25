@@ -7,7 +7,7 @@ import { MAKKAH_CORE, buildMakkah } from '../src/scene/makkah';
 import { CORNERS, KAABA_POLY, adjustLap, bearingOf, initialLap, pointAt, startManual, stepLap, zoneOf, type Fix, type LapState } from '../src/services/tawaf';
 import { globalAyah, surahLength } from '../src/services/quranIndex';
 import { DUA_LIB, isQuranRef } from '../src/data/duas';
-import { OVERPASS_ENDPOINTS, bearingDeg, distanceM, findMosques, parseOverpass, type El, type Fetcher } from '../src/services/mosques';
+import { OVERPASS_ENDPOINTS, bearingDeg, distanceM, findMosques, parseOverpass, parsePhotonMosques, pickMosques, type El, type Fetcher } from '../src/services/mosques';
 import { PALETTES, colorsFor, contrast, type PaletteId } from '../src/constants/theme';
 import { DEFAULT_NOTIF, notifText, planNotifications } from '../src/services/adhanPlan';
 import type { PrayerKey } from '../src/services/prayer';
@@ -169,20 +169,31 @@ async function mosqueChecks() {
 
   // Yarıçap büyütme ve yedek sunucu
   const calls: string[] = [];
-  const fetcher: Fetcher = async (url, init) => {
-    const radius = Number(/around:(\d+)/.exec(decodeURIComponent(init.body))![1]);
+  const fetcher: Fetcher = async (url0, init) => {
+    if (url0.includes('photon')) throw new Error('photon down');
+    const url = url0.split('?')[0];
+    const radius = Number(/around:(\d+)/.exec(decodeURIComponent(init.body ?? url0))![1]);
     calls.push(`${OVERPASS_ENDPOINTS.indexOf(url)}:${radius}`);
     if (url === OVERPASS_ENDPOINTS[0]) return { ok: false, status: 504, json: async () => ({}) };
     return { ok: true, status: 200, json: async () => (radius >= 10000 ? sample : { elements: [] }) };
   };
   const r = await findMosques(o, 'tr', { fetcher, minCount: 3 });
   ok(r.radius === 10000 && r.mosques.length === 3 && calls.join(' ') === '0:1500 1:1500 0:4000 1:4000 0:10000 1:10000',
-    `cami arama: 1,5 → 4 → 10 km büyüdü, çöken sunucudan yedeğe geçti (${calls.join(' ')})`);
+    `Photon yoksa Overpass: 1,5 → 4 → 10 km büyüdü, çöken sunucudan aynaya (GET) geçti (${calls.join(' ')})`);
+
+  // Photon: kilise elenir; çoğunluğu cami olan bölgede adsız ibadet yerleri de alınır; uzaktaki adlı sonuç yarıçap dışında
+  const pf = (name: string, dx: number, dy: number, id: number) => ({ geometry: { coordinates: [at(dx, dy).lon, at(dx, dy).lat] as [number, number] }, properties: { name, osm_type: 'N', osm_id: id, osm_key: 'amenity', osm_value: 'place_of_worship' } });
+  const near = parsePhotonMosques({ features: [pf('Fatih Camii', 200, 0, 1), pf('St. Mary Church', 100, 0, 2), pf('', 0, 400, 3), pf('Ayasofya', -300, 0, 4), pf('Süleymaniye Camii', 0, -700, 5)] }, o);
+  const far = parsePhotonMosques({ features: [pf('Moschee Berlin', 90000, 0, 9), pf('Fatih Camii', 200, 0, 1)] }, o);
+  const picked = pickMosques(near, far, 1500);
+  ok(picked.length === 4 && picked[0].name === 'Fatih Camii' && !picked.some((m) => /Church|Berlin/.test(m.name)), `Photon cami seçimi: ${picked.map((m) => m.name || '(adsız)').join(', ')}`);
+  const nonMuslim = pickMosques(parsePhotonMosques({ features: [pf('Dom', 100, 0, 1), pf('Kapelle', 200, 0, 2), pf('', 300, 0, 3), pf('Al-Nur Moschee', 900, 0, 4)] }, o), [], 1500);
+  ok(nonMuslim.length === 1 && nonMuslim[0].name === 'Al-Nur Moschee', 'Müslüman olmayan bölgede yalnız adı cami olanlar');
 
   // İnternet yok: son sonuç gösterilir, mesafeler yeni konuma göre
   let stored = '';
   const cache = { get: async () => stored || null, set: async (v: string) => { stored = v; } };
-  await findMosques(o, 'tr', { fetcher: async () => ({ ok: true, status: 200, json: async () => sample }), cache });
+  await findMosques(o, 'tr', { fetcher: async (u) => { if (u.includes('photon')) throw new Error('x'); return { ok: true, status: 200, json: async () => sample }; }, cache });
   const moved = { lat: o.lat + 300 / 111320, lng: o.lng };
   const off = await findMosques(moved, 'tr', { fetcher: async () => { throw new Error('offline'); }, cache });
   ok(!!off.offline && off.mosques[0].dist < 30, `internet yokken son arama gösteriliyor, mesafe yeni konuma göre (${Math.round(off.mosques[0].dist)} m)`);

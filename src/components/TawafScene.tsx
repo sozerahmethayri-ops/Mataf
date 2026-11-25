@@ -2,7 +2,7 @@ import { useMemo } from 'react';
 import { Text, View } from 'react-native';
 import Svg, { Ellipse } from 'react-native-svg';
 
-import { C } from '@/constants/theme';
+import { C, fs } from '@/constants/theme';
 import type { ML, Pt } from '@/data/sites';
 import { pick, useI18n } from '@/i18n';
 import { placeLabels, textWidth, type Box } from '@/scene/layout';
@@ -60,7 +60,7 @@ export function TawafScene({
         const fg = l.tone === 'green' ? '#FFFFFF' : l.tone === 'gold' ? '#7A5B00' : C.ink2;
         return (
           <View key={l.id} pointerEvents="none" style={{ position: 'absolute', left: b.x, top: b.y, width: b.w, height: b.h, borderRadius: 10, backgroundColor: bg, alignItems: 'center', justifyContent: 'center' }}>
-            <Text numberOfLines={1} style={{ fontSize: 10.5, fontWeight: '700', color: fg }}>{pick(l.text, lang)}</Text>
+            <Text numberOfLines={1} style={{ fontSize: fs(10.5), fontWeight: '700', color: fg }}>{pick(l.text, lang)}</Text>
           </View>
         );
       })}

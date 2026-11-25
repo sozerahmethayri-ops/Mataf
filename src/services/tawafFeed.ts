@@ -1,4 +1,5 @@
-// Tavaf asistanı için konum akışı: gerçek GPS (saniyede bir) ya da demo yürüyüş.
+// Tavaf asistanı için konum akışı: Mescid-i Haram'daysanız gerçek GPS (saniyede bir); değilseniz hiçbir şey
+// kendiliğinden ilerlemez ('away'). Önizleme yürüyüşü yalnız kullanıcı açarsa ('demo').
 // Ölçümler doğrudan geri çağrıya verilir; ekran durumu orada günceller (efekt içinde senkron setState yok).
 import * as Location from 'expo-location';
 import { useEffect, useRef, useState } from 'react';
@@ -6,7 +7,7 @@ import { useEffect, useRef, useState } from 'react';
 import { toLocal } from '@/data/sites';
 import { pointAt, type Fix } from './tawaf';
 
-export type FeedSource = 'gps' | 'demo';
+export type FeedSource = 'gps' | 'away' | 'demo';
 export const DEMO_RADIUS = 24;
 
 /** Mescid-i Haram'da mıyız? (Kâbe'ye 300 m'den yakın ve ölçüm makul) */
@@ -22,7 +23,7 @@ export function useTawafFeed(opts: { walking: boolean; speed: number; forceDemo?
   useEffect(() => { cb.current = opts.onFix; });
   const [denied, setDenied] = useState(false);
   const [lastGps, setLastGps] = useState<Fix | null>(null);
-  const source: FeedSource = !forceDemo && nearKaaba(lastGps) ? 'gps' : 'demo';
+  const source: FeedSource = forceDemo ? 'demo' : nearKaaba(lastGps) ? 'gps' : 'away';
   const useGps = useRef(false);
   useEffect(() => { useGps.current = source === 'gps'; });
 

@@ -1,11 +1,10 @@
-// Sade harita: Google Haritalar anahtarı olmadan derlenen Android uygulamasında (ve web önizlemesinde)
-// yerel harita yerine kullanılır. Noktalar, rota çizgileri ve konumunuz gerçek oranlarıyla çizilir;
-// noktaya dokununca seçilir, uzun basınca o nokta hedef olur, "Haritada aç" telefonun harita uygulamasını açar.
+// Sade harita: online harita açılamadığında (internet ya da WebGL yok) ve web önizlemesinde kullanılır. Noktalar, rota çizgileri ve konumunuz gerçek oranlarıyla çizilir;
+// noktaya dokununca seçilir, uzun basınca o nokta hedef olur. Online harita açılamadığında da bu çizim kullanılır.
 import { useState } from 'react';
-import { Linking, Pressable, Text, View, type GestureResponderEvent, type LayoutChangeEvent } from 'react-native';
+import { Pressable, Text, View, type GestureResponderEvent, type LayoutChangeEvent } from 'react-native';
 import Svg, { Circle, G, Path, Text as SvgText } from 'react-native-svg';
 
-import { C } from '@/constants/theme';
+import { C, fs } from '@/constants/theme';
 import { niceScale } from '@/scene/layout';
 
 export type PlainLL = { lat: number; lng: number };
@@ -47,7 +46,6 @@ export function PlainMap({ pins, lines = [], user, selectedId, onPin, onLongPres
   const S = (p: PlainLL): [number, number] => [ox + k * X(p), oy + k * Y(p)];
   const unS = (sx: number, sy: number): PlainLL => ({ lat: -((sy - oy) / k) / M, lng: (sx - ox) / k / (M * kx) });
   const step = niceScale(k, 90);
-  const focus = pins.find((p) => p.id === selectedId) ?? pins[0] ?? user ?? center;
 
   const grid: string[] = [];
   if (k > 0) {
@@ -95,15 +93,9 @@ export function PlainMap({ pins, lines = [], user, selectedId, onPin, onLongPres
         </Pressable>
       )}
       <View pointerEvents="none" style={{ position: 'absolute', left: 10, bottom: 10, backgroundColor: C.overlay, borderRadius: 8, paddingHorizontal: 7, paddingVertical: 4 }}>
-        <Text style={{ fontSize: 10, fontWeight: '700', color: C.ink2 }}>{step} m</Text>
+        <Text style={{ fontSize: fs(10), fontWeight: '700', color: C.ink2 }}>{step} m</Text>
         <View style={{ width: step * k, height: 4, borderWidth: 1.5, borderTopWidth: 0, borderColor: C.ink }} />
       </View>
-      {focus && (
-        <Pressable onPress={() => Linking.openURL(`https://www.google.com/maps/search/?api=1&query=${focus.lat},${focus.lng}`)}
-          style={{ position: 'absolute', right: 10, bottom: 10, backgroundColor: C.overlay, borderRadius: 8, paddingHorizontal: 9, paddingVertical: 5 }}>
-          <Text style={{ fontSize: 11, fontWeight: '700', color: C.accent }}>Haritada aç ↗</Text>
-        </Pressable>
-      )}
     </View>
   );
 }

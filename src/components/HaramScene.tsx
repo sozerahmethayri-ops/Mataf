@@ -1,11 +1,13 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Animated, Easing, PanResponder, Platform, Pressable, Text, View, type ViewStyle } from 'react-native';
 import Svg, { G, Path } from 'react-native-svg';
+import { useIsFocused } from 'expo-router';
 
-import { C } from '@/constants/theme';
+import { C, fs } from '@/constants/theme';
 import { GATES, type City, type Pt } from '@/data/sites';
 import { pick, useI18n } from '@/i18n';
 import type { GateSummary } from '@/services/reports';
+import { useTheme } from '@/services/ThemeContext';
 import { fitCamera, NO_INSETS, niceScale, placeLabels, textWidth, type Box, type Viewport } from '@/scene/layout';
 import { buildMadinah, MADINAH_LABELS } from '@/scene/madinah';
 import { buildMakkah, MAKKAH_LABELS } from '@/scene/makkah';
@@ -152,13 +154,19 @@ export function HaramScene(props: SceneProps) {
   }, [pan, pinch, twist, pannable]);
   const twistDeg = twist.interpolate({ inputRange: [-360, 360], outputRange: ['-360deg', '360deg'] });
 
-  // Akan turuncu iz
+  // Akan turuncu iz: SVG çizgisi yerel sürücüyle canlandırılamaz, her karede JS iş parçacığını meşgul eder.
+  // Bu yüzden yalnız ekran öndeyken, rota varken ve "hareketi azalt" kapalıyken akar; arka plandaki sekme
+  // (ör. Harita açık kalıp Kur'an'a geçince) uygulamanın geri kalanını yavaşlatmaz.
+  const focused = useIsFocused();
+  const { prefs } = useTheme();
+  const hasRoute = !!route && route.length > 1;
   const [dash] = useState(() => new Animated.Value(0));
   useEffect(() => {
-    const loop = Animated.loop(Animated.timing(dash, { toValue: -30, duration: 1100, easing: Easing.linear, useNativeDriver: false }));
+    if (!focused || !hasRoute || prefs.reduceMotion) return;
+    const loop = Animated.loop(Animated.timing(dash, { toValue: -30, duration: 1400, easing: Easing.linear, useNativeDriver: false }));
     loop.start();
     return () => loop.stop();
-  }, [dash]);
+  }, [dash, focused, hasRoute, prefs.reduceMotion]);
 
   const routeD = route && route.length > 1 ? pathD(cam, route) : undefined;
   const doneD = traveled && traveled.length > 1 ? pathD(cam, traveled) : undefined;
@@ -230,7 +238,7 @@ export function HaramScene(props: SceneProps) {
           if (!b) return null;
           return (
             <View key={l.key} pointerEvents="none" style={{ position: 'absolute', left: b.x, top: b.y, width: b.w, height: b.h, borderRadius: 9, backgroundColor: C.overlay, alignItems: 'center', justifyContent: 'center' }}>
-              <Text numberOfLines={1} style={{ fontSize: 10, fontWeight: '700', color: C.ink2 }}>{pick(l.text, lang)}</Text>
+              <Text numberOfLines={1} style={{ fontSize: fs(10), fontWeight: '700', color: C.ink2 }}>{pick(l.text, lang)}</Text>
             </View>
           );
         })}
@@ -265,7 +273,7 @@ export function HaramScene(props: SceneProps) {
             {destBox && destLabel ? (
               <View pointerEvents="none" style={{ position: 'absolute', left: destBox.x, top: destBox.y, width: destBox.w, height: DEST_H, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 4, borderRadius: DEST_H / 2, backgroundColor: C.accent, borderWidth: 2, borderColor: '#FFFFFF' }}>
                 <Icon name="flag" size={12} color={C.onAccent} width={2.4} />
-                <Text numberOfLines={1} style={{ fontSize: 11, fontWeight: '700', color: C.onAccent }}>{destLabel}</Text>
+                <Text numberOfLines={1} style={{ fontSize: fs(11), fontWeight: '700', color: C.onAccent }}>{destLabel}</Text>
               </View>
             ) : null}
           </>
@@ -280,12 +288,12 @@ export function HaramScene(props: SceneProps) {
 
       <View pointerEvents="none" style={{ position: 'absolute', left: vl + 12, bottom: vb + 10, backgroundColor: C.overlay, borderRadius: 10, paddingHorizontal: 8, paddingVertical: 5 }}>
         <View style={{ flexDirection: 'row', justifyContent: 'space-between', width: Math.max(44, scaleM * k) }}>
-          <Text style={{ fontSize: 10, fontWeight: '700', color: C.ink2 }}>0</Text>
-          <Text style={{ fontSize: 10, fontWeight: '700', color: C.ink2 }}>{scaleM} m</Text>
+          <Text style={{ fontSize: fs(10), fontWeight: '700', color: C.ink2 }}>0</Text>
+          <Text style={{ fontSize: fs(10), fontWeight: '700', color: C.ink2 }}>{scaleM} m</Text>
         </View>
         <View style={{ width: scaleM * k, height: 5, borderWidth: 1.5, borderTopWidth: 0, borderColor: C.ink }} />
         {/* 3D bina verisi OpenStreetMap'ten (ODbL): atıf haritada görünür olmalı */}
-        <Text style={{ fontSize: 8, color: C.ink2, marginTop: 3 }}>© OpenStreetMap</Text>
+        <Text style={{ fontSize: fs(8), color: C.ink2, marginTop: 3 }}>© OpenStreetMap</Text>
       </View>
     </View>
   );

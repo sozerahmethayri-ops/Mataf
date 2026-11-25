@@ -4,7 +4,7 @@
 // (gerçek düzene yakın, birebir değil); yüksekliği bilinmeyen oteller OSM'de verilen ya da tahmini yüksekliktedir.
 import type { Pt } from '@/data/sites';
 import { BAQI, NABAWI_3D } from '@/data/osm/nabawi3d';
-import { Cam, type Prim } from './oblique';
+import { Cam, line, type Prim } from './oblique';
 import { arcades, buildModel, cylinder, decodeOsm3d, domeCap, drawModel, hull, pointInPoly, signedArea, type Item, type Model, type Paint, type Part } from './osm3d';
 
 const f = (v: number) => v.toFixed(1);
@@ -107,18 +107,33 @@ export function buildMadinah(cam: Cam): { below: Prim[]; above: Prim[]; ghost: P
   const m = getModel();
   const P = (p: Pt) => cam.P(p[0], p[1]);
   const poly = (pl: Pt[], fill: string, extra: Partial<Prim> = {}): Prim => ({ t: 'poly', pts: pl.map((q) => P(q).map(f).join(',')).join(' '), fill, ...extra }) as Prim;
-  const ground: Prim[] = [poly(plaza, '#FAF8F4'), poly(BAQI, '#EFE6D3', { stroke: '#D3C5A6', sw: Math.max(0.8, 1.6 * cam.k) })];
-  // Bakî: mezar taşları (seyrek nokta deseni)
-  if (cam.k >= 0.7) {
+  // Cennetü'l-Bakî: kum rengi zemin, mezar sıraları, ortadan geçen yürüyüş yolları ve 3 m'lik çevre duvarı
+  const ground: Prim[] = [poly(plaza, '#FAF8F4'), poly(BAQI, '#E4D3AE')];
+  {
+    const step = cam.k >= 1.2 ? 9 : cam.k >= 0.6 ? 14 : 22;
+    const rx = Math.max(0.5, Math.min(2.2, 1.1 * cam.k));
     const dots: string[] = [];
-    const r = 0.9;
-    for (let gx = 220; gx < 790; gx += 16)
-      for (let gy = -115; gy < 300; gy += 16) {
-        if (!pointInPoly([gx, gy], BAQI)) continue;
-        const [cx, cy] = P([gx, gy]);
-        dots.push(`M${f(cx - r)} ${f(cy)} a${r} ${r * 0.7} 0 1 0 ${2 * r} 0 a${r} ${r * 0.7} 0 1 0 ${-2 * r} 0`);
+    for (let gx = 214; gx < 790; gx += step)
+      for (let gy = -118; gy < 300; gy += step * 0.8) {
+        const row = Math.round((gy + 118) / (step * 0.8));
+        const x = gx + (row % 2 ? step / 2 : 0);
+        if (Math.abs(gy - 20) < 5 || Math.abs(x - 470) < 5 || !pointInPoly([x, gy], BAQI)) continue; // yollar boş kalsın
+        const [cx, cy] = P([x, gy]);
+        dots.push(`M${f(cx - rx)} ${f(cy)} a${f(rx)} ${f(rx * 0.6)} 0 1 0 ${f(2 * rx)} 0 a${f(rx)} ${f(rx * 0.6)} 0 1 0 ${f(-2 * rx)} 0`);
       }
-    if (dots.length) ground.push({ t: 'path', d: dots.join(' '), fill: '#CDBD9C' });
+    if (dots.length) ground.push({ t: 'path', d: dots.join(' '), fill: '#B49A68' });
+    // Yürüyüş yolları (batı girişinden doğuya ve kuzey–güney)
+    const walkW = Math.max(1, 4 * cam.k);
+    ground.push(line(cam, [214, 20], [780, 20], '#F3EBDA', walkW), line(cam, [470, -105], [470, 250], '#F3EBDA', walkW));
+    // Çevre duvarı: uzaktan yakına, iç ve dış yüzler ayrı gölge
+    const H = 3;
+    const ring = BAQI.map((a, i) => [a, BAQI[(i + 1) % BAQI.length]] as [Pt, Pt]);
+    ring.sort((e1, e2) => cam.depthOf((e1[0][0] + e1[1][0]) / 2, (e1[0][1] + e1[1][1]) / 2) - cam.depthOf((e2[0][0] + e2[1][0]) / 2, (e2[0][1] + e2[1][1]) / 2));
+    for (const [a, b] of ring) {
+      const q = [cam.P(a[0], a[1], 0), cam.P(b[0], b[1], 0), cam.P(b[0], b[1], H), cam.P(a[0], a[1], H)];
+      ground.push({ t: 'poly', pts: q.map((v) => v.map(f).join(',')).join(' '), fill: '#CDB98E', stroke: '#A88F60', sw: 0.5 });
+    }
+    ground.push({ t: 'path', d: BAQI.map((p, i) => { const [x, y] = cam.P(p[0], p[1], H); return `${i ? 'L' : 'M'}${f(x)} ${f(y)}`; }).join(' ') + ' Z', fill: 'none', stroke: '#9C8457', sw: Math.max(0.8, 1.2 * cam.k) });
   }
   const { below, ghost } = drawModel(cam, m);
   return { below: [...ground, ...below], above: [], ghost };

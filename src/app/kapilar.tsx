@@ -4,7 +4,7 @@ import { Pressable, ScrollView, Text, View } from 'react-native';
 
 import { Icon } from '@/components/Icon';
 import { Btn, Chip, Header, Screen, STATUS_TONE, Segmented, StatusPill, T, ago } from '@/components/ui';
-import { C } from '@/constants/theme';
+import { C, fs } from '@/constants/theme';
 import { GATES } from '@/data/sites';
 import { pick, useI18n } from '@/i18n';
 import { useApp } from '@/services/AppContext';
@@ -49,10 +49,10 @@ export default function GatesScreen() {
             style={({ pressed }) => [{ borderWidth: 1, borderColor: C.border, borderRadius: 18, padding: 14, gap: 10, opacity: pressed ? 0.8 : 1 }]}>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
               <View style={{ width: 44, height: 44, borderRadius: 12, backgroundColor: tone.bg, alignItems: 'center', justifyContent: 'center' }}>
-                <Text style={{ fontSize: 15, fontWeight: '700', color: tone.fg }}>{g.no}</Text>
+                <Text style={{ fontSize: fs(15), fontWeight: '700', color: tone.fg }}>{g.no}</Text>
               </View>
               <View style={{ flex: 1 }}>
-                <Text style={{ fontSize: 16, fontWeight: '700', color: C.ink }}>{pick(g.name, lang)}</Text>
+                <Text style={{ fontSize: fs(16), fontWeight: '700', color: C.ink }}>{pick(g.name, lang)}</Text>
                 <Text style={T.small}>{pick(g.side, lang)}</Text>
               </View>
               <StatusPill status={s?.status ?? 'open'} />

@@ -9,7 +9,7 @@ import { useEffect, useRef, useState } from 'react';
 import { AppState, Pressable, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { C, shadow } from '@/constants/theme';
+import { C, shadow, fs } from '@/constants/theme';
 import { useI18n } from '@/i18n';
 import { initNotifications, loadNotifPrefs, notificationsSupported, refreshSchedule } from '@/services/adhanNotify';
 
@@ -95,7 +95,7 @@ export function AdhanHost() {
   return (
     <View pointerEvents="box-none" style={{ position: 'absolute', left: 0, right: 0, top: insets.top + 8, alignItems: 'center' }}>
       <View style={[{ flexDirection: 'row', alignItems: 'center', gap: 12, backgroundColor: C.ink, borderRadius: 999, paddingLeft: 16, paddingRight: 6, paddingVertical: 6 }, shadow]}>
-        <Text style={{ color: C.onInk, fontWeight: '700', fontSize: 15 }}>{label}</Text>
+        <Text style={{ color: C.onInk, fontWeight: '700', fontSize: fs(15) }}>{label}</Text>
         <Pressable onPress={stopAdhan} accessibilityRole="button" accessibilityLabel={stop}
           style={{ backgroundColor: C.onInk, borderRadius: 999, paddingHorizontal: 14, paddingVertical: 8 }}>
           <Text style={{ color: C.ink, fontWeight: '800' }}>{stop}</Text>

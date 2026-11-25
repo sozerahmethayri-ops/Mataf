@@ -64,6 +64,13 @@ const P: Record<string, string> = {
   list: 'M8 6h13M8 12h13M8 18h13M3.5 6h.01M3.5 12h.01M3.5 18h.01',
   tafsir: 'M4 5.5A2.5 2.5 0 0 1 6.5 3H20v15H6.5A2.5 2.5 0 0 0 4 20.5zM4 20.5A2.5 2.5 0 0 0 6.5 23H20v-5M8 8h8M8 12h6',
   counter: 'M12 8v4l2.5 1.5M5 3 2 6M19 3l3 3',
+  home: 'M3 10.5 12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z',
+  grid: 'M4 4h6v6H4zM14 4h6v6h-6zM4 14h6v6H4zM14 14h6v6h-6z',
+  beads: 'M12 3v2M12 19v2',
+  text: 'M4 7V5h16v2M9 19h6M12 5v14',
+  trash: 'M3 6h18M8 6V4h8v2M6 6l1 15h10l1-15',
+  edit: 'M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z',
+  cube: 'M12 2 3 7v10l9 5 9-5V7l-9-5zM3 7l9 5 9-5M12 12v10',
 };
 
 const CIRCLES: Record<string, [number, number, number][]> = {
@@ -82,6 +89,7 @@ const CIRCLES: Record<string, [number, number, number][]> = {
   wheel: [[12, 4, 1.5]],
   compass: [[12, 12, 9]],
   counter: [[12, 13, 8]],
+  beads: [[12, 8, 2], [12, 12, 2], [12, 16, 2], [7.5, 10, 1.6], [16.5, 10, 1.6], [7.5, 14, 1.6], [16.5, 14, 1.6]],
 };
 
 export type IconName = keyof typeof P;

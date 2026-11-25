@@ -1,7 +1,8 @@
-// En yakın cami / mescit: dünyanın her yerinde OpenStreetMap verisiyle (Overpass API).
+// En yakın cami / mescit: dünyanın her yerinde OpenStreetMap verisiyle.
 // Lisans: © OpenStreetMap katkıcıları, ODbL — ekranda atıf gösterilir.
-// Hız ve dayanıklılık: yarıçap kademeli büyür (1,5 → 60 km), sunucu yanıt vermezse yedek sunucuya geçilir,
-// son başarılı sonuç cihazda saklanır (internet yokken gösterilir).
+// Önce Photon (hızlı, kararlı): yakındaki ibadet yerleri + "cami/mosque/moschee/مسجد" adlı yerler; kilise vb.
+// adlar elenir. Photon yanıt vermezse Overpass sunucuları (ve aynası) sırayla denenir.
+// Yarıçap kademeli büyür (1,5 → 60 km); son başarılı sonuç cihazda saklanır (internet yokken gösterilir).
 // Bu dosya saf TypeScript'tir (React Native'e bağlı değil); testler doğrudan çalıştırır.
 // Cihazda saklama için `src/services/mosqueStore.ts` kullanılır.
 
@@ -23,9 +24,18 @@ export type Mosque = {
 
 export const OVERPASS_ENDPOINTS = [
   'https://overpass-api.de/api/interpreter',
+  'https://maps.mail.ru/osm/tools/overpass/api/interpreter',
   'https://overpass.kumi.systems/api/interpreter',
   'https://overpass.private.coffee/api/interpreter',
 ];
+export const PHOTON = 'https://photon.komoot.io';
+export const UA = 'MATAF/0.6 (Android; https://github.com/sozerahmethayri-ops/Mataf)';
+const ua = (): Record<string, string> => (typeof navigator !== 'undefined' && navigator.product === 'ReactNative' ? { 'User-Agent': UA } : {});
+
+/** Adından cami olduğu anlaşılanlar (birçok dilde). */
+export const MOSQUE_NAME = /(cami|mescid|mescit|mosque|masjid|masjed|mesjid|moschee|mosqu[eé]e|mezquita|moskee|moskeija|meczet|me[cč]et|d[žz]amija|jami|jamia|jama'?at|musall?a|mussal+ah|namazg[aâ]h|islamic cent|islamisch|islamique|islamitisch|tekke|dergah|مسجد|جامع|مصلى|مصلّى)/i;
+/** Başka dinlere ait ibadet yerleri (ada göre elenir). */
+export const NOT_MOSQUE = /(church|kilise|chapel|şapel|kapelle|kapel|cathedral|katedral|kathedrale|dom |dómkirkj|synagog|sinagog|havra|temple|tapınak|kirche|[ée]glise|iglesia|chiesa|ko[śs]ci[óo]ł|cerkiew|monastery|manast[ıi]r|kloster|gurdwara|mandir|pagoda|kingdom hall|cemevi|ermita|basilic|bazilik|parish|abbey|chappel|kirkj|templo|igreja|kerk|kyrka|kirke)/i;
 export const RADII = [1500, 4000, 10000, 25000, 60000];
 
 const R = 6371000;
@@ -95,7 +105,80 @@ export function parseOverpass(json: { elements?: El[] }, o: LatLng, lang: 'tr' |
   return keep.map(({ raw: _raw, ...m }) => m);
 }
 
-export type Fetcher = (url: string, init: { method: string; headers: Record<string, string>; body: string; signal?: AbortSignal }) => Promise<{ ok: boolean; status: number; json: () => Promise<unknown> }>;
+export type Fetcher = (url: string, init: { method: string; headers: Record<string, string>; body?: string; signal?: AbortSignal }) => Promise<{ ok: boolean; status: number; json: () => Promise<unknown> }>;
+
+type PhotonJson = { features?: { geometry?: { coordinates?: [number, number] }; properties?: Record<string, string | number | undefined> }[] };
+type Cand = Mosque & { named: boolean; other: boolean };
+
+/** Photon yanıtı → aday camiler (başka dinlerin ibadet yerleri elenir). */
+export function parsePhotonMosques(json: PhotonJson, o: LatLng): Cand[] {
+  const out: Cand[] = [];
+  for (const f of json.features ?? []) {
+    const p = f.properties ?? {};
+    const [lng, lat] = f.geometry?.coordinates ?? [];
+    if (lat == null || lng == null) continue;
+    const name = String(p.name ?? '');
+    const named = MOSQUE_NAME.test(name) || (p.osm_key === 'building' && p.osm_value === 'mosque');
+    const other = !named && !!name && NOT_MOSQUE.test(` ${name} `);
+    const kind: MosqueKind = /musall?a|mescit|mescid|مصلى|prayer/i.test(name) ? 'musalla' : 'mosque';
+    out.push({ id: `${String(p.osm_type ?? 'N').toLowerCase()}/${p.osm_id ?? `${lat},${lng}`}`, name, kind, lat, lng, dist: distanceM(o, { lat, lng }), bearing: bearingDeg(o, { lat, lng }), named, other });
+  }
+  return out;
+}
+
+/** Adaylardan camileri seçer: adı cami olanlar her zaman; adsız/başka adlılar yalnız çoğunluğu cami olan bölgede. */
+export function pickMosques(near: Cand[], named: Cand[], radiusM: number): Mosque[] {
+  // Bölge: adı belli ibadet yerlerinin en az yarısı cami ise adsız/genel adlı yerler de cami sayılır
+  const withName = near.filter((c) => c.name);
+  const share = withName.length ? withName.filter((c) => c.named).length / withName.length : 0;
+  const muslimArea = share >= 0.5;
+  const all = [...near.filter((c) => !c.other && (c.named || muslimArea)), ...named.filter((c) => c.named)]
+    .filter((c) => c.dist <= radiusM)
+    .sort((a, b) => a.dist - b.dist);
+  const keep: Cand[] = [];
+  for (const m of all) {
+    const dup = keep.find((k) => k.id === m.id || distanceM(k, m) < 40);
+    if (dup) { if (!dup.name && m.name) dup.name = m.name; continue; }
+    keep.push(m);
+  }
+  return keep.map(({ named: _n, other: _o, ...m }) => m);
+}
+
+async function getJson(fetcher: Fetcher, url: string, timeoutMs: number) {
+  const ctrl = typeof AbortController !== 'undefined' ? new AbortController() : undefined;
+  const timer = setTimeout(() => ctrl?.abort(), timeoutMs);
+  try {
+    const res = await fetcher(url, { method: 'GET', headers: { ...ua(), Accept: 'application/json' }, signal: ctrl?.signal });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    return await res.json();
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+const KEYWORDS = ['mosque', 'cami', 'moschee', 'مسجد'];
+
+/** Photon ile arama: yakındaki ibadet yerleri (yarıçap başına) + anahtar kelimeli aramalar (bir kez). */
+async function photonSearch(o: LatLng, fetcher: Fetcher, minCount: number, timeoutMs: number): Promise<{ mosques: Mosque[]; radius: number }> {
+  const ll = `lat=${o.lat.toFixed(5)}&lon=${o.lng.toFixed(5)}`;
+  const named = (await Promise.allSettled(KEYWORDS.map((q) => getJson(fetcher, `${PHOTON}/api/?q=${encodeURIComponent(q)}&${ll}&limit=40&osm_tag=amenity:place_of_worship&location_bias_scale=0.1&zoom=13`, timeoutMs))))
+    .flatMap((r) => (r.status === 'fulfilled' ? parsePhotonMosques(r.value as PhotonJson, o) : []));
+  let last: Mosque[] = [];
+  let used = RADII[0];
+  let anyOk = named.length > 0;
+  for (const radius of RADII) {
+    used = radius;
+    let near: Cand[] = [];
+    try {
+      near = parsePhotonMosques(await getJson(fetcher, `${PHOTON}/reverse?${ll}&radius=${radius / 1000}&limit=50&osm_tag=amenity:place_of_worship&osm_tag=building:mosque`, timeoutMs) as PhotonJson, o);
+      anyOk = true;
+    } catch { /* anahtar kelimeli sonuçlarla devam */ }
+    last = pickMosques(near, named, radius);
+    if (last.length >= minCount) break;
+  }
+  if (!anyOk) throw new Error('photon unreachable');
+  return { mosques: last, radius: used };
+}
 
 async function queryOnce(o: LatLng, radius: number, fetcher: Fetcher, timeoutMs: number) {
   let lastErr: unknown = new Error('no endpoint');
@@ -103,10 +186,12 @@ async function queryOnce(o: LatLng, radius: number, fetcher: Fetcher, timeoutMs:
     const ctrl = typeof AbortController !== 'undefined' ? new AbortController() : undefined;
     const timer = setTimeout(() => ctrl?.abort(), timeoutMs);
     try {
-      const res = await fetcher(url, {
-        method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-        body: `data=${encodeURIComponent(buildQuery(o, radius))}`, signal: ctrl?.signal,
-      });
+      // Ayna sunucu yalnız GET kabul ediyor
+      const get = url.includes('mail.ru');
+      const q = encodeURIComponent(buildQuery(o, radius));
+      const res = await fetcher(get ? `${url}?data=${q}` : url, get
+        ? { method: 'GET', headers: ua(), signal: ctrl?.signal }
+        : { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded', ...ua() }, body: `data=${q}`, signal: ctrl?.signal });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       return (await res.json()) as { elements?: El[] };
     } catch (e) {
@@ -131,10 +216,17 @@ export async function findMosques(o: LatLng, lang: 'tr' | 'en' | 'ar', opts: { f
   let found: Mosque[] = [];
   let used = RADII[0];
   try {
-    for (const radius of RADII) {
-      used = radius;
-      found = parseOverpass(await queryOnce(o, radius, fetcher, opts.timeoutMs ?? 12000), o, lang);
-      if (found.length >= minCount) break;
+    try {
+      const r = await photonSearch(o, fetcher, minCount, opts.timeoutMs ?? 9000);
+      found = r.mosques;
+      used = r.radius;
+    } catch {
+      // Photon'a ulaşılamadı: Overpass sunucuları
+      for (const radius of RADII) {
+        used = radius;
+        found = parseOverpass(await queryOnce(o, radius, fetcher, opts.timeoutMs ?? 12000), o, lang);
+        if (found.length >= minCount) break;
+      }
     }
     const result: SearchResult = { mosques: found.slice(0, 40), radius: used, origin: o, at: Date.now() };
     opts.cache?.set(JSON.stringify(result)).catch(() => undefined);

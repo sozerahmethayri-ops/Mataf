@@ -70,7 +70,8 @@ export interface Backend {
 const uid = () => Math.random().toString(36).slice(2) + Date.now().toString(36);
 const MIN = 60 * 1000;
 
-function seeds(now: number): Report[] {
+/** Örnek bildirimler: yalnız testlerde (uygulamada gerçek olmayan kapalı kapı gösterilmez). */
+export function sampleReports(now: number): Report[] {
   const s: Report[] = [];
   const add = (gateId: string, status: GateStatus, users: number, minsAgo: number, extra: Partial<Report> = {}) => {
     for (let i = 0; i < users; i++)
@@ -98,7 +99,7 @@ class LocalBackend implements Backend {
   async list() {
     const raw = await AsyncStorage.getItem(this.key);
     const mine: Report[] = raw ? JSON.parse(raw) : [];
-    return [...seeds(Date.now()), ...mine];
+    return mine;
   }
   async add(r: Omit<Report, 'id' | 'createdAt'>) {
     const full: Report = { ...r, id: uid(), createdAt: Date.now() };

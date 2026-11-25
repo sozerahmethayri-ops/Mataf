@@ -8,7 +8,7 @@ import Svg, { Path } from 'react-native-svg';
 import { Icon } from '@/components/Icon';
 import { MosqueMap } from '@/components/MosqueMap';
 import { Btn, Card, Header, T } from '@/components/ui';
-import { C, shadow } from '@/constants/theme';
+import { C, shadow, fs } from '@/constants/theme';
 import type { ML } from '@/data/sites';
 import { pick, useI18n } from '@/i18n';
 import { useHeading } from '@/services/location';
@@ -29,7 +29,7 @@ const L = {
   empty: { tr: '60 km içinde kayıtlı cami bulunamadı. Kıble yönüne dönerek namazınızı kılabilirsiniz.', en: 'No mosque is recorded within 60 km. You can pray facing the Qibla.', ar: 'لا يوجد مسجد مسجّل ضمن ٦٠ كم. يمكنك الصلاة باتجاه القبلة.' },
   offline: { tr: 'İnternet yok — son aramadaki camiler gösteriliyor', en: 'Offline — showing mosques from your last search', ar: 'لا يوجد اتصال — تُعرض مساجد آخر بحث' },
   directions: { tr: 'Yol tarifi', en: 'Directions', ar: 'الاتجاهات' },
-  route: { tr: 'Haritada rota', en: 'Route on map', ar: 'المسار على الخريطة' },
+  route: { tr: 'Telefonun harita uygulamasında aç', en: 'Open in your maps app', ar: 'افتح في تطبيق الخرائط' },
   walk: { tr: 'dk yürüme', en: 'min walk', ar: 'دقيقة سيرًا' },
   others: { tr: 'Diğer yakın camiler', en: 'Other mosques nearby', ar: 'مساجد قريبة أخرى' },
   unnamed: { tr: 'İsimsiz cami', en: 'Unnamed mosque', ar: 'مسجد بلا اسم' },
@@ -114,10 +114,19 @@ export default function NearestMosque() {
   const nameOf = (m: Mosque) => m.name || pick(L.unnamed, lang);
   const rel = (m: Mosque) => (heading != null ? m.bearing - heading : m.bearing);
 
+  const [routing, setRouting] = useState(false);
   const showRoute = async () => {
     if (!pos || !sel) return;
-    const r = await walkRoute(pos, sel);
-    setRoute(r.coords);
+    setRouting(true);
+    try {
+      const r = await walkRoute(pos, sel);
+      setRoute(r.coords);
+    } catch {
+      // Yürüyüş rotası alınamazsa düz çizgi: yön ve uzaklık yine görünsün
+      setRoute([{ latitude: pos.lat, longitude: pos.lng }, { latitude: sel.lat, longitude: sel.lng }]);
+    } finally {
+      setRouting(false);
+    }
   };
   const retry = () => { searchedAt.current = null; setResult(null); setRoute(undefined); setState('locating'); setAttempt((a) => a + 1); };
 
@@ -147,14 +156,14 @@ export default function NearestMosque() {
       ) : (
         <ScrollView contentContainerStyle={{ paddingBottom: insets.bottom + 24 }}>
           {pos && list.length > 0 && (
-            <View style={{ height: 220 }}>
+            <View style={{ height: 300 }}>
               <MosqueMap user={pos} mosques={list} selectedId={sel?.id} route={route} onSelect={(id) => { setSelId(id); setRoute(undefined); }} />
             </View>
           )}
           <View style={{ padding: 16, gap: 12 }}>
             {result?.offline && (
               <View style={{ padding: 10, borderRadius: 12, backgroundColor: C.limitedTint }}>
-                <Text style={{ fontSize: 13, fontWeight: '600', color: C.limited }}>{pick(L.offline, lang)} ({fmtTime(new Date(result.at))})</Text>
+                <Text style={{ fontSize: fs(13), fontWeight: '600', color: C.limited }}>{pick(L.offline, lang)} ({fmtTime(new Date(result.at))})</Text>
               </View>
             )}
             {np && (
@@ -169,13 +178,13 @@ export default function NearestMosque() {
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: 14 }}>
                   <Arrow deg={rel(sel)} size={68} color="#FFFFFF" bg="rgba(255,255,255,0.16)" />
                   <View style={{ flex: 1, gap: 2 }}>
-                    <Text style={{ color: '#FFFFFF', fontSize: 19, fontWeight: '800' }} numberOfLines={2}>{nameOf(sel)}</Text>
-                    <Text style={{ color: '#D8F0E0', fontSize: 13 }}>{kindLabel(sel)}{sel.denomination ? ` · ${sel.denomination}` : ''}</Text>
-                    <Text style={{ color: '#FFFFFF', fontSize: 28, fontWeight: '800', marginTop: 4 }}>{fmtDistance(sel.dist, lg)}</Text>
-                    <Text style={{ color: '#D8F0E0', fontSize: 13 }}>~{walkMinutes(sel.dist)} {pick(L.walk, lang)}</Text>
+                    <Text style={{ color: '#FFFFFF', fontSize: fs(19), fontWeight: '800' }} numberOfLines={2}>{nameOf(sel)}</Text>
+                    <Text style={{ color: '#D8F0E0', fontSize: fs(13) }}>{kindLabel(sel)}{sel.denomination ? ` · ${sel.denomination}` : ''}</Text>
+                    <Text style={{ color: '#FFFFFF', fontSize: fs(28), fontWeight: '800', marginTop: 4 }}>{fmtDistance(sel.dist, lg)}</Text>
+                    <Text style={{ color: '#D8F0E0', fontSize: fs(13) }}>~{walkMinutes(sel.dist)} {pick(L.walk, lang)}</Text>
                   </View>
                 </View>
-                {heading == null && <Text style={{ color: '#D8F0E0', fontSize: 11.5 }}>{pick(L.noHeading, lang)}</Text>}
+                {heading == null && <Text style={{ color: '#D8F0E0', fontSize: fs(11.5) }}>{pick(L.noHeading, lang)}</Text>}
                 {(sel.wheelchair || sel.hours) && (
                   <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6 }}>
                     {sel.wheelchair ? <Pill text={pick(L.wheelchair, lang)} /> : null}
@@ -183,17 +192,15 @@ export default function NearestMosque() {
                   </View>
                 )}
                 <View style={{ flexDirection: 'row', gap: 10 }}>
-                  <Pressable onPress={() => Linking.openURL(directionsUrl(sel, Platform.OS))} accessibilityRole="button"
+                  <Pressable onPress={showRoute} accessibilityRole="button" disabled={routing}
                     style={{ flex: 1, height: 48, borderRadius: 24, backgroundColor: '#FFFFFF', flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
-                    <Icon name="nav" size={18} color={C.green} />
-                    <Text style={{ fontSize: 15, fontWeight: '700', color: C.green }}>{pick(L.directions, lang)}</Text>
+                    {routing ? <ActivityIndicator color={C.green} /> : <Icon name="nav" size={18} color={C.green} />}
+                    <Text style={{ fontSize: fs(15), fontWeight: '700', color: C.green }}>{pick(L.directions, lang)}</Text>
                   </Pressable>
-                  {Platform.OS !== 'web' && (
-                    <Pressable onPress={showRoute} accessibilityRole="button"
-                      style={{ height: 48, paddingHorizontal: 16, borderRadius: 24, borderWidth: 1.5, borderColor: '#FFFFFF', alignItems: 'center', justifyContent: 'center' }}>
-                      <Text style={{ fontSize: 14, fontWeight: '700', color: '#FFFFFF' }}>{pick(L.route, lang)}</Text>
-                    </Pressable>
-                  )}
+                  <Pressable onPress={() => Linking.openURL(directionsUrl(sel, Platform.OS))} accessibilityRole="button" accessibilityLabel={pick(L.route, lang)}
+                    style={{ width: 48, height: 48, borderRadius: 24, borderWidth: 1.5, borderColor: '#FFFFFF', alignItems: 'center', justifyContent: 'center' }}>
+                    <Icon name="external" size={18} color="#FFFFFF" />
+                  </Pressable>
                 </View>
               </View>
             ) : (
@@ -211,10 +218,10 @@ export default function NearestMosque() {
                     style={{ flexDirection: 'row', alignItems: 'center', gap: 12, padding: 12, borderRadius: 16, backgroundColor: C.surface }}>
                     <Arrow deg={rel(m)} size={36} color={C.green} bg={C.greenTint} />
                     <View style={{ flex: 1 }}>
-                      <Text style={{ fontSize: 15, fontWeight: '600', color: C.ink }} numberOfLines={1}>{nameOf(m)}</Text>
+                      <Text style={{ fontSize: fs(15), fontWeight: '600', color: C.ink }} numberOfLines={1}>{nameOf(m)}</Text>
                       <Text style={T.small}>{kindLabel(m)} · ~{walkMinutes(m.dist)} {pick(L.walk, lang)}</Text>
                     </View>
-                    <Text style={{ fontSize: 15, fontWeight: '700', color: C.ink }}>{fmtDistance(m.dist, lg)}</Text>
+                    <Text style={{ fontSize: fs(15), fontWeight: '700', color: C.ink }}>{fmtDistance(m.dist, lg)}</Text>
                   </Pressable>
                 ))}
               </>
@@ -247,7 +254,7 @@ function Arrow({ deg, size, color, bg }: { deg: number; size: number; color: str
 function Pill({ text }: { text: string }) {
   return (
     <View style={{ paddingHorizontal: 10, paddingVertical: 4, borderRadius: 10, backgroundColor: 'rgba(255,255,255,0.18)' }}>
-      <Text style={{ color: '#FFFFFF', fontSize: 12, fontWeight: '600' }}>{text}</Text>
+      <Text style={{ color: '#FFFFFF', fontSize: fs(12), fontWeight: '600' }}>{text}</Text>
     </View>
   );
 }

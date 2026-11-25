@@ -4,17 +4,34 @@ import { useCallback, useEffect, useState } from 'react';
 import { Linking, Pressable, Text, View } from 'react-native';
 
 import { Icon } from '@/components/Icon';
-import { Card, Header, ListRow, Screen, SectionTitle, Segmented, T } from '@/components/ui';
-import { C, PALETTES, colorsFor, type PaletteId, type ThemeMode } from '@/constants/theme';
+import { Card, Header, ListRow, Screen, SectionTitle, Segmented, T, Toggle } from '@/components/ui';
+import { C, PALETTES, colorsFor, fs, fsAr, type PaletteId, type ThemeMode } from '@/constants/theme';
 import { pick, useI18n } from '@/i18n';
 import { LANGS } from '@/i18n/strings';
 import { SOUNDS, type NotifPrefs } from '@/services/adhanPlan';
 import { loadNotifPrefs } from '@/services/adhanNotify';
 import { METHODS, getMethod, setMethod, type MethodId } from '@/services/prayer';
 import { useReports } from '@/services/ReportsContext';
-import { useTheme } from '@/services/ThemeContext';
+import { useTheme, type HomeId } from '@/services/ThemeContext';
 
 type Lang = 'tr' | 'en' | 'ar';
+const TEXT_STEPS: { v: number; l: { tr: string; en: string; ar: string } }[] = [
+  { v: 0.9, l: { tr: 'Küçük', en: 'Small', ar: 'صغير' } },
+  { v: 1, l: { tr: 'Normal', en: 'Normal', ar: 'عادي' } },
+  { v: 1.15, l: { tr: 'Büyük', en: 'Large', ar: 'كبير' } },
+  { v: 1.3, l: { tr: 'Çok büyük', en: 'Larger', ar: 'أكبر' } },
+];
+const AR_STEPS: { v: number; l: string }[] = [{ v: 0.85, l: 'A−' }, { v: 1, l: 'A' }, { v: 1.2, l: 'A+' }, { v: 1.4, l: 'A++' }, { v: 1.6, l: 'A+++' }];
+const HOMES: { id: HomeId; l: { tr: string; en: string; ar: string } }[] = [
+  { id: 'vakit', l: { tr: 'Sade ezan vakitleri (önerilen)', en: 'Minimal prayer times (recommended)', ar: 'مواقيت الصلاة المبسطة' } },
+  { id: 'vakitler', l: { tr: 'Ayrıntılı namaz vakitleri', en: 'Detailed prayer times', ar: 'مواقيت الصلاة المفصلة' } },
+  { id: 'kuran', l: { tr: "Kur'an-ı Kerîm", en: 'The Quran', ar: 'القرآن الكريم' } },
+  { id: 'harita', l: { tr: 'Haram / Nebevî haritası', en: 'Haram / Nabawi map', ar: 'خريطة الحرم' } },
+  { id: 'tavaf', l: { tr: 'Tavaf asistanı', en: 'Tawaf assistant', ar: 'مساعد الطواف' } },
+  { id: 'zikir', l: { tr: 'Zikirmatik', en: 'Dhikr counter', ar: 'المسبحة' } },
+  { id: 'hadis', l: { tr: 'Hadis ve dualar', en: 'Hadith and du‘as', ar: 'الحديث والدعاء' } },
+];
+
 const L = {
   look: { tr: 'Görünüm', en: 'Appearance', ar: 'المظهر' },
   light: { tr: 'Açık', en: 'Light', ar: 'فاتح' },
@@ -25,6 +42,19 @@ const L = {
   notifOff: { tr: 'Kapalı', en: 'Off', ar: 'مغلق' },
   before: { tr: 'dk önce', en: 'min before', ar: 'دقيقة قبل' },
   atTime: { tr: 'vaktinde', en: 'at adhan time', ar: 'عند الأذان' },
+  text: { tr: 'Yazı boyutu', en: 'Text size', ar: 'حجم الخط' },
+  arabic: { tr: 'Arapça yazı boyutu (Kur’an, dua)', en: 'Arabic text size (Quran, du‘a)', ar: 'حجم الخط العربي' },
+  sample: { tr: 'Örnek: Bugün öğle namazı 12:08’de.', en: 'Sample: Dhuhr today is at 12:08.', ar: 'مثال: الظهر اليوم الساعة ١٢:٠٨' },
+  home: { tr: 'Ana sayfa', en: 'Home screen', ar: 'الصفحة الرئيسية' },
+  homeNote: { tr: 'Alttaki ortadaki düğme bu ekranı açar.', en: 'The middle button at the bottom opens this screen.', ar: 'الزر الأوسط في الأسفل يفتح هذه الشاشة.' },
+  behaviour: { tr: 'Kullanım', en: 'Behaviour', ar: 'الاستخدام' },
+  map3d: { tr: 'Haram/Nebevî haritası 3D açılsın', en: 'Open the Haram/Nabawi map in 3D', ar: 'فتح الخريطة ثلاثية الأبعاد' },
+  map3dSub: { tr: 'Kapalıysa 2D plan görünümüyle açılır; haritadaki 2D/3D düğmesiyle her an değişir.', en: 'Off: opens in 2D plan view; switch any time with the 2D/3D button.', ar: 'إذا أُوقف تُفتح بعرض مسطح.' },
+  swipe: { tr: 'Sekmeler arasında kaydırarak geç', en: 'Swipe between tabs', ar: 'التنقل بين التبويبات بالسحب' },
+  motion: { tr: 'Hareketleri azalt', en: 'Reduce motion', ar: 'تقليل الحركة' },
+  motionSub: { tr: 'Geçiş ve pusula animasyonları kapanır.', en: 'Turns off transitions and compass animation.', ar: 'إيقاف الحركات الانتقالية.' },
+  haptics: { tr: 'Titreşim', en: 'Haptics', ar: 'الاهتزاز' },
+  hapticsSub: { tr: 'Zikir sayacı, kıble ve tavafta kısa titreşim.', en: 'Short vibration in dhikr counter, qibla and tawaf.', ar: 'اهتزاز قصير في المسبحة والقبلة والطواف.' },
 } satisfies Record<string, { tr: string; en: string; ar: string }>;
 
 export default function Settings() {
@@ -46,7 +76,7 @@ export default function Settings() {
       <Header back title={t('settings.title')} />
 
       <SectionTitle>{l('look')}</SectionTitle>
-      <Segmented<ThemeMode> value={theme.mode} onChange={(m) => setTheme({ mode: m }, '/ayarlar')}
+      <Segmented<ThemeMode> value={theme.mode} onChange={(m) => setTheme({ mode: m })}
         options={[{ value: 'light', label: l('light') }, { value: 'dark', label: l('dark') }, { value: 'system', label: l('system') }]} />
       <Text style={T.small}>{l('palette')}</Text>
       <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
@@ -54,7 +84,7 @@ export default function Settings() {
           const on = id === theme.palette;
           const c = colorsFor(dark, id);
           return (
-            <Pressable key={id} onPress={() => setTheme({ palette: id }, '/ayarlar')} accessibilityRole="radio" accessibilityState={{ selected: on }}
+            <Pressable key={id} onPress={() => setTheme({ palette: id })} accessibilityRole="radio" accessibilityState={{ selected: on }}
               accessibilityLabel={pick(PALETTES[id].name, lg)}
               style={({ pressed }) => ({ width: '31%', minWidth: 100, padding: 8, gap: 6, borderRadius: 14, borderWidth: on ? 2 : 1, borderColor: on ? C.accent : C.border, backgroundColor: c.bg, opacity: pressed ? 0.8 : 1 })}>
               <View style={{ flexDirection: 'row', gap: 4 }}>
@@ -64,11 +94,35 @@ export default function Settings() {
                 <View style={{ flex: 1, height: 22, borderRadius: 6, backgroundColor: c.route }} />
                 <View style={{ flex: 1, height: 22, borderRadius: 6, backgroundColor: c.accentTint }} />
               </View>
-              <Text style={{ fontSize: 12, fontWeight: on ? '700' : '500', color: c.ink, minHeight: 32 }} numberOfLines={2}>{pick(PALETTES[id].name, lg)}</Text>
+              <Text style={{ fontSize: fs(12), fontWeight: on ? '700' : '500', color: c.ink, minHeight: 32 }} numberOfLines={2}>{pick(PALETTES[id].name, lg)}</Text>
             </Pressable>
           );
         })}
       </View>
+
+      <Text style={T.small}>{l('text')}</Text>
+      <Segmented<string> value={String(theme.text)} onChange={(v) => setTheme({ text: Number(v) })}
+        options={TEXT_STEPS.map((x) => ({ value: String(x.v), label: pick(x.l, lg) }))} />
+      <Text style={T.small}>{l('arabic')}</Text>
+      <Segmented<string> value={String(theme.arabic)} onChange={(v) => setTheme({ arabic: Number(v) })}
+        options={AR_STEPS.map((x) => ({ value: String(x.v), label: x.l }))} />
+      <Card tint={C.surface} style={{ gap: 6 }}>
+        <Text style={{ fontSize: fsAr(24), lineHeight: fsAr(40), color: C.ink, textAlign: 'right', writingDirection: 'rtl' }}>بِسْمِ ٱللَّهِ ٱلرَّحْمَٰنِ ٱلرَّحِيمِ</Text>
+        <Text style={T.body}>{l('sample')}</Text>
+      </Card>
+
+      <SectionTitle>{l('home')}</SectionTitle>
+      {HOMES.map((h) => (
+        <ListRow key={h.id} title={pick(h.l, lg)} onPress={() => setTheme({ home: h.id })}
+          right={h.id === theme.home ? <Icon name="check" color={C.accent} /> : <></>} />
+      ))}
+      <Text style={T.small}>{l('homeNote')}</Text>
+
+      <SectionTitle>{l('behaviour')}</SectionTitle>
+      <ToggleRow title={l('map3d')} sub={l('map3dSub')} value={theme.map3d} onChange={(v) => setTheme({ map3d: v })} />
+      <ToggleRow title={l('swipe')} value={theme.swipeTabs} onChange={(v) => setTheme({ swipeTabs: v })} />
+      <ToggleRow title={l('motion')} sub={l('motionSub')} value={theme.reduceMotion} onChange={(v) => setTheme({ reduceMotion: v })} />
+      <ToggleRow title={l('haptics')} sub={l('hapticsSub')} value={theme.haptics} onChange={(v) => setTheme({ haptics: v })} />
 
       <SectionTitle>{l('notif')}</SectionTitle>
       <ListRow title={l('notif')} subtitle={notifSub} onPress={() => router.push('/bildirimler')}
@@ -103,5 +157,17 @@ export default function Settings() {
         <Text style={[T.small, { color: C.accent, fontWeight: '700' }]} onPress={() => Linking.openURL('https://www.openstreetmap.org/copyright')}>OpenStreetMap lisansı ↗</Text>
       </Card>
     </Screen>
+  );
+}
+
+function ToggleRow({ title, sub, value, onChange }: { title: string; sub?: string; value: boolean; onChange: (v: boolean) => void }) {
+  return (
+    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 8, borderBottomWidth: 1, borderBottomColor: C.border }}>
+      <View style={{ flex: 1, gap: 2 }}>
+        <Text style={{ fontSize: fs(15), fontWeight: '600', color: C.ink }}>{title}</Text>
+        {sub ? <Text style={T.small}>{sub}</Text> : null}
+      </View>
+      <Toggle value={value} onChange={onChange} label={title} />
+    </View>
   );
 }

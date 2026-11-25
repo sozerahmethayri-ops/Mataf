@@ -2,25 +2,31 @@
 
 Mekke ve Medine'deki ziyaretçiler için iOS ve Android uygulaması:
 
+- **Sade açılış: ezan vakitleri** — bir sonraki vakte geri sayım halkası, günün altı vakti, Hicrî tarih ve yaklaşan mübarek gün (Kandiller, Ramazan, Bayramlar); konumunuza, Mekke'ye ya da Medine'ye göre. Ana sayfa olarak başka ekran da seçilebilir (Vakitler, Kur'an, Harita, Tavaf, Zikir, Hadis).
+- **Alt çubuk ve Menü** — ortada Ana sayfa; Harita, Kur'an, Ulaşım ve tüm ekranların toplandığı Menü. Sekmeler arasında kaydırarak geçilir.
+- **Uygulama içi online harita** — şehir, ulaşım ve en yakın cami haritaları OpenStreetMap verisiyle (OpenFreeMap) uygulamanın içinde açılır: binalar, sokaklar, mezarlıklar, yer adları; 2D/3D düğmesi binaları yükseltir. İnternet yoksa sade haritaya geçer.
+- **Zikirmatik** — hazır zikirler ya da kendi zikriniz, hedef (33, 99, 100, 500, 1000, sınırsız), namaz sonrası 33-33-34 tesbihat sırası, titreşim; biten zikirler notla deftere kaydedilir.
+- **Ayrıntılı ayarlar** — yazı boyutu ve Arapça yazı boyutu (önizlemeli), ana sayfa seçimi, harita 2D/3D, kaydırarak geçiş, hareketleri azalt, titreşim.
 - **Beytullah'ın ayrıntılı 3D modeli** — gerçek ölçü ve yönde Kâbe: ışıkla gölgelenen kisve ve dokusu, altın işlemeli kuşak (hizâm) ve kandiller, kapı ve kapı perdesi (sitâre), gümüş çerçeveli Hacerü'l-Esved, Şâzervân mermer eteği, mermer çatı, altın oluk (Mîzâb), Hatîm duvarı ve Makam-ı İbrâhîm; yere düşen gölge. Harita hangi yöne döndürülürse döndürülsün doğru çizilir, uzakta sadeleşir, yakında ayrıntılanır; koyu temada altın ve örtü gerçek renginde kalır.
 - **Gerçek 3D silüet (OpenStreetMap)** — Mescid-i Haram ve Mescid-i Nebevî, OpenStreetMap'in 3D bina verisinden birebir yer, yükseklik ve çatı biçimiyle çizilir: Haram'ın dış hattı ve Mataf avlusu, Mataf halkası, Mes'a, Kral Abdullah genişlemesi, 13 minare (katları, şerefeleri ve kameriye sütunlarıyla), kubbeler ve Ebrâcü'l-Beyt (Saat Kulesi, 601 m; dört kadran ve hilâl). Nebevî'de gerçek dış hat, 10 minare (104 m ve 70 m), Yeşil Kubbe, meydandaki şemsiyeler, çevredeki oteller ve Cennetü'l-Bakî. Cephelerde kemer dizileri; koyu temada pencereler içeriden aydınlanır.
 - **Gerçek ölçekli 3D harita** — metre cinsinden, 100 m ölçek çubuğu. **İki parmakla büyütülür ve döndürülür**; her açıdan doğru ön–arka sırası; pusula düğmesi kuzeyi yukarı alır / eğik görünüme döner. Kapılar OSM'deki gerçek giriş noktalarında; yürüme rotası binaların içinden değil çevresinden geçer.
 - **Kapı kapanmalarına göre rota** — ziyaretçiler kapı durumunu bildirir, yorum yazar, onaylar; kapalı kapılar rotadan otomatik çıkar. Resmî duyuru her zaman önceliklidir.
-- **Turuncu izle navigasyon** — sıradaki dönüş, kalan mesafe, kapı kapanınca "rota güncellendi" uyarısı. Mescid çevresinde değilseniz demo yürüyüş.
+- **Turuncu izle navigasyon** — sıradaki dönüş, kalan mesafe, kapı kapanınca "rota güncellendi" uyarısı. Mescid çevresinde değilseniz uygulama kendi kendine yürümez: uzaklığı gösterir, "Önizleme" ile örnek rota izlenebilir.
+- **Haram/Nebevî haritasında 2D/3D** — 3D: kendi çizimimiz; 2D: gerçek OSM haritası (Cennetü'l-Bakî, sokaklar, oteller) üzerinde aynı kapılar ve rota.
 - **Şehir haritası** — oteller, yemek, eczane, otobüs, taksi, hastane (OpenStreetMap); otelinizi kaydedip mescide yaya rotası.
-- **En yakın cami (dünyanın her yerinde)** — ana ekrandaki yeşil "Cami" düğmesiyle tek dokunuşta: konumunuza en yakın cami/mescit, mesafe, yürüme süresi, yönü gösteren ok (telefonun pusulasıyla döner), telefonun harita uygulamasında yürüyüş tarifi, uygulama içi rota ve sıradaki namaz vakti. Veri OpenStreetMap'ten gelir; 1,5 km'den başlayıp 60 km'ye kadar arar, sunucu yanıt vermezse yedek sunuculara geçer, internet yokken son aramayı gösterir.
+- **En yakın cami (dünyanın her yerinde)** — tek dokunuşta: konumunuza en yakın cami/mescit, mesafe, yürüme süresi, yönü gösteren ok (telefonun pusulasıyla döner), uygulama içi haritada yürüyüş rotası ve sıradaki namaz vakti. Veri OpenStreetMap'ten gelir (önce Photon, sonra Overpass sunucuları); 1,5 km'den başlayıp 60 km'ye kadar arar, internet yokken son aramayı gösterir.
 - **Ulaşım (her ülkede)** — "Buradasınız" adresi ve konum paylaşma; adres/otel/istasyon arama ya da haritaya uzun basarak hedef; **yürüme**, **toplu taşıma** (metro, otobüs, tramvay, tren — hat renkleri, aktarmalar, duraklar) ve **araç/taksi** (süre, mesafe, Uber, telefonun haritasında yol tarifi). "Şoföre göster" kartı hedefi Arapça, Urduca ve İngilizce ricayla büyük yazar. Haram, Nebevî, otel ve en yakın cami hızlı hedeflerdir.
-- **Namaz vakitleri ve kıble pusulası** — telefonda hesaplanır (Ümmü'l-Kurâ, Diyanet, MWL…), internet gerekmez.
+- **Namaz vakitleri ve kıble pusulası** — telefonda hesaplanır (Ümmü'l-Kurâ, Diyanet, MWL…; Türkiye'de Diyanet kendiliğinden), internet gerekmez. Pusula titremez: yön yumuşatılır ve kadran telefonun kendi animasyon katmanında döner.
 - **Ezan bildirimleri** — ezandan 5–45 dk önce ve/veya vaktinde; vakit vakit seçim (güneş: sabahın çıkış uyarısı); Zil, Çan, Nağme (Hicaz), Damla ya da telefonun sesi; **kendi ezan kaydınızı** seçip vakit girince tamamını dinleme. Telefon kilitliyken de gelir, internet gerekmez.
 - **Tema** — açık, koyu ya da sistem; 5 renk paleti (Turuncu, Zümrüt, Gece mavisi, Altın, Gül). Tüm paletler WCAG AA kontrastını sağlar (testli).
 - **3D tavaf asistanı** — Kâbe gerçek ölçü ve yönüyle (Hacerü'l-Esved, Rükn-i Irâkî/Şâmî/Yemânî, kapı, Hatîm, Makam-ı İbrâhîm); konumunuz ve bu şavtta yürüdüğünüz yay; Hacerü'l-Esved hizasından başlayan **şavt sayacı** (GPS ile otomatik + elle düzeltme); köşelere geldikçe istilam/selamlama ve dua; **sesli asistan** (şavt duyurusu, "Rabbenâ âtinâ…" kâri sesiyle); tavaf sonrası adımlar (Makam, 2 rekât, Zemzem, sa'y). Ekran açık kalır, cep kilidi vardır.
-- **Kur'an-ı Kerim** — 114 sûre; **12 kâriden ayet ayet sesli okuma**, **9 dilde sesli meal** (Türkçe Diyanet Vakfı dahil), 50+ dilde 100'ü aşkın meal, Latin harfli okunuş, **30+ dilde tefsir** (Türkçe: Muhtasar, Sa'dî, İbn Kesîr); okunan ayet vurgulanır.
+- **Kur'an-ı Kerim** — 114 sûre; **dört görünüm** (Mealli, yalnız Arapça, yalnız meal, kesintisiz Mushaf); **birden fazla ayraç** (Hatim ayracı yüzde ilerlemesiyle, diğerleri adlarıyla; okudukça yer kendiliğinden kaydedilir); **12 kâriden ayet ayet sesli okuma**, **9 dilde sesli meal** (Türkçe Diyanet Vakfı dahil), 50+ dilde 100'ü aşkın meal, Latin harfli okunuş, **30+ dilde tefsir** (Türkçe: Muhtasar, Sa'dî, İbn Kesîr); okunan ayet vurgulanır.
 - **Dua kütüphanesi** — 20 kategori, 100'ü aşkın kayıt (sabah-akşam, namaz sonrası, tavaf, sa'y, hac, Medine, sıkıntı, şifa, tövbe, yolculuk, Kur'an'daki dualar…), arama, kaynak numarası, sesli dinleme. Kur'an'daki dualar seçtiğiniz meal dilinde gelir.
 - **Sahîh-i Buhârî ve günün hadisi.**
 - **Ravza rehberi** — ziyaret saatleri, Nusuk izni, resmî 360° sanal tur bağlantısı.
 - **Türkçe, İngilizce, Arapça** (Arapça sağdan sola).
 
-> Durum: **0.5.0 — geliştirme sürümü.** Bina biçimleri ve kapı yerleri OpenStreetMap'ten gelir (doğruluğu bu veri kadardır); mescit içi hizmet noktaları örnektir. Ayrıntı: [docs/VERI-KAYNAKLARI.md](docs/VERI-KAYNAKLARI.md), [scripts/osm-3d.md](scripts/osm-3d.md).
+> Durum: **0.6.0 — geliştirme sürümü.** Bina biçimleri ve kapı yerleri OpenStreetMap'ten gelir (doğruluğu bu veri kadardır); mescit içi hizmet noktaları örnektir. Ayrıntı: [docs/VERI-KAYNAKLARI.md](docs/VERI-KAYNAKLARI.md), [scripts/osm-3d.md](scripts/osm-3d.md).
 
 ## Hızlı başlangıç
 
@@ -100,9 +106,12 @@ Uygulama her isteğe `User-Agent: MATAF/<sürüm> (<iletişim>)` ekler. Ticari y
 
 ```
 src/
-  app/            Ekranlar (Expo Router): (tabs)/ harita, ulaşım, Kur'an, vakitler, hadis
-                  kapilar · kapi/[id] · bildir · navigasyon · arama · sehir · cami · kible · tavaf · ravza
-                  medine-rehber · veriler · ayarlar · bildirimler (ezan) · kuran-ayarlar · tefsir
+  app/            Rotalar (Expo Router): (tabs)/ harita, Kur'an, ana sayfa (orta), ulaşım, menü
+                  vakitler · zikir · hadis-dua · kapilar · kapi/[id] · bildir · navigasyon · arama · sehir · cami
+                  kible · tavaf · ravza · medine-rehber · veriler · ayarlar · bildirimler (ezan) · kuran-ayarlar · tefsir
+  screens/        Ekran gövdeleri (ana sayfa seçimi bunları paylaşır): HomePrayer, PrayerTimes, MapScreen,
+                  QuranList, Tawaf, Zikir, Menu, HadithScreen
+  components/     Ortak parçalar; OnlineMap (WebView + MapLibre), PlainMap (çevrimdışı yedek), HaramScene
   scene/          Gerçek ölçekli 3D çizim motoru (eğik izdüşüm) ve Mekke/Medine sahneleri
   services/       Kapı bildirim kuralları + Supabase, rota planlama, konum, namaz vakti, ezan bildirimleri,
                   ulaşım (Photon/OSRM/Transitous), cami arama, Kur'an, hadis, tema, OSM

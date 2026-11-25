@@ -6,7 +6,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { CityMap, POI_COLORS } from '@/components/CityMap';
 import { Btn, Chip, IconBtn, T } from '@/components/ui';
-import { C, shadow } from '@/constants/theme';
+import { C, shadow, fs } from '@/constants/theme';
 import { ANCHORS, GATES, toLatLng } from '@/data/sites';
 import { pick, useI18n } from '@/i18n';
 import type { Key } from '@/i18n/strings';
@@ -57,6 +57,7 @@ export default function CityScreen() {
   const routeRes = useAsync(() => (origin && target ? walkRoute(origin, target) : Promise.resolve(null)), [origin?.lat, origin?.lng, target?.id]);
   const route = routeRes.data ?? null;
 
+  const [sheetH, setSheetH] = useState(220);
   const saveHotel = (p: { lat: number; lng: number }) => {
     setHotel(p);
     AsyncStorage.setItem(`mataf.hotel.${city}`, JSON.stringify(p));
@@ -66,14 +67,14 @@ export default function CityScreen() {
 
   return (
     <View style={{ flex: 1, backgroundColor: C.mapGround }}>
-      <CityMap center={center} pois={pois.filter((p) => !cat || p.cat === cat)} hotel={hotel} gates={gates}
+      <CityMap padding={{ top: insets.top + 120, bottom: sheetH + 8, left: 10, right: 10 }} center={center} pois={pois.filter((p) => !cat || p.cat === cat)} hotel={hotel} gates={gates}
         route={mode === 'taxi' ? undefined : route?.coords} onLongPress={saveHotel}
         onGatePress={(id) => router.push({ pathname: '/kapi/[id]', params: { id } })} />
 
       <View style={{ position: 'absolute', left: 12, right: 12, top: insets.top + 8, gap: 10 }}>
         <View style={[{ flexDirection: 'row', alignItems: 'center', gap: 8, height: 52, borderRadius: 26, backgroundColor: C.bg, paddingHorizontal: 6 }, shadow]}>
           <IconBtn name="back" label={t('common.back')} size={40} onPress={() => router.back()} />
-          <Text style={{ flex: 1, fontSize: 15, color: C.muted }}>{t('city.searchPh')}</Text>
+          <Text style={{ flex: 1, fontSize: fs(15), color: C.muted }}>{t('city.searchPh')}</Text>
           {loading && <ActivityIndicator color={C.accent} style={{ marginRight: 10 }} />}
         </View>
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8 }}>
@@ -82,7 +83,7 @@ export default function CityScreen() {
         {error && <Text style={[T.small, { backgroundColor: C.bg, padding: 8, borderRadius: 10, overflow: 'hidden' }]}>{t('city.offline')}</Text>}
       </View>
 
-      <View style={[{ position: 'absolute', left: 0, right: 0, bottom: 0, backgroundColor: C.bg, borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 16, paddingBottom: insets.bottom + 16, gap: 10 }, shadow]}>
+      <View onLayout={(e) => setSheetH(Math.round(e.nativeEvent.layout.height))} style={[{ position: 'absolute', left: 0, right: 0, bottom: 0, backgroundColor: C.bg, borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 16, paddingBottom: insets.bottom + 16, gap: 10 }, shadow]}>
         {!origin ? (
           <Text style={T.body}>{t('city.setHotel')}</Text>
         ) : (
@@ -98,8 +99,8 @@ export default function CityScreen() {
                 return (
                   <Pressable key={m} onPress={() => setMode(m)} accessibilityRole="tab" accessibilityState={{ selected: on }}
                     style={{ flex: 1, height: 52, borderRadius: 14, alignItems: 'center', justifyContent: 'center', borderWidth: on ? 2 : 1, borderColor: on ? C.accent : C.borderStrong, backgroundColor: on ? C.accentTint : C.bg }}>
-                    <Text style={{ fontSize: 12, fontWeight: '600', color: on ? C.accent : C.ink }}>{t(m === 'walk' ? 'city.walk' : m === 'accessible' ? 'city.accessible' : 'city.taxi')}</Text>
-                    <Text style={{ fontSize: 15, fontWeight: '700', color: on ? C.accent : C.ink }}>{m === 'taxi' ? '—' : `${m === 'accessible' ? Math.round(minutes * 1.25) : minutes} ${t('common.min')}`}</Text>
+                    <Text style={{ fontSize: fs(12), fontWeight: '600', color: on ? C.accent : C.ink }}>{t(m === 'walk' ? 'city.walk' : m === 'accessible' ? 'city.accessible' : 'city.taxi')}</Text>
+                    <Text style={{ fontSize: fs(15), fontWeight: '700', color: on ? C.accent : C.ink }}>{m === 'taxi' ? '—' : `${m === 'accessible' ? Math.round(minutes * 1.25) : minutes} ${t('common.min')}`}</Text>
                   </Pressable>
                 );
               })}
@@ -107,7 +108,7 @@ export default function CityScreen() {
             <Btn title={t('city.route')} icon="nav" onPress={() => router.push('/navigasyon')} />
           </>
         )}
-        <Text style={[T.small, { fontSize: 10 }]}>© OpenStreetMap katkıcıları (ODbL) · rota: FOSSGIS OSRM · harita: {`Apple/Google`}</Text>
+        <Text style={[T.small, { fontSize: fs(10) }]}>© OpenStreetMap katkıcıları (ODbL) · rota: FOSSGIS OSRM · harita: {`Apple/Google`}</Text>
       </View>
     </View>
   );

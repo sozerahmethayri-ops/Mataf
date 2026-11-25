@@ -3,7 +3,7 @@ import type { ReactNode } from 'react';
 import { Platform, Pressable, ScrollView, Switch, Text, View, type StyleProp, type TextStyle, type ViewStyle } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { C, R, S, onThemeChange, shadow } from '@/constants/theme';
+import { C, R, S, fs, fsAr, onThemeChange, shadow } from '@/constants/theme';
 import type { GateStatus } from '@/services/reports';
 import { useI18n } from '@/i18n';
 import type { Key } from '@/i18n/strings';
@@ -26,7 +26,7 @@ export function Header({ title, subtitle, back, right }: { title: string; subtit
         <IconBtn name="back" label={t('common.back')} onPress={() => (router.canGoBack() ? router.back() : router.replace('/'))} />
       )}
       <View style={{ flex: 1 }}>
-        <Text style={[T.h1, back && { fontSize: 20 }]} accessibilityRole="header">{title}</Text>
+        <Text style={[T.h1, back && { fontSize: fs(20) }]} accessibilityRole="header">{title}</Text>
         {subtitle ? <Text style={T.muted}>{subtitle}</Text> : null}
       </View>
       {right}
@@ -50,7 +50,7 @@ export function Btn({ title, onPress, kind = 'primary', icon, style, disabled }:
     <Pressable accessibilityRole="button" onPress={onPress} disabled={disabled}
       style={({ pressed }) => [{ height: 48, borderRadius: 24, paddingHorizontal: 18, backgroundColor: bg, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, opacity: disabled ? 0.5 : pressed ? 0.8 : 1 }, kind === 'secondary' && { borderWidth: 1.5, borderColor: C.borderStrong }, style]}>
       {icon && <Icon name={icon} color={fg} size={18} />}
-      <Text style={{ color: fg, fontSize: 15, fontWeight: '700' }}>{title}</Text>
+      <Text style={{ color: fg, fontSize: fs(15), fontWeight: '700' }}>{title}</Text>
     </Pressable>
   );
 }
@@ -60,7 +60,7 @@ export function Chip({ label, active, onPress, dot }: { label: string; active?: 
     <Pressable accessibilityRole="button" accessibilityState={{ selected: !!active }} onPress={onPress}
       style={[{ height: 38, paddingHorizontal: 14, borderRadius: 19, flexDirection: 'row', alignItems: 'center', gap: 6 }, active ? { backgroundColor: C.ink } : { backgroundColor: C.bg, borderWidth: 1, borderColor: C.borderStrong }]}>
       {dot && <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: active ? C.onInk : dot }} />}
-      <Text style={{ fontSize: 13, fontWeight: active ? '700' : '500', color: active ? C.onInk : C.ink }}>{label}</Text>
+      <Text style={{ fontSize: fs(13), fontWeight: active ? '700' : '500', color: active ? C.onInk : C.ink }}>{label}</Text>
     </Pressable>
   );
 }
@@ -90,7 +90,7 @@ export function Segmented<V extends string>({ value, options, onChange }: { valu
         return (
           <Pressable key={o.value} accessibilityRole="button" accessibilityState={{ selected: on }} onPress={() => onChange(o.value)}
             style={[{ flex: 1, height: 36, borderRadius: 10, alignItems: 'center', justifyContent: 'center' }, on && { backgroundColor: C.bg, ...shadow, shadowOpacity: 0.08, elevation: 1 }]}>
-            <Text style={{ fontSize: 13, fontWeight: on ? '700' : '500', color: on ? C.ink : C.muted }}>{o.label}</Text>
+            <Text style={{ fontSize: fs(13), fontWeight: on ? '700' : '500', color: on ? C.ink : C.muted }}>{o.label}</Text>
           </Pressable>
         );
       })}
@@ -114,7 +114,7 @@ export function StatusPill({ status }: { status: GateStatus }) {
   const tone = STATUS_TONE[status];
   return (
     <View style={{ paddingHorizontal: 10, paddingVertical: 5, borderRadius: 12, backgroundColor: tone.bg }}>
-      <Text style={{ fontSize: 12, fontWeight: '700', color: tone.fg }}>{t(tone.key)}</Text>
+      <Text style={{ fontSize: fs(12), fontWeight: '700', color: tone.fg }}>{t(tone.key)}</Text>
     </View>
   );
 }
@@ -125,7 +125,7 @@ export function ListRow({ title, subtitle, onPress, right, left }: { title: stri
       style={({ pressed }) => [{ minHeight: 56, flexDirection: 'row', alignItems: 'center', gap: S.md, borderBottomWidth: 1, borderBottomColor: C.border, paddingVertical: S.sm, opacity: pressed ? 0.7 : 1 }]}>
       {left}
       <View style={{ flex: 1, gap: 2 }}>
-        <Text style={{ fontSize: 15, fontWeight: '600', color: C.ink }}>{title}</Text>
+        <Text style={{ fontSize: fs(15), fontWeight: '600', color: C.ink }}>{title}</Text>
         {subtitle ? <Text style={T.small}>{subtitle}</Text> : null}
       </View>
       {right ?? (onPress ? <Icon name="chevron" color={C.muted} size={18} /> : null)}
@@ -142,14 +142,14 @@ export function ago(ms: number | undefined, t: ReturnType<typeof useI18n>['t']) 
 }
 
 const buildT = () => ({
-  h1: { fontSize: 26, fontWeight: '700', color: C.ink, letterSpacing: -0.3 } as TextStyle,
-  h2: { fontSize: 18, fontWeight: '700', color: C.ink } as TextStyle,
-  h3: { fontSize: 16, fontWeight: '700', color: C.ink, lineHeight: 22 } as TextStyle,
-  body: { fontSize: 15, lineHeight: 22, color: C.ink2 } as TextStyle,
-  muted: { fontSize: 13, color: C.muted } as TextStyle,
-  small: { fontSize: 12, color: C.muted } as TextStyle,
-  section: { fontSize: 12, fontWeight: '700', color: C.muted, textTransform: 'uppercase', letterSpacing: 0.7, marginTop: S.sm } as TextStyle,
-  arabic: { fontSize: 24, lineHeight: 40, color: C.ink, textAlign: 'right', writingDirection: 'rtl' } as TextStyle,
+  h1: { fontSize: fs(26), fontWeight: '700', color: C.ink, letterSpacing: -0.3 } as TextStyle,
+  h2: { fontSize: fs(18), fontWeight: '700', color: C.ink } as TextStyle,
+  h3: { fontSize: fs(16), fontWeight: '700', color: C.ink, lineHeight: fs(22) } as TextStyle,
+  body: { fontSize: fs(15), lineHeight: fs(22), color: C.ink2 } as TextStyle,
+  muted: { fontSize: fs(13), color: C.muted } as TextStyle,
+  small: { fontSize: fs(12), color: C.muted } as TextStyle,
+  section: { fontSize: fs(12), fontWeight: '700', color: C.muted, textTransform: 'uppercase', letterSpacing: 0.7, marginTop: S.sm } as TextStyle,
+  arabic: { fontSize: fsAr(24), lineHeight: fsAr(40), color: C.ink, textAlign: 'right', writingDirection: 'rtl' } as TextStyle,
 });
 /** Yazı stilleri — tema değişince aynı nesne yeni renklerle güncellenir. */
 export const T = buildT();

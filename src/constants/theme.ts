@@ -102,6 +102,19 @@ export const shadow = {
   elevation: 4,
 };
 
+// ── Yazı ölçeği (Ayarlar → Görünüm): fs(n) temel boyutu ölçekler; değişince ekranlar yeniden kurulur ──
+let textScale = 1;
+let arabicScale = 1;
+/** Yazı boyutu: temel piksel değerini kullanıcının seçtiği ölçekle çarpar. */
+export const fs = (n: number) => Math.round(n * textScale * 2) / 2;
+/** Arapça (Kur'an, dua) yazı boyutu: ayrı ölçek. */
+export const fsAr = (n: number) => Math.round(n * arabicScale * 2) / 2;
+export function applyTextScale(text: number, arabic: number) {
+  textScale = text;
+  arabicScale = arabic;
+  for (const fn of listeners) fn();
+}
+
 let darkNow = false;
 export const isDark = () => darkNow;
 const listeners = new Set<() => void>();
@@ -152,9 +165,10 @@ export function nightColor(c: string | undefined): string | undefined {
     h = max === rn ? (gn - bn) / d + (gn < bn ? 6 : 0) : max === gn ? (bn - rn) / d + 2 : (rn - gn) / d + 4;
     h /= 6;
   }
-  const l2 = 0.08 + l * 0.33;
-  // Açık bej/mermer tonlar gece zeytin-altın gibi çamurlaşmasın: açık renklerde doygunluğu daha çok düşür
-  const s2 = s * Math.max(0.2, 0.8 - 2 * Math.max(0, l - 0.6));
+  // Gece: parlaklık sıkıştırılır ama sahne solmasın (beyaz → açık gri-mavi, renkler canlı kalır)
+  const l2 = 0.13 + l * 0.52;
+  // Açık bej/mermer tonlar gece zeytin-altın gibi çamurlaşmasın: açık renklerde doygunluğu biraz düşür
+  const s2 = Math.min(1, s * Math.max(0.45, 1 - 1.4 * Math.max(0, l - 0.6)) * 1.1);
   // HSL → RGB
   const q = l2 < 0.5 ? l2 * (1 + s2) : l2 + s2 - l2 * s2;
   const p = 2 * l2 - q;

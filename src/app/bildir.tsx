@@ -6,7 +6,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Icon } from '@/components/Icon';
 import { Btn, Header, Segmented, SectionTitle, T } from '@/components/ui';
-import { C } from '@/constants/theme';
+import { C, fs } from '@/constants/theme';
 import { GATES, dist, toLocal } from '@/data/sites';
 import { pick, useI18n } from '@/i18n';
 import type { Key } from '@/i18n/strings';
@@ -99,7 +99,7 @@ export default function ReportScreen() {
 
         <SectionTitle>{t('report.comment')}</SectionTitle>
         <TextInput value={comment} onChangeText={setComment} multiline placeholder={t('detail.write')} placeholderTextColor={C.muted}
-          style={{ minHeight: 80, borderWidth: 1, borderColor: C.borderStrong, borderRadius: 14, padding: 12, fontSize: 14, color: C.ink, textAlignVertical: 'top' }} />
+          style={{ minHeight: 80, borderWidth: 1, borderColor: C.borderStrong, borderRadius: 14, padding: 12, fontSize: fs(14), color: C.ink, textAlignVertical: 'top' }} />
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
           <Pressable onPress={pickPhoto} accessibilityRole="button"
             style={{ height: 44, paddingHorizontal: 14, borderRadius: 22, borderWidth: 1, borderStyle: 'dashed', borderColor: '#C9C6C0', flexDirection: 'row', alignItems: 'center', gap: 8 }}>

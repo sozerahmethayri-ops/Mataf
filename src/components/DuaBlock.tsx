@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Pressable, Share, Text, View } from 'react-native';
 
-import { C } from '@/constants/theme';
+import { C, fs, fsAr } from '@/constants/theme';
 import type { DuaText } from '@/data/tawaf';
 import { pick, useI18n } from '@/i18n';
 import { duaSpeech, playSequence, stopVoice } from '@/services/voice';
@@ -29,14 +29,14 @@ export function DuaBlock({ d, tint = C.accentSoft, compact, right }: { d: DuaTex
   return (
     <View style={{ backgroundColor: tint, borderRadius: 16, padding: compact ? 12 : 14, gap: 8 }}>
       {d.when ? <Text style={[T.small, { color: C.accent, fontWeight: '700' }]}>{pick(d.when, lang)}{d.count ? ` · ${d.count} ${pick(L.times, lang)}` : ''}</Text> : null}
-      <Text style={[T.arabic, compact && { fontSize: 22, lineHeight: 40 }]}>{d.ar}</Text>
-      {lang !== 'ar' ? <Text style={{ fontSize: 14, fontStyle: 'italic', color: C.ink2, lineHeight: 20 }}>{d.tr}</Text> : null}
+      <Text style={[T.arabic, compact && { fontSize: fsAr(22), lineHeight: fsAr(40) }]}>{d.ar}</Text>
+      {lang !== 'ar' ? <Text style={{ fontSize: fs(14), fontStyle: 'italic', color: C.ink2, lineHeight: fs(20) }}>{d.tr}</Text> : null}
       {meaning ? <Text style={T.body}>{meaning}</Text> : null}
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 2 }}>
         <Pressable onPress={toggle} accessibilityRole="button" accessibilityLabel={pick(playing ? L.stop : L.listen, lang)}
           style={{ flexDirection: 'row', alignItems: 'center', gap: 6, height: 36, paddingHorizontal: 12, borderRadius: 18, backgroundColor: playing ? C.accent : C.bg }}>
           <Icon name={playing ? 'stop' : 'play'} size={14} color={playing ? C.onAccent : C.accent} fill={playing ? C.onAccent : C.accent} />
-          <Text style={{ fontSize: 13, fontWeight: '700', color: playing ? C.onAccent : C.accent }}>{pick(playing ? L.stop : L.listen, lang)}</Text>
+          <Text style={{ fontSize: fs(13), fontWeight: '700', color: playing ? C.onAccent : C.accent }}>{pick(playing ? L.stop : L.listen, lang)}</Text>
         </Pressable>
         <Text style={[T.small, { flex: 1 }]} numberOfLines={2}>{d.ref}{'\n'}{pick(d.quran ? L.reciter : L.tts, lang)}</Text>
         {right}

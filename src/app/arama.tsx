@@ -5,7 +5,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Icon, type IconName } from '@/components/Icon';
 import { IconBtn, StatusPill, T } from '@/components/ui';
-import { C, tone } from '@/constants/theme';
+import { C, tone, fs } from '@/constants/theme';
 import { PLACES, type PlaceCat } from '@/data/content';
 import { GATES, dist } from '@/data/sites';
 import { pick, useI18n } from '@/i18n';
@@ -55,7 +55,7 @@ export default function Search() {
         <IconBtn name="back" label={t('common.back')} onPress={() => router.back()} />
         <View style={{ flex: 1, height: 48, borderRadius: 24, borderWidth: 2, borderColor: C.accent, flexDirection: 'row', alignItems: 'center', paddingHorizontal: 14, gap: 8 }}>
           <Icon name="search" color={C.muted} size={18} />
-          <TextInput autoFocus value={q} onChangeText={setQ} placeholder={t('search.placeholder')} placeholderTextColor={C.muted} style={{ flex: 1, fontSize: 15, color: C.ink }} />
+          <TextInput autoFocus value={q} onChangeText={setQ} placeholder={t('search.placeholder')} placeholderTextColor={C.muted} style={{ flex: 1, fontSize: fs(15), color: C.ink }} />
           {q ? <Pressable onPress={() => setQ('')} accessibilityLabel="Temizle"><Icon name="close" size={16} color={C.muted} /></Pressable> : null}
         </View>
       </View>
@@ -67,7 +67,7 @@ export default function Search() {
               <Pressable key={c.id} onPress={() => setCat(on ? null : c.id)} accessibilityRole="button" accessibilityState={{ selected: on }}
                 style={{ width: '23%', minHeight: 78, borderRadius: 16, alignItems: 'center', justifyContent: 'center', gap: 6, padding: 6, borderWidth: on ? 2 : 1, borderColor: on ? c.fg : C.border, backgroundColor: on ? c.bg : C.bg }}>
                 <View style={{ width: 36, height: 36, borderRadius: 12, backgroundColor: c.bg, alignItems: 'center', justifyContent: 'center' }}><Icon name={c.icon} color={c.fg} /></View>
-                <Text style={{ fontSize: 11, fontWeight: '600', textAlign: 'center', color: C.ink }}>{t(c.key)}</Text>
+                <Text style={{ fontSize: fs(11), fontWeight: '600', textAlign: 'center', color: C.ink }}>{t(c.key)}</Text>
               </Pressable>
             );
           })}
@@ -81,7 +81,7 @@ export default function Search() {
               style={{ minHeight: 60, flexDirection: 'row', alignItems: 'center', gap: 12, borderBottomWidth: 1, borderBottomColor: C.border }}>
               <View style={{ width: 40, height: 40, borderRadius: 12, backgroundColor: c.bg, alignItems: 'center', justifyContent: 'center' }}><Icon name={c.icon} color={c.fg} size={18} /></View>
               <View style={{ flex: 1 }}>
-                <Text style={{ fontSize: 14, fontWeight: '600', color: C.ink }}>{p.name}</Text>
+                <Text style={{ fontSize: fs(14), fontWeight: '600', color: C.ink }}>{p.name}</Text>
                 <Text style={T.small}>{p.detail} · {p.m} m</Text>
               </View>
               {p.gateId ? <StatusPill status={summaries[p.gateId]?.status ?? 'open'} /> : null}

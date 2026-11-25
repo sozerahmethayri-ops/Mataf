@@ -4,7 +4,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Icon } from '@/components/Icon';
 import { Header, SectionTitle, Segmented, T } from '@/components/ui';
-import { C } from '@/constants/theme';
+import { C, fs } from '@/constants/theme';
 import { LANG_NAMES, MEAL_AUDIO, RECITERS, TAFSIRS } from '@/data/quranEditions';
 import type { ML } from '@/data/sites';
 import { pick, useI18n } from '@/i18n';
@@ -94,7 +94,7 @@ function LangChips({ langs, value, onChange }: { langs: string[]; value: string;
       {langs.map((l) => (
         <Pressable key={l} onPress={() => onChange(l)} accessibilityRole="radio" accessibilityState={{ selected: value === l }}
           style={{ height: 34, paddingHorizontal: 12, borderRadius: 17, justifyContent: 'center', backgroundColor: value === l ? C.ink : C.surface }}>
-          <Text style={{ fontSize: 13, fontWeight: '600', color: value === l ? C.onInk : C.ink }}>{LANG_NAMES[l] ?? l}</Text>
+          <Text style={{ fontSize: fs(13), fontWeight: '600', color: value === l ? C.onInk : C.ink }}>{LANG_NAMES[l] ?? l}</Text>
         </Pressable>
       ))}
     </ScrollView>
@@ -109,7 +109,7 @@ function Option({ label, sub, selected, onPress, check }: { label: string; sub?:
         {selected ? <Icon name="check" size={13} color={C.onAccent} width={3} /> : null}
       </View>
       <View style={{ flex: 1 }}>
-        <Text style={{ fontSize: 15, fontWeight: '600', color: C.ink }}>{label}</Text>
+        <Text style={{ fontSize: fs(15), fontWeight: '600', color: C.ink }}>{label}</Text>
         {sub ? <Text style={T.small}>{sub}</Text> : null}
       </View>
     </Pressable>

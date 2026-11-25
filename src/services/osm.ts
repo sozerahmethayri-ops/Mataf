@@ -5,42 +5,31 @@ import { cachedJson } from './cache';
 export type PoiCat = 'hotel' | 'food' | 'pharmacy' | 'bus' | 'taxi' | 'hospital';
 export type Poi = { id: string; cat: PoiCat; name: string; lat: number; lng: number };
 
-const OVERPASS = 'https://overpass-api.de/api/interpreter';
+// Yakındaki yerler Photon'dan (OSM etiketiyle, kategori başına en yakın 25); kararsız Overpass sunucularına bağlı değil.
+const CATS: { cat: PoiCat; tags: string[] }[] = [
+  { cat: 'hotel', tags: ['tourism:hotel', 'tourism:guest_house', 'tourism:hostel'] },
+  { cat: 'food', tags: ['amenity:restaurant', 'amenity:fast_food', 'amenity:cafe'] },
+  { cat: 'pharmacy', tags: ['amenity:pharmacy'] },
+  { cat: 'bus', tags: ['highway:bus_stop', 'amenity:bus_station'] },
+  { cat: 'taxi', tags: ['amenity:taxi'] },
+  { cat: 'hospital', tags: ['amenity:hospital', 'amenity:clinic'] },
+];
 
 export async function nearbyPois(lat: number, lng: number, radius = 1200): Promise<Poi[]> {
-  const a = `(around:${radius},${lat},${lng})`;
-  const q = `[out:json][timeout:25];(
-    nwr["tourism"="hotel"]${a};
-    nwr["amenity"~"^(restaurant|fast_food|cafe)$"]${a};
-    nwr["amenity"="pharmacy"]${a};
-    node["highway"="bus_stop"]${a};
-    nwr["amenity"="taxi"]${a};
-    nwr["amenity"~"^(hospital|clinic)$"]${a};
-  );out center 500;`;
-  type El = { type: string; id: number; lat?: number; lon?: number; center?: { lat: number; lon: number }; tags?: Record<string, string> };
-  const key = `osm:${lat.toFixed(3)},${lng.toFixed(3)},${radius}`;
-  const r = await cachedJson<{ elements: El[] }>(key, OVERPASS, 7 * 24 * 3600 * 1000, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-    body: `data=${encodeURIComponent(q)}`,
-  });
-  const out: Poi[] = [];
-  for (const e of r.data.elements) {
-    const t = e.tags ?? {};
-    const la = e.lat ?? e.center?.lat;
-    const lo = e.lon ?? e.center?.lon;
-    if (la == null || lo == null) continue;
-    let cat: PoiCat | null = null;
-    if (t.tourism === 'hotel') cat = 'hotel';
-    else if (['restaurant', 'fast_food', 'cafe'].includes(t.amenity)) cat = 'food';
-    else if (t.amenity === 'pharmacy') cat = 'pharmacy';
-    else if (t.highway === 'bus_stop') cat = 'bus';
-    else if (t.amenity === 'taxi') cat = 'taxi';
-    else if (t.amenity === 'hospital' || t.amenity === 'clinic') cat = 'hospital';
-    if (!cat) continue;
-    out.push({ id: `${e.type}/${e.id}`, cat, name: t['name:tr'] ?? t['name:en'] ?? t.name ?? '', lat: la, lng: lo });
-  }
-  return out;
+  type F = { geometry?: { coordinates?: [number, number] }; properties?: Record<string, string | number | undefined> };
+  const results = await Promise.allSettled(CATS.map(async ({ cat, tags }) => {
+    const url = `https://photon.komoot.io/reverse?lat=${lat.toFixed(5)}&lon=${lng.toFixed(5)}&radius=${radius / 1000}&limit=25&${tags.map((t) => `osm_tag=${t}`).join('&')}`;
+    const r = await cachedJson<{ features?: F[] }>(`poi:${cat}:${lat.toFixed(3)},${lng.toFixed(3)},${radius}`, url, 3 * 24 * 3600 * 1000);
+    return (r.data.features ?? []).flatMap((f) => {
+      const [lo, la] = f.geometry?.coordinates ?? [];
+      if (la == null || lo == null) return [];
+      const p = f.properties ?? {};
+      return [{ id: `${String(p.osm_type ?? 'N').toLowerCase()}/${p.osm_id}`, cat, name: String(p.name ?? ''), lat: la, lng: lo } as Poi];
+    });
+  }));
+  const ok = results.filter((r): r is PromiseFulfilledResult<Poi[]> => r.status === 'fulfilled');
+  if (!ok.length) throw (results[0] as PromiseRejectedResult).reason;
+  return ok.flatMap((r) => r.value);
 }
 
 export type WalkRoute = { coords: { latitude: number; longitude: number }[]; meters: number; seconds: number; approximate: boolean };

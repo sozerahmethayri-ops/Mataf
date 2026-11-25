@@ -2,7 +2,7 @@ import { Linking, Text, View } from 'react-native';
 
 import { Icon } from '@/components/Icon';
 import { Btn, Card, Header, Screen, SectionTitle, T } from '@/components/ui';
-import { C } from '@/constants/theme';
+import { C, fs } from '@/constants/theme';
 import { RAWDAH } from '@/data/content';
 import { pick, useI18n } from '@/i18n';
 
@@ -12,7 +12,7 @@ export default function Rawdah() {
     <Screen>
       <Header back title={t('rawdah.title')} subtitle="الروضة الشريفة" />
       <Card tint={C.greenTint}>
-        <Text style={{ fontSize: 14, fontWeight: '700', color: C.greenDark }}>Nusuk · {RAWDAH.insideMinutes} dk · {RAWDAH.reissueDays} gün</Text>
+        <Text style={{ fontSize: fs(14), fontWeight: '700', color: C.greenDark }}>Nusuk · {RAWDAH.insideMinutes} dk · {RAWDAH.reissueDays} gün</Text>
         <Text style={T.small}>{pick(RAWDAH.entry, lang)}</Text>
         <Btn title={t('rawdah.nusuk')} kind="secondary" icon="external" onPress={() => Linking.openURL(RAWDAH.nusukUrl)} />
       </Card>
@@ -23,7 +23,7 @@ export default function Rawdah() {
             <Icon name="tour" color="#FFFFFF" size={30} width={1.8} />
           </View>
           <View style={{ flex: 1 }}>
-            <Text style={{ fontSize: 16, fontWeight: '700', color: C.greenDark }}>{t('rawdah.tour')}</Text>
+            <Text style={{ fontSize: fs(16), fontWeight: '700', color: C.greenDark }}>{t('rawdah.tour')}</Text>
             <Text style={T.small}>{t('rawdah.tourSub')}</Text>
           </View>
         </View>
@@ -47,7 +47,7 @@ export default function Rawdah() {
       {RAWDAH.steps.map((s, i) => (
         <View key={i} style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
           <View style={{ width: 26, height: 26, borderRadius: 13, backgroundColor: C.accent, alignItems: 'center', justifyContent: 'center' }}>
-            <Text style={{ color: C.onAccent, fontWeight: '700', fontSize: 12 }}>{i + 1}</Text>
+            <Text style={{ color: C.onAccent, fontWeight: '700', fontSize: fs(12) }}>{i + 1}</Text>
           </View>
           <Text style={[T.body, { flex: 1 }]}>{s}</Text>
         </View>

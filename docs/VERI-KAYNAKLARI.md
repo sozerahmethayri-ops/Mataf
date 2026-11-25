@@ -43,8 +43,10 @@
 | cdn.islamic.network/quran/audio | Ayet ayet tilavet ve sesli meal (alquran.cloud) | Kayıt hakları kâri/yayıncılara aittir |
 | cdn.jsdelivr.net/gh/spa5k/tafsir_api | Tefsir (30+ dil) | Depo MIT; tefsir metinlerinin hakları yayıncılarına aittir |
 | cdn.jsdelivr.net/gh/fawazahmed0/hadith-api | Sahîh-i Buhârî | Açık veri |
-| overpass-api.de | Şehir yerleri | © OpenStreetMap katkıcıları, ODbL — atıf zorunlu |
-| overpass-api.de, overpass.kumi.systems, overpass.private.coffee | En yakın cami (dünya geneli; sırayla yedek) | ODbL; kamu sunucuları — yoğun kullanımda kendi Overpass sunucunuzu kurun |
+| photon.komoot.io | Şehir yerleri (otel, yemek, eczane, durak, taksi, hastane) ve en yakın cami — OSM etiketine göre ters arama; konum adı | © OpenStreetMap katkıcıları, ODbL — atıf zorunlu; adil kullanım, uygulama kendini `User-Agent` ile tanıtır |
+| overpass-api.de, overpass.kumi.systems, overpass.private.coffee, maps.mail.ru | En yakın cami için yedek (Photon yanıt vermezse) | ODbL; bazı ağlarda Overpass sunucularına hiç ulaşılamıyor — bu yüzden ilk tercih Photon |
+| tiles.openfreemap.org | Uygulama içi online harita (vektör karolar, liberty/dark stilleri) | Ücretsiz, anahtarsız; © OpenMapTiles © OpenStreetMap — haritanın köşesinde atıf |
+| unpkg.com / cdn.jsdelivr.net (maplibre-gl 5.24.1) | Harita çizim kütüphanesi (WebView içinde) | BSD-3; biri açılmazsa diğeri denenir |
 | routing.openstreetmap.de | Yaya rotası | FOSSGIS kullanım koşulları; yoğun kullanımda kendi OSRM sunucunuzu kurun |
 | Supabase (isteğe bağlı) | Canlı kapı bildirimleri | Kendi projeniz |
 

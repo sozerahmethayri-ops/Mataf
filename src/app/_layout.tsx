@@ -7,7 +7,7 @@ import { C } from '@/constants/theme';
 import { I18nProvider } from '@/i18n';
 import { AppProvider } from '@/services/AppContext';
 import { QuranPrefsProvider } from '@/services/QuranPrefs';
-import { ThemeProvider, useTheme } from '@/services/ThemeContext';
+import { ScreenRemount, ThemeProvider, useTheme } from '@/services/ThemeContext';
 import { ReportsProvider } from '@/services/ReportsContext';
 
 export default function RootLayout() {
@@ -34,7 +34,8 @@ function AppStack() {
   return (
     <>
       <StatusBar style={dark ? 'light' : 'dark'} />
-      <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: C.bg } }}>
+      <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: C.bg } }}
+        screenLayout={({ children }) => <ScreenRemount>{children}</ScreenRemount>}>
         <Stack.Screen name="(tabs)" />
         <Stack.Screen name="bildir" options={{ presentation: 'modal' }} />
         <Stack.Screen name="kuran-ayarlar" options={{ presentation: 'modal' }} />

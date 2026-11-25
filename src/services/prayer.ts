@@ -45,8 +45,20 @@ function prevOf(k: PrayerKey, today: Record<PrayerKey, Date>, lat: number, lng: 
 
 export const qiblaDeg = (lat: number, lng: number) => Qibla(new Coordinates(lat, lng));
 
+export function guessMethod(): MethodId {
+  let tz = '';
+  try { tz = Intl.DateTimeFormat().resolvedOptions().timeZone ?? ''; } catch { /* yok */ }
+  if (tz === 'Europe/Istanbul') return 'Turkey';
+  if (tz === 'Asia/Riyadh' || tz === 'Asia/Aden' || tz === 'Asia/Qatar' || tz === 'Asia/Bahrain' || tz === 'Asia/Kuwait') return 'UmmAlQura';
+  if (tz === 'Asia/Dubai' || tz === 'Asia/Muscat') return 'Dubai';
+  if (tz.startsWith('America/')) return 'NorthAmerica';
+  if (tz === 'Asia/Karachi' || tz === 'Asia/Kolkata' || tz === 'Asia/Dhaka') return 'Karachi';
+  if (tz === 'Africa/Cairo') return 'Egyptian';
+  return 'MuslimWorldLeague';
+}
+
 export async function getMethod(): Promise<MethodId> {
-  return ((await AsyncStorage.getItem('mataf.method')) as MethodId) || 'UmmAlQura';
+  return ((await AsyncStorage.getItem('mataf.method')) as MethodId) || guessMethod();
 }
 export async function setMethod(m: MethodId) {
   await AsyncStorage.setItem('mataf.method', m);

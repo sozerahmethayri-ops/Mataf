@@ -1,11 +1,13 @@
-// Ulaşım haritasının sade sürümü (anahtarsız Android derlemesi ve web önizlemesi): rota bacakları renkleriyle.
+// Ulaşım haritasının sade sürümü (Android: uygulama içi online harita; web önizlemesi: sade harita): rota bacakları renkleriyle.
 import { C } from '@/constants/theme';
 import type { TransportMapProps } from './TransportMap.types';
-import { PlainMap } from './PlainMap';
+import { OnlineMap } from './OnlineMap';
 
-export function TransportMapPlain({ user, dest, segments, onLongPress }: TransportMapProps) {
+export function TransportMapPlain({ user, dest, segments, onLongPress, fitKey }: TransportMapProps) {
   return (
-    <PlainMap
+    <OnlineMap
+      fitUser
+      fitKey={fitKey}
       user={user}
       center={user ?? dest ?? { lat: 21.4225, lng: 39.8262 }}
       selectedId={dest ? 'dest' : undefined}

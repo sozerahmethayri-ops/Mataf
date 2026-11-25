@@ -12,10 +12,11 @@ import { Icon, type IconName } from '@/components/Icon';
 import { TransportMap } from '@/components/TransportMap';
 import type { MapSeg } from '@/components/TransportMap.types';
 import { Btn, Card, IconBtn, Segmented, T } from '@/components/ui';
-import { C, R } from '@/constants/theme';
+import { C, R, fs } from '@/constants/theme';
 import { ANCHORS } from '@/data/sites';
 import { pick, useI18n } from '@/i18n';
 import { useLocation } from '@/services/location';
+import { uaHeaders } from '@/services/cache';
 import {
   fmtMinutes, mapsUrl, meters, osrmUrl, parseOsrm, parsePhoton, photonReverseUrl, photonUrl, placeLine, planTransit, roughRoute,
   shareText, uberUrl, type Itinerary, type LatLng, type LegKind, type Place, type StreetRoute, type Travel,
@@ -91,7 +92,7 @@ async function getJson(url: string, ms = 12000) {
   const ctrl = new AbortController();
   const timer = setTimeout(() => ctrl.abort(), ms);
   try {
-    const r = await fetch(url, { signal: ctrl.signal, headers: { Accept: 'application/json' } });
+    const r = await fetch(url, { signal: ctrl.signal, headers: { Accept: 'application/json', ...uaHeaders() } });
     if (!r.ok) throw new Error(`HTTP ${r.status}`);
     return await r.json();
   } finally {
@@ -275,7 +276,7 @@ export default function TransportScreen() {
               <Icon name="search" color={C.muted} />
               <TextInput value={query} onChangeText={setQuery} placeholder={pick({ tr: 'Adres, otel, istasyon, yer…', en: 'Address, hotel, station, place…', ar: 'عنوان، فندق، محطة، مكان…' }, lg)}
                 placeholderTextColor={C.muted} returnKeyType="search" autoCorrect={false}
-                style={[{ flex: 1, height: 46, fontSize: 16, color: C.ink, textAlign: lg === 'ar' ? 'right' : 'left' }, WEB_NO_OUTLINE]} accessibilityLabel={l('where')} />
+                style={[{ flex: 1, height: 46, fontSize: fs(16), color: C.ink, textAlign: lg === 'ar' ? 'right' : 'left' }, WEB_NO_OUTLINE]} accessibilityLabel={l('where')} />
               {searching ? <ActivityIndicator color={C.muted} /> : query ? (
                 <Pressable onPress={() => setQuery('')} hitSlop={8} accessibilityRole="button" accessibilityLabel={l('close')}><Icon name="close" color={C.muted} /></Pressable>
               ) : null}
@@ -299,7 +300,7 @@ export default function TransportScreen() {
                     <Pressable key={q.label} onPress={q.onPress} accessibilityRole="button"
                       style={({ pressed }) => ({ flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 12, height: 38, borderRadius: 19, backgroundColor: C.accentTint, opacity: pressed ? 0.7 : 1 })}>
                       <Icon name={q.icon} color={C.accent} size={16} />
-                      <Text style={{ color: C.accent, fontWeight: '700', fontSize: 14 }}>{q.label}</Text>
+                      <Text style={{ color: C.accent, fontWeight: '700', fontSize: fs(14) }}>{q.label}</Text>
                     </Pressable>
                   ))}
                 </View>
@@ -342,7 +343,7 @@ export default function TransportScreen() {
                   <View style={{ flexDirection: 'row', gap: 8, alignItems: 'center' }}><ActivityIndicator color={C.muted} /><Text style={T.muted}>{l('routing')}</Text></View>
                 ) : (
                   <View style={{ flexDirection: 'row', alignItems: 'baseline', gap: 8 }}>
-                    <Text style={{ fontSize: 30, fontWeight: '800', color: C.ink }}>{fmtMinutes(Math.max(1, Math.round(cur.seconds / 60)), lg)}</Text>
+                    <Text style={{ fontSize: fs(30), fontWeight: '800', color: C.ink }}>{fmtMinutes(Math.max(1, Math.round(cur.seconds / 60)), lg)}</Text>
                     <Text style={T.muted}>{fmtDist(cur.meters, lg)}{mode === 'car' ? ` · ${l('noTraffic')}` : ''}</Text>
                   </View>
                 )
@@ -403,13 +404,13 @@ export default function TransportScreen() {
       {/* Şoföre / görevliye göster: büyük yazı, birkaç dilde */}
       <Modal visible={driver && !!dest} animationType="slide" onRequestClose={() => setDriver(false)} supportedOrientations={['portrait', 'landscape']}>
         <SafeAreaView style={{ flex: 1, backgroundColor: C.bg, padding: 24, gap: 18, justifyContent: 'center' }}>
-          <Text style={{ fontSize: 22, color: C.ink2, textAlign: 'center', writingDirection: 'rtl' }}>{L.takeMe.ar}</Text>
-          <Text style={{ fontSize: 20, color: C.ink2, textAlign: 'center', writingDirection: 'rtl' }}>براہ کرم مجھے یہاں لے چلیں</Text>
-          <Text style={{ fontSize: 18, color: C.ink2, textAlign: 'center' }}>{L.takeMe.en}</Text>
-          {dest?.local ? <Text style={{ fontSize: 40, fontWeight: '800', color: C.ink, textAlign: 'center', writingDirection: 'rtl' }}>{dest.local}</Text> : null}
+          <Text style={{ fontSize: fs(22), color: C.ink2, textAlign: 'center', writingDirection: 'rtl' }}>{L.takeMe.ar}</Text>
+          <Text style={{ fontSize: fs(20), color: C.ink2, textAlign: 'center', writingDirection: 'rtl' }}>براہ کرم مجھے یہاں لے چلیں</Text>
+          <Text style={{ fontSize: fs(18), color: C.ink2, textAlign: 'center' }}>{L.takeMe.en}</Text>
+          {dest?.local ? <Text style={{ fontSize: fs(40), fontWeight: '800', color: C.ink, textAlign: 'center', writingDirection: 'rtl' }}>{dest.local}</Text> : null}
           <Text style={{ fontSize: dest?.local ? 26 : 34, fontWeight: '800', color: C.ink, textAlign: 'center' }}>{dest?.name}</Text>
-          {dest?.sub ? <Text style={{ fontSize: 20, color: C.ink, textAlign: 'center' }}>{dest.sub}</Text> : null}
-          {dest && <Text style={{ fontSize: 16, color: C.muted, textAlign: 'center' }}>{dest.lat.toFixed(5)}, {dest.lng.toFixed(5)}</Text>}
+          {dest?.sub ? <Text style={{ fontSize: fs(20), color: C.ink, textAlign: 'center' }}>{dest.sub}</Text> : null}
+          {dest && <Text style={{ fontSize: fs(16), color: C.muted, textAlign: 'center' }}>{dest.lat.toFixed(5)}, {dest.lng.toFixed(5)}</Text>}
           <Btn title={l('close')} kind="secondary" onPress={() => setDriver(false)} />
         </SafeAreaView>
       </Modal>
@@ -422,7 +423,7 @@ function Badge({ kind, label, color, textColor }: { kind: LegKind; label: string
   return (
     <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 8, height: 26, borderRadius: 8, backgroundColor: bg }}>
       <Icon name={KIND[kind].icon} color={textColor ?? '#FFFFFF'} size={14} />
-      {label ? <Text style={{ color: textColor ?? '#FFFFFF', fontWeight: '700', fontSize: 13 }}>{label}</Text> : null}
+      {label ? <Text style={{ color: textColor ?? '#FFFFFF', fontWeight: '700', fontSize: fs(13) }}>{label}</Text> : null}
     </View>
   );
 }
@@ -434,7 +435,7 @@ function ItinCard({ it, lang, active, onPress, l, names }: { it: Itinerary; lang
     <Pressable onPress={onPress} accessibilityRole="button" accessibilityState={{ selected: active }}
       style={{ borderWidth: active ? 2 : 1, borderColor: active ? C.accent : C.border, borderRadius: R.lg, padding: 12, gap: 10, backgroundColor: C.bg }}>
       <View style={{ flexDirection: 'row', alignItems: 'baseline', gap: 8 }}>
-        <Text style={{ fontSize: 20, fontWeight: '800', color: C.ink }}>{fmtMinutes(it.minutes, lang)}</Text>
+        <Text style={{ fontSize: fs(20), fontWeight: '800', color: C.ink }}>{fmtMinutes(it.minutes, lang)}</Text>
         <Text style={T.muted}>{hhmm(it.start, lang)} → {hhmm(it.end, lang)} · {it.transfers ? `${it.transfers} ${l('transfers')}` : l('direct')}</Text>
       </View>
       <View style={{ flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: 4 }}>

@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { ActivityIndicator, Text, View } from 'react-native';
 
 import { Btn, Card, Header, ListRow, Screen, SectionTitle, T, ago } from '@/components/ui';
-import { C } from '@/constants/theme';
+import { C, fs } from '@/constants/theme';
 import { SOURCES } from '@/data/content';
 import { useI18n } from '@/i18n';
 import { cacheAge, clearCache } from '@/services/cache';
@@ -49,7 +49,7 @@ export default function DataSources() {
         <ListRow key={s.id} title={s.title}
           subtitle={`${s.id === 'reports' ? (backend === 'supabase' ? 'Supabase · canlı' : 'Yerel demo · bu cihaz') : s.meta}${ages[s.id] ? ` · ${ago(ages[s.id], t)}` : ''}`}
           right={<View style={{ paddingHorizontal: 9, paddingVertical: 4, borderRadius: 10, backgroundColor: s.live ? C.openTint : C.surface }}>
-            <Text style={{ fontSize: 11, fontWeight: '700', color: s.live ? C.open : '#334155' }}>{s.live ? '● Canlı' : 'Sürümlü'}</Text>
+            <Text style={{ fontSize: fs(11), fontWeight: '700', color: s.live ? C.open : '#334155' }}>{s.live ? '● Canlı' : 'Sürümlü'}</Text>
           </View>} />
       ))}
       <Text style={T.small}>Kurallar: resmî kapanma bilgisi ziyaretçi bildirimlerinden önce gelir. Bildirim 3 farklı kişi onaylayınca görünür, 2 saat içinde yeniden onaylanmazsa kalkar.</Text>

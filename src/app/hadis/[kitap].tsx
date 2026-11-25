@@ -4,7 +4,7 @@ import { ActivityIndicator, FlatList, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Btn, Header, T } from '@/components/ui';
-import { C } from '@/constants/theme';
+import { C, fs } from '@/constants/theme';
 import { useI18n } from '@/i18n';
 import { bukhariSection } from '@/services/hadith';
 import { useAsync } from '@/services/useAsync';
@@ -35,7 +35,7 @@ export default function BukhariBook() {
           contentContainerStyle={{ padding: 16, paddingBottom: 32 }}
           renderItem={({ item: h }) => (
             <View style={{ paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: C.border, gap: 6 }}>
-              <Text style={{ fontSize: 12, fontWeight: '700', color: C.accent }}>Buhârî, {h.number}</Text>
+              <Text style={{ fontSize: fs(12), fontWeight: '700', color: C.accent }}>Buhârî, {h.number}</Text>
               <Text style={lang === 'ar' ? T.arabic : T.body}>{h.text}</Text>
             </View>
           )}

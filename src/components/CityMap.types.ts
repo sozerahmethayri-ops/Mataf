@@ -15,4 +15,6 @@ export type CityMapProps = {
   onLongPress?: (p: { lat: number; lng: number }) => void;
   onPoiPress?: (p: Poi) => void;
   onGatePress?: (id: string) => void;
+  /** Haritayı örten üst/alt paneller (px). */
+  padding?: { top: number; bottom: number; left: number; right: number };
 };
