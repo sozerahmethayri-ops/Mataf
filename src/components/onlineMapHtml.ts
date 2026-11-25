@@ -77,7 +77,16 @@ function init(){
     ready=true;post({t:'ready'});if(state)apply(state,true);
     // Sekme sayfası (ViewPager) içinde WebView ilk anda 0 boyutla kurulabiliyor: birkaç kez boyutu yenile
     [250,900,2000].forEach(function(ms){setTimeout(function(){map.resize();map.triggerRepaint()},ms)});
+    // Tanı: 4 sn sonra çizim durumu (tuval boyutu, WebGL bağlamı, karolar) günlüğe
+    setTimeout(function(){
+      var cv=map.getCanvas(),gl=null;try{gl=map.painter&&map.painter.context&&map.painter.context.gl}catch(x){}
+      var lost=!!(gl&&gl.isContextLost&&gl.isContextLost());
+      post({t:'log',m:'durum '+cv.width+'x'+cv.height+' kayıp='+lost+' karolar='+map.areTilesLoaded()+' öğe='+map.queryRenderedFeatures().length});
+      if(lost)post({t:'reload',m:'webgl bağlamı kayıp'});
+    },4000);
   });
+  map.on('webglcontextlost',function(){post({t:'log',m:'webgl bağlamı kayboldu'})});
+  map.on('webglcontextrestored',function(){post({t:'log',m:'webgl bağlamı geri geldi'});map.triggerRepaint()});
   map.on('click',function(e){
     var p=e.point,f=map.queryRenderedFeatures([[p.x-18,p.y-18],[p.x+18,p.y+18]],{layers:['pins']});
     if(f.length)post({t:'pin',id:f[0].properties.id});

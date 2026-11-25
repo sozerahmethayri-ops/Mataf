@@ -43,6 +43,15 @@ export function OnlineMap(props: OnlineMapProps) {
   // Sayfa hazır olunca son durum hemen gönderilir; sonraki değişiklikler etkiyle
   const stateRef = useRef(state);
   const logs = useRef(0);
+  const reloaded = useRef(false);
+  // Hazır olduktan sonra WebView'i 1 px oynat: bazı cihazlarda (ilk WebView) tuval ancak yeniden yerleşimde boyanıyor
+  const [nudge, setNudge] = useState(0);
+  useEffect(() => {
+    if (!ready) return;
+    const a = setTimeout(() => setNudge(1), 700);
+    const b = setTimeout(() => setNudge(0), 1400);
+    return () => { clearTimeout(a); clearTimeout(b); };
+  }, [ready]);
   useEffect(() => { stateRef.current = state; });
   useEffect(() => {
     if (ready) ref.current?.injectJavaScript(`window.matafSet(${state});true;`);
@@ -84,6 +93,12 @@ export function OnlineMap(props: OnlineMapProps) {
       console.log('[harita] hazır', Date.now() - t0.current, 'ms');
       setReady(true);
       setSlow(false);
+    } else if (m.t === 'reload' && !reloaded.current) {
+      // WebGL bağlamı kaybolduysa sayfayı bir kez yeniden kur
+      reloaded.current = true;
+      console.log('[harita] yeniden kuruluyor:', m.m);
+      setReady(false);
+      setAttempt((n) => n + 1);
     } else if (m.t === 'error') {
       console.warn('[harita] açılamadı:', m.m);
       setFailed(true);
@@ -127,7 +142,7 @@ export function OnlineMap(props: OnlineMapProps) {
         nestedScrollEnabled
         scrollEnabled={false}
         bounces={false}
-        style={{ flex: 1, backgroundColor: C.mapGround }}
+        style={{ flex: 1, marginBottom: nudge, backgroundColor: C.mapGround }}
       />
       {!ready && !slow && <ActivityIndicator style={{ position: 'absolute', top: '45%', alignSelf: 'center' }} color={C.accent} />}
       {!ready && slow && (
