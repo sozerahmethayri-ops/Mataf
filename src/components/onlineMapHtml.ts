@@ -38,7 +38,19 @@ function init(){
     map=new maplibregl.Map({container:'m',style:CFG.style,center:[39.8262,21.4225],zoom:15,maxPitch:65,fadeDuration:0,
       attributionControl:{compact:true},dragRotate:true,pitchWithRotate:true,touchPitch:true});
   }catch(e){post({t:'error',m:'webgl: '+e.message});return}
-  map.on('error',function(e){var m=(e&&e.error&&e.error.message)||'map error';post({t:'log',m:m});if(!ready&&!map.isStyleLoaded())post({t:'error',m:m})});
+  // Karo/kaynak isteği başarısız olursa (ör. ilk bağlantıda SSL kopması) MapLibre kendisi yeniden denemez:
+  // kaynağı birkaç kez artan aralıkla yeniden yükle, yoksa harita boş kalır
+  var retries=0,retryT=null;
+  map.on('error',function(e){
+    var m=(e&&e.error&&e.error.message)||'map error';post({t:'log',m:(e&&e.sourceId?e.sourceId+': ':'')+m});
+    if(!ready&&!map.isStyleLoaded()&&!(e&&e.sourceId)){post({t:'error',m:m});return}
+    if(e&&e.sourceId&&retries<5&&!retryT){
+      var id=e.sourceId;
+      retryT=setTimeout(function(){retryT=null;retries++;var src=map.getSource(id);
+        try{if(src&&src.setUrl&&src.url)src.setUrl(src.url);else if(src&&src.setTiles&&src.tiles)src.setTiles(src.tiles);post({t:'log',m:'yeniden yüklendi: '+id})}catch(x){}
+      },1500*(retries+1));
+    }
+  });
   map.on('load',function(){
     var src=map.getStyle().sources,vec=null;
     for(var k in src){if(src[k].type==='vector'){vec=k;break}}
