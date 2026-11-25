@@ -95,7 +95,14 @@ fi
 echo "widget eklendi: $added" >> smoke/status.txt
 sleep 3
 adb shell input keyevent KEYCODE_HOME; sleep 6; shot "41-widget-ana-ekran"
+# Başlatıcı yer yoksa küçük uygulamayı sonraki sayfaya koyar: iki sayfa sağa bak
+adb shell input swipe $(( W * 85 / 100 )) $(( H * 45 / 100 )) $(( W * 15 / 100 )) $(( H * 45 / 100 )) 300; sleep 4; shot "42-widget-sayfa2"
 adb shell dumpsys appwidget > smoke/widget.txt 2>&1 || true
+# Dokununca uygulama açılıyor mu? (küçük uygulama sayfanın üst yarısında)
+tap 500 300; sleep 5
+top=$(adb shell dumpsys activity activities | grep -E "mResumedActivity|topResumedActivity" | head -2 | tr -d '\r')
+echo "dokununca öndeki: $top" >> smoke/status.txt
+shot "43-widget-dokun"
 adb shell monkey -p "$PKG" -c android.intent.category.LAUNCHER 1 >/dev/null 2>&1; sleep 6
 
 # Tema değiştirme (koyu/açık) sonrası uygulama açık kalmalı: Ayarlar'da tema satırına dokun
