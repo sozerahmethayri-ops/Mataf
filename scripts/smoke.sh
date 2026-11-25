@@ -77,21 +77,23 @@ tapText() { # $1: metin (grep -E); bulursa ortasına dokunur
   set -- $b
   adb shell input tap $(( ($1 + $3) / 2 )) $(( ($2 + $4) / 2 ))
 }
-open vakitler; sleep 6
-found=0
-for k in 1 2 3 4 5 6; do
-  if tapText "Ana ekrana vakit kutusu ekle|Add prayer times to home screen|أضف المواقيت إلى الشاشة الرئيسية"; then found=1; break; fi
-  adb shell input swipe $(( W / 2 )) $(( H * 75 / 100 )) $(( W / 2 )) $(( H * 30 / 100 )) 300; sleep 1
-done
-echo "widget satırı bulundu: $found" >> smoke/status.txt
-sleep 3; shot "40-widget-onay"
+widgetAdded() { [ "$(adb shell dumpsys appwidget | grep -c PrayerWidgetProvider)" -ge 2 ]; }
+# mataf://vakitler?widget=1 başlatıcının onay penceresini açar. RN ekranı sürekli güncellendiği için
+# uiautomator çoğu zaman "idle state" alamıyor; o zaman düğmeyi olası yerlerinde dener.
+open "vakitler?widget=1"; sleep 6; shot "40-widget-onay"
 added=0
-for k in 1 2 3; do
-  if tapText "Add to home screen|ADD TO HOME SCREEN|Add automatically|ADD AUTOMATICALLY|Add|ADD|Ekle|EKLE|Ana ekrana ekle"; then added=1; break; fi
-  sleep 2
-done
-echo "widget onayı: $added" >> smoke/status.txt
-sleep 4
+if tapText "Add to home screen|ADD TO HOME SCREEN|Add automatically|ADD AUTOMATICALLY|Add|ADD|Ekle|EKLE|Ana ekrana ekle"; then
+  sleep 4; widgetAdded && added=1
+fi
+if [ $added = 0 ]; then
+  for p in "850 930" "750 930" "850 960" "750 960" "850 900" "650 930" "850 870" "700 880"; do
+    open "vakitler?widget=1"; sleep 5
+    tap $p; sleep 4
+    if widgetAdded; then added="dokunma $p"; break; fi
+  done
+fi
+echo "widget eklendi: $added" >> smoke/status.txt
+sleep 3
 adb shell input keyevent KEYCODE_HOME; sleep 6; shot "41-widget-ana-ekran"
 adb shell dumpsys appwidget > smoke/widget.txt 2>&1 || true
 adb shell monkey -p "$PKG" -c android.intent.category.LAUNCHER 1 >/dev/null 2>&1; sleep 6
@@ -104,6 +106,7 @@ tap 200 158; step "32-tema-acik" 4
 open harita; step "33-harita-tema" 8
 
 adb logcat -d > smoke/logcat.txt
+grep -iE "expo.?widgets|glance|PrayerWidget|appwidget" smoke/logcat.txt | head -150 > smoke/widget-log.txt || true
 # Yalnız uygulamamızın çökmeleri (Google Play hizmetleri gibi sistem süreçleri hariç) + uygulamanın neden kapatıldığı
 { grep -n -B1 -A40 -E "Process: $PKG" smoke/logcat.txt; grep -n -A20 -E "ReactNativeJS.*(Error|Exception)|JavascriptException" smoke/logcat.txt; grep -n -E "Killing [0-9]+:$PKG|$PKG.*has died|DeadSystemException" smoke/logcat.txt | head -20; } > smoke/crash.txt
 [ -s smoke/crash.txt ] || echo "çökme kaydı yok" > smoke/crash.txt
