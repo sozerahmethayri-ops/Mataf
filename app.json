@@ -106,7 +106,8 @@
             }
           ]
         }
-      ]
+      ],
+      "./plugins/withGradleMemory"
     ],
     "experiments": {
       "typedRoutes": true,
