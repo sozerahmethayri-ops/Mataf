@@ -1,0 +1,39 @@
+# Web sürümü: GitHub Pages'e yayınlar (https://sozerahmethayri-ops.github.io/Mataf/). iPhone'da Safari → Ana Ekrana Ekle.
+name: Web (GitHub Pages)
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npx expo export -p web --output-dir dist
+        env:
+          WEB_BASE_URL: /Mataf
+      - name: Uygulama gibi açılma (PWA) ve sayfa yenilemede yönlendirme
+        run: |
+          cp assets/images/icon.png dist/icon.png
+          sed -i 's#</head>#<link rel="manifest" href="/Mataf/manifest.json"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="MATAF"><link rel="apple-touch-icon" href="/Mataf/icon.png"></head>#' dist/index.html
+          cp dist/index.html dist/404.html
+          touch dist/.nojekyll
+      - uses: JamesIves/github-pages-deploy-action@v4
+        with:
+          branch: gh-pages
+          folder: dist
+          single-commit: true
