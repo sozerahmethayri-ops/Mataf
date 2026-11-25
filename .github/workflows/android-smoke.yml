@@ -1,0 +1,61 @@
+# Android emülatöründe açılış denemesi: APK'yı (x86_64) derler, emülatöre kurar, açar, 45 sn bekler;
+# çalışıyor mu, ekran görüntüsü ve logcat'i "smoke-latest" sürüm sayfasına koyar.
+name: Android smoke
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 75
+    env:
+      CI: 1
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+      - uses: gradle/actions/setup-gradle@v4
+      - run: npm ci
+      - run: npx expo prebuild --platform android --no-install
+      - name: APK (x86_64, emülatör için)
+        working-directory: android
+        run: ./gradlew assembleRelease --no-daemon -PreactNativeArchitectures=x86_64
+      - name: KVM
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+      - name: Emülatörde aç
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 34
+          arch: x86_64
+          target: google_apis
+          disable-animations: true
+          emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
+          script: bash scripts/smoke.sh android/app/build/outputs/apk/release/app-release.apk
+      - name: Çökme satırları
+        if: always()
+        run: |
+          grep -E "FATAL EXCEPTION|AndroidRuntime|ReactNativeJS|Error:|Exception|Caused by" smoke/logcat.txt | head -80 || true
+          if [ -f smoke/crash.txt ]; then while IFS= read -r line; do echo "::error::$line"; done < <(head -12 smoke/crash.txt); fi
+      - uses: softprops/action-gh-release@v2
+        if: always()
+        with:
+          tag_name: smoke-latest
+          name: Emülatör denemesi (son)
+          prerelease: true
+          files: |
+            smoke/logcat.txt
+            smoke/crash.txt
+            smoke/screen-*.png
