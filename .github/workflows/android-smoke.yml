@@ -60,3 +60,4 @@ jobs:
             smoke/crash.txt
             smoke/screen-*.png
             smoke/status.txt
+            smoke/map-log.txt

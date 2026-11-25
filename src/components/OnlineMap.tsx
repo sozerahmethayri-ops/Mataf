@@ -1,7 +1,8 @@
 // Uygulama içi online harita (telefon): MapLibre GL + OpenFreeMap (OSM). Binalar, mezarlıklar, yollar ve yer adları
 // gerçek veriden gelir; 2D/3D düğmesi binaları yükseltip haritayı eğer. Harita yüklenemezse (internet yok, WebGL yok)
 // sade haritaya (PlainMap) geçer — ekran hiçbir zaman boş kalmaz.
-import { useEffect, useMemo, useRef, useState, type ComponentType, type Ref } from 'react';
+import { useFocusEffect } from 'expo-router';
+import { useCallback, useEffect, useMemo, useRef, useState, type ComponentType, type Ref } from 'react';
 import { ActivityIndicator, Pressable, Text, View } from 'react-native';
 import { WebView as RNWebView, type WebViewMessageEvent, type WebViewProps } from 'react-native-webview';
 
@@ -39,9 +40,24 @@ export function OnlineMap(props: OnlineMapProps) {
     fitKey: props.fitKey ?? autoKey,
     recenter: (props.recenterKey ?? 0) * 1000 + recenter,
   });
+  // Sayfa hazır olunca son durum hemen gönderilir; sonraki değişiklikler etkiyle
+  const stateRef = useRef(state);
+  const logs = useRef(0);
+  useEffect(() => { stateRef.current = state; });
   useEffect(() => {
     if (ready) ref.current?.injectJavaScript(`window.matafSet(${state});true;`);
   }, [state, ready]);
+  // Ekran 20 sn'den uzun arka planda kalırsa WebView kapatılır (bellek); öne gelince yeniden açılır
+  const [sleeping, setSleeping] = useState(false);
+  const sleepTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useFocusEffect(useCallback(() => {
+    if (sleepTimer.current) clearTimeout(sleepTimer.current);
+    setSleeping(false);
+    return () => {
+      sleepTimer.current = setTimeout(() => { setSleeping(true); setReady(false); }, 20000);
+    };
+  }, []));
+  useEffect(() => () => { if (sleepTimer.current) clearTimeout(sleepTimer.current); }, []);
   // 25 sn içinde açılmazsa (ağ çok yavaş / engelli) sade haritaya geç
   useEffect(() => {
     if (ready || failed) return;
@@ -52,8 +68,16 @@ export function OnlineMap(props: OnlineMapProps) {
   const onMessage = (e: WebViewMessageEvent) => {
     let m: { t: string; id?: string; lat?: number; lng?: number; m?: string };
     try { m = JSON.parse(e.nativeEvent.data); } catch { return; }
-    if (m.t === 'ready') setReady(true);
-    else if (m.t === 'error') setFailed(true);
+    if (m.t === 'ready') {
+      ref.current?.injectJavaScript(`window.matafSet(${stateRef.current});true;`);
+      setReady(true);
+    } else if (m.t === 'error') {
+      console.warn('[harita] açılamadı:', m.m);
+      setFailed(true);
+    } else if (m.t === 'log' && logs.current < 12) {
+      logs.current += 1;
+      console.log('[harita]', m.m);
+    }
     else if (m.t === 'pin' && m.id) onPin?.(m.id);
     else if (m.t === 'long' && m.lat != null && m.lng != null) onLongPress?.({ lat: m.lat, lng: m.lng } as PlainLL);
   };
@@ -70,6 +94,8 @@ export function OnlineMap(props: OnlineMapProps) {
       </View>
     );
   }
+
+  if (sleeping) return <View style={{ flex: 1, backgroundColor: C.mapGround }} />;
 
   return (
     <View style={{ flex: 1, backgroundColor: C.mapGround }}>
@@ -88,7 +114,6 @@ export function OnlineMap(props: OnlineMapProps) {
         nestedScrollEnabled
         scrollEnabled={false}
         bounces={false}
-        androidLayerType="hardware"
         style={{ flex: 1, backgroundColor: C.mapGround }}
       />
       {!ready && <ActivityIndicator style={{ position: 'absolute', top: '45%', alignSelf: 'center' }} color={C.accent} />}

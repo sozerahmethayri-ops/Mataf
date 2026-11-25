@@ -6,6 +6,8 @@ set -u
 APK="$1"
 PKG=app.mataf.navigator
 mkdir -p smoke
+# Yeni açılan emülatörde Google Play hizmetleri ilk dakikalarda güncellenip yeniden başlıyor; önce otursun
+sleep 60
 adb install -r -g "$APK" || { echo "kurulamadı" > smoke/crash.txt; exit 0; }
 adb emu geo fix 39.82625 21.42295 || true
 adb logcat -c
@@ -46,8 +48,9 @@ for r in "kuran/18?b=hatim&a=10" zikir vakitler kible cami sehir ulasim tavaf na
   i=$((i + 1))
   open "$r"
   name=$(echo "$r" | cut -d'?' -f1 | tr '/' '-')
-  case "$r" in cami|sehir|ulasim) wait=16 ;; *) wait=7 ;; esac
+  case "$r" in cami|sehir|ulasim) wait=14 ;; *) wait=7 ;; esac
   step "$i-$name" $wait || break
+  case "$r" in cami|sehir|ulasim) step "$i-$name-2" 14 || break ;; esac
 done
 
 # Tema değiştirme (koyu/açık) sonrası uygulama açık kalmalı: Ayarlar'da tema satırına dokun
@@ -58,6 +61,8 @@ tap 200 158; step "32-tema-acik" 4
 open harita; step "33-harita-tema" 8
 
 adb logcat -d > smoke/logcat.txt
-grep -n -A40 -E "FATAL EXCEPTION|ReactNativeJS.*(Error|Exception)|JavascriptException" smoke/logcat.txt > smoke/crash.txt || echo "çökme kaydı yok ($(cat smoke/status.txt))" > smoke/crash.txt
-grep -E "ReactNativeJS|chromium|Console" smoke/logcat.txt | grep -iE "maplibre|webgl|harita|map error" | head -40 > smoke/map-log.txt || true
+# Yalnız uygulamamızın çökmeleri (Google Play hizmetleri gibi sistem süreçleri hariç) + uygulamanın neden kapatıldığı
+{ grep -n -B1 -A40 -E "Process: $PKG" smoke/logcat.txt; grep -n -A20 -E "ReactNativeJS.*(Error|Exception)|JavascriptException" smoke/logcat.txt; grep -n -E "Killing [0-9]+:$PKG|$PKG.*has died|DeadSystemException" smoke/logcat.txt | head -20; } > smoke/crash.txt
+[ -s smoke/crash.txt ] || echo "çökme kaydı yok" > smoke/crash.txt
+grep -E "ReactNativeJS|chromium" smoke/logcat.txt | grep -iE "maplibre|webgl|harita|map error|ssl" | head -60 > smoke/map-log.txt || true
 cat smoke/status.txt >> smoke/crash.txt
