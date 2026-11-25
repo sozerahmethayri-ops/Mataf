@@ -61,3 +61,5 @@ jobs:
             smoke/screen-*.png
             smoke/status.txt
             smoke/map-log.txt
+            smoke/widget.txt
+            smoke/ui.xml

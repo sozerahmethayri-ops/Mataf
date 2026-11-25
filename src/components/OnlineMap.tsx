@@ -7,6 +7,8 @@ import { ActivityIndicator, Pressable, Text, View } from 'react-native';
 import { WebView as RNWebView, type WebViewMessageEvent, type WebViewProps } from 'react-native-webview';
 
 import { C, fs, shadow } from '@/constants/theme';
+import { offlineMapConfig, readMapFile } from '@/services/offline';
+import { resolveMataf } from '@/services/offlineMath';
 import { useTheme } from '@/services/ThemeContext';
 import { Icon } from './Icon';
 import { onlineMapHtml } from './onlineMapHtml';
@@ -29,10 +31,17 @@ export function OnlineMap(props: OnlineMapProps) {
   const [own3d, setOwn3d] = useState(prefs.map3d);
   const [recenter, setRecenter] = useState(0);
   const threeD = props.threeD ?? own3d;
+  // Çevrimdışı paket indirildiyse yerel stil ve kütüphane (ağ yalnız paket dışındaki yerler için)
+  const off = useMemo(() => offlineMapConfig(dark), [dark]);
   const html = useMemo(
-    () => onlineMapHtml({ dark, bg: C.mapGround, ink: C.ink, user: C.user, building: dark ? '#2E3440' : '#DCD3C6' }),
-    [dark],
+    () => onlineMapHtml({ dark, bg: C.mapGround, ink: C.ink, user: C.user, building: dark ? '#2E3440' : '#DCD3C6', offline: off ? { style: off.style, libBase: off.libBase } : undefined }),
+    [dark, off],
   );
+  const sendFile = async (id: number, url: string) => {
+    const r = off ? resolveMataf(url, off.remote) : null;
+    const b64 = r ? await readMapFile(r.path) : null;
+    ref.current?.injectJavaScript(`window.matafFile(${id},${b64 ? JSON.stringify(b64) : 'null'},${JSON.stringify(r?.remote ?? null)});true;`);
+  };
   // Kullanıcı haritayı kaydırmışken her konum değişiminde yeniden çerçevelenmesin: yalnız noktalar/çizgiler değişince
   const autoKey = `${pins.length}:${pins[0]?.id ?? ''}:${pins[pins.length - 1]?.id ?? ''}:${lines.map((l) => `${l.coords.length}`).join(',')}`;
   const state = JSON.stringify({
@@ -86,8 +95,12 @@ export function OnlineMap(props: OnlineMapProps) {
   }, [ready, failed, attempt, sleeping, mounted]);
 
   const onMessage = (e: WebViewMessageEvent) => {
-    let m: { t: string; id?: string; lat?: number; lng?: number; m?: string };
+    let m: { t: string; id?: string | number; lat?: number; lng?: number; m?: string; url?: string };
     try { m = JSON.parse(e.nativeEvent.data); } catch { return; }
+    if (m.t === 'file' && typeof m.id === 'number' && m.url) {
+      sendFile(m.id, m.url).catch(() => undefined);
+      return;
+    }
     if (m.t === 'ready') {
       ref.current?.injectJavaScript(`window.matafSet(${stateRef.current});true;`);
       console.log('[harita] hazır', Date.now() - t0.current, 'ms');
@@ -106,7 +119,7 @@ export function OnlineMap(props: OnlineMapProps) {
       logs.current += 1;
       console.log('[harita]', m.m);
     }
-    else if (m.t === 'pin' && m.id) onPin?.(m.id);
+    else if (m.t === 'pin' && m.id != null) onPin?.(String(m.id));
     else if (m.t === 'long' && m.lat != null && m.lng != null) onLongPress?.({ lat: m.lat, lng: m.lng } as PlainLL);
   };
 
@@ -130,7 +143,10 @@ export function OnlineMap(props: OnlineMapProps) {
       <WebView
         key={attempt}
         ref={ref}
-        source={{ html, baseUrl: 'https://mataf.app/' }}
+        source={{ html, baseUrl: off?.libBase ?? 'https://mataf.app/' }}
+        allowFileAccess={!!off?.libBase}
+        allowFileAccessFromFileURLs={!!off?.libBase}
+        allowUniversalAccessFromFileURLs={!!off?.libBase}
         originWhitelist={['*']}
         onMessage={onMessage}
         onError={() => setFailed(true)}

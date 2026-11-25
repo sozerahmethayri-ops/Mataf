@@ -2,6 +2,8 @@
 // Arapça metin: Tanzil (quran-uthmani). Meal hakları sahiplerine aittir; yayın öncesi lisansı kontrol edin.
 import type { Lang } from '@/i18n/strings';
 import { cachedJson } from './cache';
+import { offlineSurah } from './offline';
+import { globalAyah } from './quranIndex';
 
 const API = 'https://api.alquran.cloud/v1';
 const DAY = 24 * 3600 * 1000;
@@ -65,6 +67,15 @@ export function stripBasmala(surah: number, ayah: number, text: string) {
 
 export async function getSurahText(n: number, translation: string | null, translit: string | null): Promise<{ ayahs: FullAyah[]; fromCache: boolean }> {
   const eds = ['quran-uthmani', translation, translit].filter(Boolean) as string[];
+  // Çevrimdışı paket indirildiyse önce oradan (ağ gerekmez)
+  const off = offlineSurah(n, eds);
+  if (off) {
+    const ar = off['quran-uthmani'];
+    return {
+      ayahs: ar.map((text, i) => ({ n: i + 1, global: globalAyah(n, i + 1), ar: stripBasmala(n, i + 1, text), meal: translation ? off[translation]?.[i] : undefined, translit: translit ? off[translit]?.[i] : undefined })),
+      fromCache: true,
+    };
+  }
   try {
     const r = await cachedJson<{ data: { edition: { identifier: string }; ayahs: { number: number; numberInSurah: number; text: string }[] }[] }>(
       `quran:${n}:${eds.join(',')}`, `${API}/surah/${n}/editions/${eds.join(',')}`, 90 * DAY,

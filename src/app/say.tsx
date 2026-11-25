@@ -10,7 +10,7 @@ import Svg, { Circle, G, Line, Path, Rect, Text as SvgText } from 'react-native-
 
 import { DuaBlock } from '@/components/DuaBlock';
 import { Icon } from '@/components/Icon';
-import { Btn, Card, IconBtn, SectionTitle, T } from '@/components/ui';
+import { Btn, Card, IconBtn, SectionTitle, Segmented, T } from '@/components/ui';
 import { C, fs, shadow } from '@/constants/theme';
 import { SAFA_AYAH, SAFA_DHIKR, SAY_BETWEEN, UMRE_STEPS, type T3 } from '@/data/umre';
 import { pick, useI18n } from '@/i18n';
@@ -20,7 +20,7 @@ import {
 import { useSayFeed } from '@/services/sayFeed';
 import { markUmreStep } from '@/services/umreProgress';
 import { usePersisted } from '@/services/usePersisted';
-import { playSequence, stopVoice, type SpeechItem } from '@/services/voice';
+import { duaSpeech, playSequence, stopVoice, type SpeechItem } from '@/services/voice';
 
 type Lang = 'tr' | 'en' | 'ar';
 type Phase = 'prep' | 'active' | 'done';
@@ -64,6 +64,12 @@ const L = {
   locked: { tr: 'Ekran kilitli — açmak için basılı tutun', en: 'Screen locked — press and hold to unlock', ar: 'الشاشة مقفلة — اضغط مطولًا لفتحها' },
   resumed: { tr: 'Yarım kalan sa’y geri yüklendi', en: 'Unfinished sa‘y restored', ar: 'تمت استعادة السعي غير المكتمل' },
   of: { tr: 'tamamlandı', en: 'completed', ar: 'مكتملة' },
+  vguide: { tr: 'Sesli rehber', en: 'Voice guide', ar: 'الدليل الصوتي' },
+  gOff: { tr: 'Kapalı', en: 'Off', ar: 'مغلق' },
+  gShort: { tr: 'Kısa', en: 'Short', ar: 'مختصر' },
+  gFull: { tr: 'Ayrıntılı', en: 'Detailed', ar: 'مفصّل' },
+  gShortSub: { tr: 'Yalnız şavt sayısı ve yön.', en: 'Only the trip number and direction.', ar: 'رقم الشوط والاتجاه فقط.' },
+  gFullSub: { tr: 'Şavt sayısı, tepede Safâ/Merve zikri ve yolun ortasında dua. Kulaklıkla kullanın.', en: 'Trip number, the dhikr on the hills and a du‘a midway. Use earphones.', ar: 'رقم الشوط وذكر الصفا والمروة ودعاء في منتصف الطريق.' },
 } satisfies Record<string, T3>;
 
 const ORD: Record<Lang, string[]> = {
@@ -95,7 +101,7 @@ export default function SayScreen() {
   const { lang } = useI18n();
   const lg = lang as Lang;
   const insets = useSafeAreaInsets();
-  const [prefs, setPrefs] = usePersisted('say:prefs', { voice: true, auto: true });
+  const [prefs, setPrefs] = usePersisted('say:prefs', { voice: true, auto: true, guide: 'full' as 'short' | 'full' });
   const [phase, setPhase] = useState<Phase>('prep');
   const [st, setSt] = useState<SayState>(initialSay);
   const [fix, setFix] = useState<SayFix | null>(null);
@@ -108,13 +114,17 @@ export default function SayScreen() {
   const phaseRef = useRef(phase);
   const prefsRef = useRef(prefs);
   const lgRef = useRef(lg);
+  const midSaid = useRef(false);
   useEffect(() => { phaseRef.current = phase; prefsRef.current = prefs; lgRef.current = lg; });
 
   const speak = (items: SpeechItem[]) => { if (prefsRef.current.voice) playSequence(items).catch(() => undefined); };
   const onEvents = (events: SayEvent[]) => {
     for (const e of events) {
       if (e.type !== 'wrongStart') haptic(e.type === 'done');
-      speak([{ kind: 'speak', text: announce(e, lgRef.current), lang: lgRef.current }]);
+      // Ayrıntılı rehber: tepeye varınca (şavt bitişi) Safâ/Merve zikri de okunur
+      const atHill = (e.type === 'lap' || e.type === 'done') && prefsRef.current.guide === 'full';
+      speak([{ kind: 'speak', text: announce(e, lgRef.current), lang: lgRef.current }, ...(atHill ? duaSpeech(SAFA_DHIKR) : [])]);
+      midSaid.current = false;
       if (e.type === 'done') { setPhase('done'); markUmreStep('say').catch(() => undefined); }
     }
   };
@@ -133,6 +143,11 @@ export default function SayScreen() {
     stRef.current = next;
     setSt(next);
     onEvents(events);
+    // Yolun ortasında bir kez "Rabbiğfir verham" (ayrıntılı rehber)
+    if (next.started && next.s !== undefined && !midSaid.current && prefsRef.current.guide === 'full' && Math.abs(next.s - MASA_LENGTH / 2) < 40) {
+      midSaid.current = true;
+      speak(duaSpeech(SAY_BETWEEN));
+    }
   };
   const { denied, source } = useSayFeed({ walking: phase === 'active', speed: 6, forceDemo, onFix });
   const demo = source === 'demo';
@@ -214,6 +229,10 @@ export default function SayScreen() {
             <Text style={T.body}>{pick(L.p1, lg)}</Text>
             <Text style={T.body}>{pick(L.p2, lg)}</Text>
             <DuaBlock d={SAFA_AYAH} compact />
+            <SectionTitle>{pick(L.vguide, lg)}</SectionTitle>
+            <Segmented value={prefs.voice ? prefs.guide : 'off'} onChange={(v) => (v === 'off' ? (stopVoice(), setPrefs({ voice: false })) : setPrefs({ voice: true, guide: v as 'short' | 'full' }))}
+              options={[{ value: 'off', label: pick(L.gOff, lg) }, { value: 'short', label: pick(L.gShort, lg) }, { value: 'full', label: pick(L.gFull, lg) }]} />
+            <Text style={T.small}>{pick(prefs.voice && prefs.guide === 'full' ? L.gFullSub : L.gShortSub, lg)}</Text>
             <Btn title={pick(L.begin, lg)} icon="walk" onPress={begin} />
           </>
         )}

@@ -18,6 +18,7 @@ const GROUPS: { title: { tr: string; en: string; ar: string }; items: Item[] }[]
       { icon: 'list', title: { tr: 'Umre rehberi', en: 'Umrah guide', ar: 'دليل العمرة' }, to: '/umre' },
       { icon: 'compass', title: { tr: 'Kıble', en: 'Qibla', ar: 'القبلة' }, to: '/kible' },
       { icon: 'beads', title: { tr: 'Zikirmatik', en: 'Dhikr counter', ar: 'المسبحة' }, to: '/zikir' },
+      { icon: 'check', title: { tr: 'Kaza namazı ve oruç takibi', en: 'Missed prayers and fasts', ar: 'قضاء الصلوات والصيام' }, to: '/kaza' },
       { icon: 'book', title: { tr: "Kur'an-ı Kerîm", en: 'The Quran', ar: 'القرآن الكريم' }, to: '/kuran' },
       { icon: 'moon', title: { tr: 'Hadis ve dualar', en: 'Hadith and du‘as', ar: 'الحديث والدعاء' }, to: '/hadis-dua' },
       { icon: 'pin', title: { tr: 'En yakın cami', en: 'Nearest mosque', ar: 'أقرب مسجد' }, to: '/cami', tint: '#277F4C' },
@@ -52,6 +53,7 @@ const GROUPS: { title: { tr: string; en: string; ar: string }; items: Item[] }[]
     items: [
       { icon: 'settings', title: { tr: 'Ayarlar', en: 'Settings', ar: 'الإعدادات' }, to: '/ayarlar' },
       { icon: 'text', title: { tr: "Kur'an okuma ayarları", en: 'Quran reading settings', ar: 'إعدادات القراءة' }, to: '/kuran-ayarlar' },
+      { icon: 'layers', title: { tr: 'Çevrimdışı paket', en: 'Offline pack', ar: 'الحزمة دون اتصال' }, to: '/cevrimdisi' },
       { icon: 'data', title: { tr: 'Veri kaynakları', en: 'Data sources', ar: 'مصادر البيانات' }, to: '/veriler' },
     ],
   },

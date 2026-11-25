@@ -2,6 +2,11 @@
 
 Mekke ve Medine'deki ziyaretçiler için iOS ve Android uygulaması:
 
+- **Ana ekran küçük uygulaması (0.8.0, Android)** — telefonun ana ekranında bugünün altı vakti ve sıradaki namaz; dokununca uygulama açılır. 30 günlük vakit yazılır, Android en geç 30 dakikada bir yeniler, uygulama açılmasa da gün ve sıradaki vakit ilerler. Vakitler ekranında ve Ayarlar'da "Ana ekrana vakit kutusu ekle" satırı (başlatıcı onay penceresi açar).
+- **Çevrimdışı paket (0.8.0)** — internet yokken de çalışsın diye: Mekke (Mina, Müzdelife, Arafat dahil) ve Medine haritaları (vektör karolar, yazı tipleri, simgeler, çizim kütüphanesi), Kur'an metni ve mealler, dua ayetlerinin sesleri. Ayarlar → Çevrimdışı paket; indirilen parça silinebilir.
+- **Kaza namazı ve oruç takibi (0.8.0)** — borç hesaplayıcı (yıl/ay/gün ya da doğrudan sayı), vakit vakit "kıldım" sayacı (vitir isteğe bağlı), günlük hedef ve bitiş tahmini, haftalık grafik.
+- **Sesli rehber (0.8.0)** — tavafta köşelere gelince kısa bilgi ve dua (Kâbe kapısı ve Mültezem, Rükn-i Irâkî, Hatîm, Rükn-i Şâmî, Rükn-i Yemânî ve iki rükün arası dua), şavt başında istilâm ve remel hatırlatması, bitince Makam-ı İbrâhîm ve Zemzem, zayıf GPS uyarısı; sa'yda Safâ/Merve zikri ve yol duası. Kapalı / kısa / ayrıntılı.
+- **Zikir istatistikleri ve yedek (0.8.0)** — bugün, bu hafta, bu ay, toplam, seri (gün), en çok çekilen zikirler, 7 günlük grafik. Tüm kayıtlar (zikirler, ayraçlar, kaza, ayarlar) tek dosyaya yedeklenip başka telefona aktarılabilir.
 - **Umre rehberi (0.7.0)** — mîkattan tıraşa 7 adım: her adımda yapılacaklar, dualar, sık yapılan hatalar ve Hanefî mezhebine göre cezaları; ihram yasakları listesi, özel durumlar. İlerleme kaydedilir; tavaf ve sa'y asistanları bitince ilgili adımı kendiliğinden işaretler.
 - **Sa'y sayacı (0.7.0)** — Safâ–Merve arası 7 şavt; Mes'a'daysanız GPS ile kendiliğinden sayar (Merve'den başlanan ilk yolu saymaz, uyarır), her zaman elle düzeltilir; Safâ/Merve'de ve yolda okunacak dualar, sesli bildirim, ekran kilidi, önizleme.
 - **Otelime dön (0.7.0)** — oteli bir kez kaydedin (bulunduğunuz yer, isimle arama ya da haritada uzun basma); tek dokunuşla yürüyüş rotası, uzaksa Uber ve şoföre gösterilecek Arapça/Urduca/İngilizce kart; oda, telefon, Arapça ad.
@@ -30,7 +35,7 @@ Mekke ve Medine'deki ziyaretçiler için iOS ve Android uygulaması:
 - **Ravza rehberi** — ziyaret saatleri, Nusuk izni, resmî 360° sanal tur bağlantısı.
 - **Türkçe, İngilizce, Arapça** (Arapça sağdan sola).
 
-> Durum: **0.7.0 — geliştirme sürümü.** Bina biçimleri ve kapı yerleri OpenStreetMap'ten gelir (doğruluğu bu veri kadardır); mescit içi hizmet noktaları örnektir. Ayrıntı: [docs/VERI-KAYNAKLARI.md](docs/VERI-KAYNAKLARI.md), [scripts/osm-3d.md](scripts/osm-3d.md).
+> Durum: **0.8.0 — geliştirme sürümü.** Bina biçimleri ve kapı yerleri OpenStreetMap'ten gelir (doğruluğu bu veri kadardır); mescit içi hizmet noktaları örnektir. Ayrıntı: [docs/VERI-KAYNAKLARI.md](docs/VERI-KAYNAKLARI.md), [scripts/osm-3d.md](scripts/osm-3d.md).
 
 ## Hızlı başlangıç
 

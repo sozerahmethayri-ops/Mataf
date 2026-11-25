@@ -2,7 +2,11 @@
 // Sayfa, uygulamadan `window.matafSet(durum)` ile noktaları/çizgileri alır; dokunuşları postMessage ile geri yollar.
 export const MAPLIBRE_VERSION = '5.24.1';
 
-export type OnlineMapTheme = { dark: boolean; bg: string; ink: string; user: string; building: string };
+export type OnlineMapTheme = {
+  dark: boolean; bg: string; ink: string; user: string; building: string;
+  /** Çevrimdışı paket: yerel stil (mataf:// adresli) ve kütüphane klasörü (file://) */
+  offline?: { style: object; libBase?: string };
+};
 
 export function onlineMapHtml(th: OnlineMapTheme) {
   const cfg = JSON.stringify({
@@ -11,8 +15,10 @@ export function onlineMapHtml(th: OnlineMapTheme) {
     halo: th.bg,
     user: th.user,
     building: th.building,
-    style: `https://tiles.openfreemap.org/styles/${th.dark ? 'dark' : 'liberty'}`,
+    style: th.offline ? th.offline.style : `https://tiles.openfreemap.org/styles/${th.dark ? 'dark' : 'liberty'}`,
+    offline: !!th.offline,
     cdns: [
+      ...(th.offline?.libBase ? [th.offline.libBase] : []),
       `https://unpkg.com/maplibre-gl@${MAPLIBRE_VERSION}/dist/`,
       `https://cdn.jsdelivr.net/npm/maplibre-gl@${MAPLIBRE_VERSION}/dist/`,
     ],
@@ -33,7 +39,23 @@ function loadLib(i){
   var s=document.createElement('script');s.src=CFG.cdns[i]+'maplibre-gl.js';
   s.onload=init;s.onerror=function(){css.remove();loadLib(i+1)};document.head.appendChild(s);
 }
+// Çevrimdışı paket: mataf:// istekleri uygulamaya sorulur (yerel dosya base64), yoksa ağdaki asıl adresten alınır
+var pend={},seq=0;
+function b64buf(b){var s=atob(b),n=s.length,u=new Uint8Array(n);for(var i=0;i<n;i++)u[i]=s.charCodeAt(i);return u.buffer}
+function asType(buf,type){if(type==='json')return JSON.parse(new TextDecoder().decode(buf));if(type==='string')return new TextDecoder().decode(buf);return buf}
+window.matafFile=function(id,b64,remote){
+  var p=pend[id];if(!p)return;delete pend[id];
+  if(b64){try{p.res({data:asType(b64buf(b64),p.type)})}catch(e){p.rej(e)}return}
+  if(!remote){p.rej(new Error('yok: '+p.url));return}
+  fetch(remote).then(function(r){if(!r.ok)throw new Error('HTTP '+r.status);return r.arrayBuffer()})
+    .then(function(buf){p.res({data:asType(buf,p.type)})}).catch(function(e){p.rej(e)});
+};
 function init(){
+  if(CFG.offline&&maplibregl.addProtocol){
+    maplibregl.addProtocol('mataf',function(params){
+      return new Promise(function(res,rej){var id=++seq;pend[id]={res:res,rej:rej,type:params.type,url:params.url};post({t:'file',id:id,url:params.url})});
+    });
+  }
   try{
     map=new maplibregl.Map({container:'m',style:CFG.style,center:[39.8262,21.4225],zoom:15,maxPitch:65,fadeDuration:0,
       attributionControl:{compact:true},dragRotate:true,pitchWithRotate:true,touchPitch:true});
@@ -43,7 +65,8 @@ function init(){
   var retries=0,retryT=null;
   map.on('error',function(e){
     var m=(e&&e.error&&e.error.message)||'map error';post({t:'log',m:(e&&e.sourceId?e.sourceId+': ':'')+m});
-    if(!ready&&!map.isStyleLoaded()&&!(e&&e.sourceId)){post({t:'error',m:m});return}
+    // Yalnız stil hiç yüklenemezse ölümcül (simge/yazı tipi eksikliği haritayı durdurmaz; çevrimdışı stil zaten yerelde)
+    if(!CFG.offline&&!ready&&!map.isStyleLoaded()&&!(e&&e.sourceId)&&!/sprite|glyph|font|\.pbf|\.png/i.test(m)){post({t:'error',m:m});return}
     if(e&&e.sourceId&&retries<5&&!retryT){
       var id=e.sourceId;
       retryT=setTimeout(function(){retryT=null;retries++;var src=map.getSource(id);

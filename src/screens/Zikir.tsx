@@ -7,11 +7,13 @@ import { Alert, Pressable, ScrollView, Text, TextInput, View } from 'react-nativ
 import Svg, { Circle } from 'react-native-svg';
 
 import { Icon } from '@/components/Icon';
+import { BarChart } from '@/components/BarChart';
 import { Btn, Header, SectionTitle, T } from '@/components/ui';
 import { C, fs, fsAr } from '@/constants/theme';
 import { pick, useI18n } from '@/i18n';
 import { useTheme } from '@/services/ThemeContext';
 import { usePersisted } from '@/services/usePersisted';
+import { zikirStats } from '@/services/zikirStats';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 type Lang = 'tr' | 'en' | 'ar';
@@ -32,6 +34,7 @@ const TESBIHAT = ['subhanallah', 'elhamdulillah', 'allahuekber'];
 const TARGETS = [33, 99, 100, 500, 1000, 0];
 
 const stamp = () => Date.now();
+const nowDate = () => new Date();
 type LogItem = { id: string; at: number; zid: string; name: string; count: number; note: string };
 type State = { current: string; counts: Record<string, number>; targets: Record<string, number>; custom: Dhikr[]; tesbihat: boolean };
 
@@ -53,6 +56,13 @@ const L = {
   addBtn: { tr: 'Ekle', en: 'Add', ar: 'إضافة' },
   del: { tr: 'Silinsin mi?', en: 'Delete?', ar: 'حذف؟' },
   done: { tr: 'Hedefe ulaşıldı', en: 'Target reached', ar: 'تم بلوغ الهدف' },
+  stats: { tr: 'İstatistik (deftere kaydedilenler)', en: 'Statistics (saved entries)', ar: 'الإحصاءات' },
+  sToday: { tr: 'Bugün', en: 'Today', ar: 'اليوم' },
+  sWeek: { tr: 'Son 7 gün', en: 'Last 7 days', ar: 'آخر ٧ أيام' },
+  sMonth: { tr: 'Bu ay', en: 'This month', ar: 'هذا الشهر' },
+  sStreak: { tr: 'Seri', en: 'Streak', ar: 'متتالية' },
+  dayUnit: { tr: 'gün', en: 'd', ar: 'يوم' },
+  allTime: { tr: 'Toplam', en: 'All time', ar: 'الإجمالي' },
 };
 
 export default function Zikir() {
@@ -63,6 +73,7 @@ export default function Zikir() {
   const [log, setLog] = usePersisted<{ items: LogItem[] }>('zikir:log', { items: [] });
   const [note, setNote] = useState('');
   const [newName, setNewName] = useState('');
+  const [chartW, setChartW] = useState(340);
   const all = useMemo(() => [...DHIKRS, ...st.custom], [st.custom]);
   const cur = all.find((d) => d.id === st.current) ?? DHIKRS[0];
   const count = st.counts[cur.id] ?? 0;
@@ -91,13 +102,15 @@ export default function Zikir() {
     if (!count) return;
     const at = stamp();
     const item: LogItem = { id: String(at), at, zid: cur.id, name: cur.tr, count, note: note.trim() };
-    setLog({ items: [item, ...log.items].slice(0, 500) });
+    setLog({ items: [item, ...log.items].slice(0, 5000) });
     setSt({ counts: { ...st.counts, [cur.id]: 0 } });
     setNote('');
   };
   const today = new Date().toDateString();
+  const dayKey = today;
   const todayTotal = log.items.filter((i) => new Date(i.at).toDateString() === today).reduce((s, i) => s + i.count, 0) + Object.values(st.counts).reduce((s, n) => s + n, 0);
 
+  const stats = useMemo(() => zikirStats(log.items, nowDate()), [log.items, dayKey]); // eslint-disable-line react-hooks/exhaustive-deps
   const R = 118;
   const circ = 2 * Math.PI * R;
   return (
@@ -174,6 +187,36 @@ export default function Zikir() {
             setNewName('');
           }} />
         </View>
+
+        {log.items.length > 0 && (
+          <>
+            <SectionTitle>{pick(L.stats, lg)}</SectionTitle>
+            <View style={{ flexDirection: 'row', gap: 8 }}>
+              {[
+                { k: L.sToday, v: stats.today },
+                { k: L.sWeek, v: stats.weekTotal },
+                { k: L.sMonth, v: stats.month },
+                { k: L.sStreak, v: stats.streak, unit: pick(L.dayUnit, lg) },
+              ].map((x) => (
+                <View key={x.k.tr} style={{ flex: 1, padding: 10, borderRadius: 14, backgroundColor: C.surface, gap: 2 }}>
+                  <Text style={{ fontSize: fs(18), fontWeight: '800', color: C.ink }} numberOfLines={1} adjustsFontSizeToFit>{x.v.toLocaleString(lang)}{x.unit ? ` ${x.unit}` : ''}</Text>
+                  <Text style={T.small} numberOfLines={1}>{pick(x.k, lg)}</Text>
+                </View>
+              ))}
+            </View>
+            <View onLayout={(e) => setChartW(Math.round(e.nativeEvent.layout.width))}>
+              <BarChart width={chartW} data={stats.week.map((d) => ({ label: d.date.toLocaleDateString(lang === 'ar' ? 'ar' : lang, { weekday: lang === 'ar' ? 'narrow' : 'short' }), value: d.value }))} />
+            </View>
+            {stats.top.map((t) => (
+              <View key={t.name} style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                <Text style={[T.body, { flex: 1 }]} numberOfLines={1}>{t.name}</Text>
+                <View style={{ width: `${Math.max(4, (t.count / stats.top[0].count) * 40)}%`, height: 8, borderRadius: 4, backgroundColor: C.accent, opacity: 0.7 }} />
+                <Text style={{ fontSize: fs(13), fontWeight: '700', color: C.ink, minWidth: 56, textAlign: 'right' }}>{t.count.toLocaleString(lang)}</Text>
+              </View>
+            ))}
+            <Text style={T.small}>{pick(L.allTime, lg)}: {stats.all.toLocaleString(lang)}</Text>
+          </>
+        )}
 
         <SectionTitle>{pick(L.log, lg)}</SectionTitle>
         {log.items.length === 0 ? <Text style={T.small}>{pick(L.empty, lg)}</Text> : log.items.slice(0, 100).map((i) => (

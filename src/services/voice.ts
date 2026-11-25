@@ -5,6 +5,7 @@ import { createAudioPlayer, setAudioModeAsync, type AudioPlayer } from 'expo-aud
 import * as Speech from 'expo-speech';
 
 import type { Lang } from '@/i18n/strings';
+import { localAyahAudio } from './offline';
 import { ayahAudioUrl, globalAyah } from './quranIndex';
 
 const LOCALE: Record<Lang, string> = { tr: 'tr-TR', en: 'en-US', ar: 'ar-SA' };
@@ -78,7 +79,7 @@ export function duaSpeech(d: { ar: string; quran?: [number, number, number?] }, 
     const parts = d.ar.split(' ۝ ');
     return Array.from({ length: to - a + 1 }, (_, i) => ({
       kind: 'url' as const,
-      uri: ayahAudioUrl(globalAyah(s, a + i), reciter),
+      uri: localAyahAudio(globalAyah(s, a + i), reciter) ?? ayahAudioUrl(globalAyah(s, a + i), reciter),
       fallback: { text: parts[i] ?? d.ar, lang: 'ar' as const },
     }));
   }

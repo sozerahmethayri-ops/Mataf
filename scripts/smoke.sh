@@ -52,7 +52,7 @@ adb shell input swipe $(( W * 85 / 100 )) $(( H / 2 )) $(( W * 15 / 100 )) $(( H
 step "08-kaydir-ana" 4
 
 i=10
-for r in "kuran/18?b=hatim&a=10" zikir vakitler kible cami sehir ulasim tavaf umre say otel acil navigasyon ayarlar hadis-dua; do
+for r in "kuran/18?b=hatim&a=10" zikir vakitler kible cami sehir ulasim tavaf umre say otel acil kaza cevrimdisi navigasyon ayarlar hadis-dua; do
   i=$((i + 1))
   open "$r"
   name=$(echo "$r" | cut -d'?' -f1 | tr '/' '-')
@@ -65,6 +65,36 @@ for r in "kuran/18?b=hatim&a=10" zikir vakitler kible cami sehir ulasim tavaf um
   fi
   case "$r" in cami|sehir|ulasim) step "$i-$name-2" 14 || break ;; esac
 done
+
+# Ana ekran küçük uygulaması: Vakitler ekranındaki "ana ekrana ekle" satırına dokun, başlatıcının onayını ver,
+# ana ekranın görüntüsünü al (küçük uygulama çiziliyor mu?)
+ui() { adb exec-out uiautomator dump /dev/tty 2>/dev/null > smoke/ui.xml; }
+tapText() { # $1: metin (grep -E); bulursa ortasına dokunur
+  ui
+  local b
+  b=$(grep -oE "<node [^>]*text=\"($1)\"[^>]*bounds=\"\[[0-9]+,[0-9]+\]\[[0-9]+,[0-9]+\]\"" smoke/ui.xml | head -1 | grep -oE 'bounds="[^"]+"' | grep -oE '[0-9]+' | tr '\n' ' ')
+  [ -n "$b" ] || return 1
+  set -- $b
+  adb shell input tap $(( ($1 + $3) / 2 )) $(( ($2 + $4) / 2 ))
+}
+open vakitler; sleep 6
+found=0
+for k in 1 2 3 4 5 6; do
+  if tapText "Ana ekrana vakit kutusu ekle|Add prayer times to home screen|أضف المواقيت إلى الشاشة الرئيسية"; then found=1; break; fi
+  adb shell input swipe $(( W / 2 )) $(( H * 75 / 100 )) $(( W / 2 )) $(( H * 30 / 100 )) 300; sleep 1
+done
+echo "widget satırı bulundu: $found" >> smoke/status.txt
+sleep 3; shot "40-widget-onay"
+added=0
+for k in 1 2 3; do
+  if tapText "Add to home screen|ADD TO HOME SCREEN|Add automatically|ADD AUTOMATICALLY|Add|ADD|Ekle|EKLE|Ana ekrana ekle"; then added=1; break; fi
+  sleep 2
+done
+echo "widget onayı: $added" >> smoke/status.txt
+sleep 4
+adb shell input keyevent KEYCODE_HOME; sleep 6; shot "41-widget-ana-ekran"
+adb shell dumpsys appwidget > smoke/widget.txt 2>&1 || true
+adb shell monkey -p "$PKG" -c android.intent.category.LAUNCHER 1 >/dev/null 2>&1; sleep 6
 
 # Tema değiştirme (koyu/açık) sonrası uygulama açık kalmalı: Ayarlar'da tema satırına dokun
 open ayarlar; sleep 5

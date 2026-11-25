@@ -1,10 +1,12 @@
 import Constants from 'expo-constants';
 import { router, useFocusEffect } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
-import { Linking, Pressable, Text, View } from 'react-native';
+import { Alert, Linking, Platform, Pressable, Text, View } from 'react-native';
 
 import { Icon } from '@/components/Icon';
 import { Card, Header, ListRow, Screen, SectionTitle, Segmented, T, Toggle } from '@/components/ui';
+import { WidgetPinRow } from '@/components/WidgetPinRow';
+import { exportBackup, importBackup } from '@/services/backup';
 import { C, PALETTES, colorsFor, fs, fsAr, type PaletteId, type ThemeMode } from '@/constants/theme';
 import { pick, useI18n } from '@/i18n';
 import { LANGS } from '@/i18n/strings';
@@ -55,6 +57,17 @@ const L = {
   motionSub: { tr: 'Geçiş ve pusula animasyonları kapanır.', en: 'Turns off transitions and compass animation.', ar: 'إيقاف الحركات الانتقالية.' },
   haptics: { tr: 'Titreşim', en: 'Haptics', ar: 'الاهتزاز' },
   hapticsSub: { tr: 'Zikir sayacı, kıble ve tavafta kısa titreşim.', en: 'Short vibration in dhikr counter, qibla and tawaf.', ar: 'اهتزاز قصير في المسبحة والقبلة والطواف.' },
+  data: { tr: 'Veriler', en: 'Data', ar: 'البيانات' },
+  offline: { tr: 'Çevrimdışı paket', en: 'Offline pack', ar: 'الحزمة دون اتصال' },
+  offlineSub: { tr: 'Kur’an, meal, dua sesleri ve Mekke/Medine haritasını indirin.', en: 'Download the Quran, translation, du‘a audio and maps.', ar: 'نزّل القرآن والترجمة والخرائط.' },
+  backup: { tr: 'Yedekle', en: 'Back up', ar: 'نسخ احتياطي' },
+  backupSub: { tr: 'Zikir defteri, kaza, ayraçlar, otel, sağlık kartı ve ayarlar tek dosyada.', en: 'Dhikr log, make-ups, bookmarks, hotel, medical card and settings in one file.', ar: 'كل بياناتك في ملف واحد.' },
+  restore: { tr: 'Yedekten geri yükle', en: 'Restore from backup', ar: 'استعادة' },
+  restoreSub: { tr: 'Yeni telefona geçince yedek dosyasını seçin.', en: 'Pick the backup file on your new phone.', ar: 'اختر ملف النسخة الاحتياطية.' },
+  restoreAsk: { tr: 'Yedekteki kayıtlar bu telefondakilerin üzerine yazılacak. Devam edilsin mi?', en: 'Backup entries will overwrite the ones on this phone. Continue?', ar: 'ستُستبدل البيانات الحالية. متابعة؟' },
+  restored: { tr: '{n} kayıt geri yüklendi ({d}). Hepsinin görünmesi için uygulamayı kapatıp açın.', en: '{n} entries restored ({d}). Close and reopen the app to see everything.', ar: 'تمت استعادة {n} سجلًا. أعد فتح التطبيق.' },
+  backedUp: { tr: '{n} kayıt yedeklendi.', en: '{n} entries backed up.', ar: 'تم نسخ {n} سجلًا.' },
+  failed: { tr: 'İşlem yapılamadı', en: 'Could not complete', ar: 'تعذّر الإتمام' },
 } satisfies Record<string, { tr: string; en: string; ar: string }>;
 
 export default function Settings() {
@@ -68,6 +81,19 @@ export default function Settings() {
   const l = (k: keyof typeof L) => pick(L[k], lg);
   useEffect(() => { getMethod().then(setM); }, []);
   useFocusEffect(useCallback(() => { loadNotifPrefs().then(setNotif); }, []));
+  const doExport = () => {
+    exportBackup(Constants.expoConfig?.version ?? '').then((n) => { if (Platform.OS !== 'web') return; Alert.alert(l('backup'), l('backedUp').replace('{n}', String(n))); })
+      .catch((e) => Alert.alert(l('failed'), String(e?.message ?? e)));
+  };
+  const doImport = () => {
+    Alert.alert(l('restore'), l('restoreAsk'), [{ text: '✕', style: 'cancel' }, {
+      text: 'OK',
+      onPress: () => {
+        importBackup().then((r) => r && Alert.alert(l('restore'), l('restored').replace('{n}', String(r.count)).replace('{d}', r.at.slice(0, 10))))
+          .catch((e) => Alert.alert(l('failed'), String(e?.message ?? e)));
+      },
+    }]);
+  };
   const notifSub = !notif ? '' : !notif.enabled ? l('notifOff')
     : [notif.before ? `${notif.before} ${l('before')}` : '', notif.atTime ? l('atTime') : '', pick((SOUNDS.find((x) => x.id === notif.sound) ?? SOUNDS[0]).ml, lg)].filter(Boolean).join(' · ');
 
@@ -127,6 +153,7 @@ export default function Settings() {
       <SectionTitle>{l('notif')}</SectionTitle>
       <ListRow title={l('notif')} subtitle={notifSub} onPress={() => router.push('/bildirimler')}
         left={<Icon name="bell" color={notif?.enabled ? C.accent : C.muted} />} />
+      <WidgetPinRow />
       <SectionTitle>{t('settings.language')}</SectionTitle>
       {LANGS.map((l) => (
         <ListRow key={l.code} title={l.label} onPress={() => { if (l.rtl !== (LANGS.find((x) => x.code === lang)?.rtl ?? false)) setRtlChanged(true); setLang(l.code); }}
@@ -140,7 +167,13 @@ export default function Settings() {
           right={m.id === method ? <Icon name="check" color={C.accent} /> : <></>} />
       ))}
 
-      <SectionTitle>{t('data.title')}</SectionTitle>
+      <SectionTitle>{l('data')}</SectionTitle>
+      <ListRow title={l('offline')} subtitle={l('offlineSub')} onPress={() => router.push('/cevrimdisi')}
+        left={<Icon name="data" color={C.accent} />} />
+      <ListRow title={l('backup')} subtitle={l('backupSub')} onPress={doExport}
+        left={<Icon name="share" color={C.accent} />} />
+      <ListRow title={l('restore')} subtitle={l('restoreSub')} onPress={doImport}
+        left={<Icon name="up" color={C.accent} />} />
       <ListRow title={t('data.title')} subtitle={t('data.sub')} onPress={() => router.push('/veriler')}
         left={<Icon name="data" color={C.accent} />} />
 

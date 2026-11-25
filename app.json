@@ -2,7 +2,7 @@
   "expo": {
     "name": "MATAF",
     "slug": "mataf",
-    "version": "0.7.0",
+    "version": "0.8.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "mataf",
@@ -36,7 +36,7 @@
       "blockedPermissions": [
         "android.permission.RECORD_AUDIO"
       ],
-      "versionCode": 7
+      "versionCode": 8
     },
     "web": {
       "output": "single",
@@ -82,6 +82,28 @@
             "./assets/sounds/can_sesi.wav",
             "./assets/sounds/nagme.wav",
             "./assets/sounds/damla.wav"
+          ]
+        }
+      ],
+      [
+        "expo-widgets",
+        {
+          "enableAndroid": true,
+          "widgets": [
+            {
+              "name": "PrayerWidget",
+              "displayName": "MATAF Namaz Vakitleri",
+              "description": "Bugünün vakitleri ve sıradaki namaz",
+              "android": {
+                "minWidth": 250,
+                "minHeight": 110,
+                "targetCellWidth": 4,
+                "targetCellHeight": 2,
+                "resizeMode": "both",
+                "initialLayout": "./src/widgets/PrayerWidget.tsx"
+              },
+              "ios": null
+            }
           ]
         }
       ]

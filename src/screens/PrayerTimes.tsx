@@ -5,12 +5,14 @@ import { useEffect, useMemo, useState } from 'react';
 import { Text, View } from 'react-native';
 
 import { Icon } from '@/components/Icon';
+import { WidgetPinRow } from '@/components/WidgetPinRow';
 import { Header, ListRow, Screen, SectionTitle, Segmented, T } from '@/components/ui';
 import { C, fs } from '@/constants/theme';
 import { pick, useI18n } from '@/i18n';
 import { HIJRI_MONTHS, SPECIAL_DAYS, hijriText, toHijri } from '@/services/hijri';
 import { METHODS, PRAYERS, fmtTime, nextPrayer, times } from '@/services/prayer';
 import { usePrayerPlace, type PlaceId } from '@/services/prayerPlace';
+import { usePrayerWidgetSync } from '@/services/widgetSync';
 import { Countdown } from './HomePrayer';
 
 type Lang = 'tr' | 'en' | 'ar';
@@ -34,6 +36,7 @@ export default function PrayerTimes({ back = false }: { back?: boolean }) {
   const { t, lang } = useI18n();
   const lg = lang as Lang;
   const { place, setPlace, loc, method, label, waiting } = usePrayerPlace(lang);
+  usePrayerWidgetSync({ loc, method, label, waiting });
   const [now, setNow] = useState(new Date());
   useEffect(() => { const id = setInterval(() => setNow(new Date()), 30000); return () => clearInterval(id); }, []);
 
@@ -152,6 +155,7 @@ export default function PrayerTimes({ back = false }: { back?: boolean }) {
       <ListRow title={t('times.qibla')} subtitle={t('times.qiblaSub')} onPress={() => router.push('/kible')} left={<Icon name="compass" color={C.accent} />} />
       <ListRow title={pick(L.mosque, lg)} subtitle={pick(L.mosqueSub, lg)} onPress={() => router.push('/cami')} left={<Icon name="pin" color={C.green} />} />
       <ListRow title={pick(L.notif, lg)} subtitle={pick(L.notifSub, lg)} onPress={() => router.push('/bildirimler')} left={<Icon name="bell" color={C.accent} />} />
+      <WidgetPinRow />
       <ListRow title={t('settings.method')} subtitle={METHODS.find((x) => x.id === method)?.label} onPress={() => router.push('/ayarlar')} left={<Icon name="settings" color={C.muted} />} />
     </Screen>
   );

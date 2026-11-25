@@ -9,6 +9,8 @@ import { globalAyah, surahLength } from '../src/services/quranIndex';
 import { DUA_LIB, isQuranRef } from '../src/data/duas';
 import { OVERPASS_ENDPOINTS, bearingDeg, distanceM, findMosques, parseOverpass, parsePhotonMosques, pickMosques, type El, type Fetcher } from '../src/services/mosques';
 import { PALETTES, colorsFor, contrast, type PaletteId } from '../src/constants/theme';
+import { WIDGET_DAYS, buildWidgetProps, widgetNext, widgetPlace } from '../src/services/widgetProps';
+import { CalculationMethod, Coordinates, PrayerTimes } from 'adhan';
 import { DEFAULT_NOTIF, notifText, planNotifications } from '../src/services/adhanPlan';
 import type { PrayerKey } from '../src/services/prayer';
 import { Cam } from '../src/scene/oblique';
@@ -20,6 +22,10 @@ import { buildTawafView } from '../src/scene/tawafScene';
 import { buildMadinah } from '../src/scene/madinah';
 import { MASA_LENGTH, adjustSay, initialSay, nearMasa, pointOnMasa, project, startSayManual, stepSay, type SayState } from '../src/services/say';
 import { UMRE_STEPS, IHRAM_RULES } from '../src/data/umre';
+import { zikirStats } from '../src/services/zikirStats';
+import { SKIP, parseBackup } from '../src/services/backupFormat';
+import { AREAS, GLYPH_RANGES, fontStacks, lat2tile, lon2tile, resolveMataf, rewriteStyle, spriteRoot, tilesFor } from '../src/services/offlineMath';
+import { daysToFinish, initialKaza, lastDays, markKaza, prayersLeft, remaining, setOwedDays, toDays } from '../src/services/kaza';
 import { decodePolyline, legKind, mapsUrl, parseMotis, parseOsrm, parsePhoton, planTransit, roughRoute, transitUserAgent, uberUrl, meters } from '../src/services/transport';
 
 const now = Date.now();
@@ -185,6 +191,105 @@ function simulate(o: Sim, st0: LapState = initialLap()) {
   ok(over === 0 && earlyN === 0, `sa'y: ${runs} rastgele iz (σ 3–15 m) → fazla sayım ${over}, erken sayım ${earlyN}`);
   const h = adjustSay(adjustSay(startSayManual(initialSay()), 1), 1);
   ok(h.laps === 2 && h.toward === 'marwa' && adjustSay(h, -1).toward === 'safa', "sa'y: elle +1/−1 ve yön");
+}
+
+// ── Kaza takibi ──
+{
+  ok(toDays(1, 2, 3) === 365 + 60 + 3 && toDays(0.5, 0, 0) === 183, 'kaza: yıl/ay/gün → gün (yukarı yuvarlama)');
+  let k = setOwedDays(initialKaza(), 400, 30, false);
+  ok(prayersLeft(k) === 400 * 6 && remaining(k, 'oruc') === 30, `kaza: 400 gün → 2400 namaz (vitir dahil), 30 oruç (${prayersLeft(k)})`);
+  ok(prayersLeft({ ...k, vitir: false }) === 2000, 'kaza: vitir kapalıyken 5 vakit');
+  const d1 = new Date(2026, 10, 25, 10);
+  k = markKaza(markKaza(markKaza(k, 'sabah', 1, d1), 'ogle', 1, d1), 'sabah', 1, new Date(2026, 10, 24, 9));
+  ok(k.done.sabah === 2 && k.done.ogle === 1 && prayersLeft(k) === 2397, 'kaza: kıldım → kalan düşer');
+  const w = lastDays(k, 7, d1);
+  ok(w.length === 7 && w[6].count === 2 && w[5].count === 1 && w[0].count === 0, `kaza: son 7 gün (${w.map((x) => x.count).join(',')})`);
+  k = markKaza(k, 'ogle', -1, d1);
+  ok(k.done.ogle === 0 && (k.days['2026-11-25'].ogle ?? 0) === 0, 'kaza: geri al');
+  const z = markKaza(setOwedDays(initialKaza(), 1, 0, false), 'yatsi', 1, d1);
+  ok(markKaza(z, 'yatsi', 1, d1) === z, 'kaza: borçtan fazla ödenemez');
+  ok(daysToFinish(setOwedDays(initialKaza(), 365, 0, false)) === 365 && daysToFinish({ ...setOwedDays(initialKaza(), 365, 0, false), dailyGoal: 2 }) === 183, 'kaza: bitiş süresi günlük hedefe göre');
+  const add = setOwedDays(setOwedDays(initialKaza(), 10, 5, false), 5, 2, true);
+  ok(add.owed.ogle === 15 && add.owed.oruc === 7, 'kaza: mevcut borca ekleme');
+}
+
+// ── Zikir istatistikleri ──
+{
+  const now = new Date(2026, 10, 25, 20);
+  const at = (daysAgo: number, h = 9) => new Date(2026, 10, 25 - daysAgo, h).getTime();
+  const items = [
+    { at: at(0), name: 'Sübhânallah', count: 33 }, { at: at(0, 21), name: 'Elhamdülillah', count: 33 },
+    { at: at(1), name: 'Sübhânallah', count: 100 }, { at: at(2), name: 'Salavat', count: 10 },
+    { at: at(4), name: 'Salavat', count: 5 }, { at: at(30), name: 'Sübhânallah', count: 1000 },
+  ];
+  const z = zikirStats(items, now);
+  ok(z.today === 66 && z.week.length === 7 && z.week[6].value === 66 && z.week[5].value === 100 && z.week[2].value === 5, `zikir: bugün ve son 7 gün (${z.week.map((x) => x.value).join(',')})`);
+  ok(z.streak === 3 && z.weekTotal === 181 && z.month === 181 && z.all === 1181, `zikir: seri ${z.streak}, hafta ${z.weekTotal}, ay ${z.month}, toplam ${z.all}`);
+  ok(z.top[0].name === 'Sübhânallah' && z.top[0].count === 1133, 'zikir: en çok çekilen');
+  ok(zikirStats(items.filter((i) => i.at < at(0)), now).streak === 2, 'zikir: bugün kayıt yoksa seri dünden sayılır');
+  ok(zikirStats([], now).streak === 0 && zikirStats([], now).all === 0, 'zikir: boş defter');
+}
+
+// ── Yedek dosyası ──
+{
+  ok(SKIP('cache:poi:x') && SKIP('tawaf:session') && !SKIP('zikir:log') && !SKIP('kaza:state'), 'yedek: önbellek ve yarım oturumlar yedeğe girmez');
+  const b = parseBackup(JSON.stringify({ app: 'MATAF', version: '0.8.0', at: '2026-11-25T20:00:00Z', data: { 'zikir:log': '{"items":[]}' } }));
+  ok(b.data['zikir:log'] === '{"items":[]}', 'yedek: geçerli dosya okunur');
+  let bad = 0;
+  for (const t of ['{}', '{"app":"X","data":{}}', '{"app":"MATAF","data":{"a":1}}', 'yok']) { try { parseBackup(t); } catch { bad++; } }
+  ok(bad === 4, `yedek: yanlış ya da bozuk dosya reddedilir (${bad}/4)`);
+}
+
+// ── Çevrimdışı harita paketi ──
+{
+  ok(lon2tile(39.8262, 14) === 10004 && lat2tile(21.4225, 14) === 7193, `çevrimdışı: Kâbe karosu z14 (${lon2tile(39.8262, 14)}/${lat2tile(21.4225, 14)})`);
+  const mk = tilesFor(AREAS[0]);
+  const md = tilesFor(AREAS[1]);
+  const z14 = mk.filter((t) => t.z === 14);
+  const kaaba = z14.some((t) => t.x === 10004 && t.y === 7193);
+  const arafat = z14.some((t) => t.x === lon2tile(39.984, 14) && t.y === lat2tile(21.355, 14));
+  ok(kaaba && arafat && mk.length > 60 && mk.length < 400 && md.length > 40 && md.length < 300, `çevrimdışı: Mekke ${mk.length} karo (Kâbe ve Arafat dahil), Medine ${md.length}`);
+  ok(new Set(mk.map((t) => `${t.z}/${t.x}/${t.y}`)).size === mk.length, 'çevrimdışı: karolar tekrar etmiyor');
+  const style = {
+    version: 8, sprite: 'https://tiles.openfreemap.org/sprites/ofm_f384/ofm', glyphs: 'https://tiles.openfreemap.org/fonts/{fontstack}/{range}.pbf',
+    sources: { ne2_shaded: { type: 'raster', tiles: ['x'] }, openmaptiles: { type: 'vector', url: 'https://tiles.openfreemap.org/planet' } },
+    layers: [{ id: 'bg' }, { id: 'ne', source: 'ne2_shaded' }, { id: 'road', source: 'openmaptiles', layout: { 'text-font': ['Noto Sans Regular'] } }, { id: 'poi', source: 'openmaptiles', layout: { 'text-font': ['Noto Sans Bold'] } }],
+  };
+  const rs = rewriteStyle(style, 'OSM');
+  ok(!rs.sources.ne2_shaded && rs.sources.openmaptiles.tiles?.[0] === 'mataf://tiles/{z}/{x}/{y}' && rs.layers.length === 3 && rs.sprite === 'mataf://sprites/ofm_f384~ofm' && rs.glyphs?.startsWith('mataf://fonts/'), 'çevrimdışı: stil yerel adreslere çevrildi, raster katman çıktı');
+  ok(fontStacks(style).join('|') === 'Noto Sans Regular|Noto Sans Bold' && GLYPH_RANGES.includes('1536-1791'), 'çevrimdışı: yazı tipleri ve Arapça dilimi');
+  const remote = { tiles: 'https://t/planet/v1/{z}/{x}/{y}.pbf', glyphs: 'https://t/fonts/{fontstack}/{range}.pbf', spriteRoot: spriteRoot('https://t/sprites/ofm_f384/ofm') };
+  const a = resolveMataf('mataf://tiles/14/10004/7144', remote);
+  const b = resolveMataf('mataf://fonts/Noto%20Sans%20Regular/0-255.pbf', remote);
+  const c = resolveMataf('mataf://sprites/ofm_f384~ofm@2x.png', remote);
+  ok(a?.path === 'tiles/14/10004/7144.pbf' && a.remote === 'https://t/planet/v1/14/10004/7144.pbf' && b?.path === 'fonts/Noto Sans Regular/0-255.pbf' && b.remote === 'https://t/fonts/Noto%20Sans%20Regular/0-255.pbf' && c?.remote === 'https://t/sprites/ofm_f384/ofm@2x.png' && resolveMataf('mataf://x', remote) === null,
+    'çevrimdışı: yerel adres → dosya yolu ve ağ adresi');
+}
+
+// ── Ana ekran küçük uygulaması (Android) ──
+{
+  const mk = (d: Date) => {
+    const p = new PrayerTimes(new Coordinates(21.4225, 39.8262), d, CalculationMethod.UmmAlQura());
+    return { fajr: p.fajr, sunrise: p.sunrise, dhuhr: p.dhuhr, asr: p.asr, maghrib: p.maghrib, isha: p.isha };
+  };
+  const hm = (d: Date) => `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
+  const wp = buildWidgetProps({ start: new Date(2026, 10, 25, 9, 0), timesFor: mk, fmt: hm, dayLabel: (d) => String(d.getDate()), place: widgetPlace('makkah', 'tr'), names: ['İmsak', 'Güneş', 'Öğle', 'İkindi', 'Akşam', 'Yatsı'], lang: 'tr', palette: 'kabe', mode: 'system' });
+  const wd = wp.days ?? [];
+  ok(wd.length === WIDGET_DAYS && wd.every((d) => d.t.length === 6 && d.a.length === 6) && wp.place === 'Mekke' && wp.names?.length === 6, 'küçük uygulama: 30 gün × 6 vakit, yer adı');
+  ok(JSON.stringify(wp).length < 12000, `küçük uygulama: veri küçük (${JSON.stringify(wp).length} bayt)`);
+  ok(wd.every((d, i) => d.a.every((x, j) => (j === 0 ? i === 0 || Number(x) > Number(wd[i - 1].a[5]) : Number(x) > Number(d.a[j - 1])))), 'küçük uygulama: vakitler sıralı');
+  const t1 = Number(wd[0].a[2]) - 60e3;
+  const t2 = Number(wd[0].a[5]) + 60e3;
+  // yatsı ile ertesi imsak arası; gün sınırı cihazın saat dilimine göre (Türkiye ve Suudi Arabistan aynı)
+  const t3 = Math.round((Number(wd[0].a[5]) + Number(wd[1].a[0])) / 2);
+  const n1 = widgetNext(wp, t1);
+  const n2 = widgetNext(wp, t2);
+  const n3 = widgetNext(wp, t3);
+  ok(n1?.day === 0 && n1.prayer === 2 && !n1.tomorrow, 'küçük uygulama: öğleden önce → öğle');
+  ok(n2?.day === 1 && n2.prayer === 0 && n2.tomorrow === Number(wd[1].s) > t2, 'küçük uygulama: yatsıdan sonra → (yarın) imsak');
+  ok(n3?.day === 1 && n3.prayer === 0 && n3.tomorrow === Number(wd[1].s) > t3, 'küçük uygulama: gece → imsak, "yarın" etiketi gün sınırına göre');
+  ok(widgetNext(wp, Number(wd[29].a[5]) + 1) === null, 'küçük uygulama: veri bitince güncelleme istenir');
+  ok(wp.light?.accent === PALETTES.kabe.light.accent && wp.dark?.accent === PALETTES.kabe.dark.accent && wp.dark?.bg !== wp.light?.bg, 'küçük uygulama: tema renkleri');
 }
 
 // ── Umre rehberi içeriği ──

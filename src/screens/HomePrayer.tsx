@@ -14,6 +14,7 @@ import { hijriText, nextSpecial } from '@/services/hijri';
 import { PRAYERS, fmtTime, nextPrayer, times } from '@/services/prayer';
 import { kmTo } from '@/services/location';
 import { usePrayerPlace, type PlaceId } from '@/services/prayerPlace';
+import { usePrayerWidgetSync } from '@/services/widgetSync';
 
 type Lang = 'tr' | 'en' | 'ar';
 const L = {
@@ -44,6 +45,7 @@ export default function HomePrayer() {
   const lg = lang as Lang;
   const insets = useSafeAreaInsets();
   const { place, setPlace, loc, method, label, denied, waiting } = usePrayerPlace(lang);
+  usePrayerWidgetSync({ loc, method, label, waiting });
   const [now, setNow] = useState(new Date());
   useEffect(() => { const id = setInterval(() => setNow(new Date()), 20000); return () => clearInterval(id); }, []);
 

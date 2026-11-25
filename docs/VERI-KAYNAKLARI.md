@@ -51,6 +51,11 @@
 | tiles.openfreemap.org | Uygulama içi online harita (vektör karolar, liberty/dark stilleri) | Ücretsiz, anahtarsız; © OpenMapTiles © OpenStreetMap — haritanın köşesinde atıf |
 | unpkg.com / cdn.jsdelivr.net (maplibre-gl 5.24.1) | Harita çizim kütüphanesi (WebView içinde) | BSD-3; biri açılmazsa diğeri denenir |
 | routing.openstreetmap.de | Yaya rotası | FOSSGIS kullanım koşulları; yoğun kullanımda kendi OSRM sunucunuzu kurun |
+| Çevrimdışı paket: tiles.openfreemap.org (planet TileJSON, vektör karolar z0–14, liberty/dark stilleri, yazı tipleri, simgeler) | Mekke/Medine haritası internetsiz | © OpenMapTiles © OpenStreetMap; karolar telefona bir kez indirilir (Mekke ~130, Medine ~80 karo) |
+| Çevrimdışı paket: api.alquran.cloud/v1/quran/<baskı> | Kur'an metni ve seçili mealler internetsiz | Arapça metin Tanzil; meal hakları sahiplerine aittir |
+| Çevrimdışı paket: cdn.islamic.network/quran/audio | Dua kütüphanesindeki Kur'an ayetlerinin sesleri | Kayıt hakları kâri/yayıncılara aittir |
+| Kaza takibi | Hesap telefonda yapılır, veri gönderilmez | Bilgi notları: Diyanet İşleri Başkanlığı (kaza namazı ve oruç) |
+| Ana ekran küçük uygulaması (expo-widgets, Android) | Vakitler telefonda hesaplanıp küçük uygulamaya yazılır | Ağ kullanmaz |
 | Supabase (isteğe bağlı) | Canlı kapı bildirimleri | Kendi projeniz |
 
 ## Tavaf asistanı ve dualar

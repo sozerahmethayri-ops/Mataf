@@ -1,0 +1,76 @@
+diff --git a/node_modules/expo-widgets/android/src/main/java/expo/modules/widgets/ExpoWidgetEmittableTree.kt b/node_modules/expo-widgets/android/src/main/java/expo/modules/widgets/ExpoWidgetEmittableTree.kt
+index 3df9e4a..1fe650c 100644
+--- a/node_modules/expo-widgets/android/src/main/java/expo/modules/widgets/ExpoWidgetEmittableTree.kt
++++ b/node_modules/expo-widgets/android/src/main/java/expo/modules/widgets/ExpoWidgetEmittableTree.kt
+@@ -66,6 +66,7 @@ import androidx.glance.ImageProvider
+ import androidx.glance.TintColorFilterParams
+ import androidx.glance.GlanceModifier
+ import androidx.glance.action.clickable
++import androidx.glance.appwidget.action.actionStartActivity
+ import androidx.glance.appwidget.CheckboxDefaults
+ import androidx.glance.appwidget.cornerRadius
+ import androidx.glance.appwidget.EmittableCheckBox
+@@ -124,6 +125,12 @@ internal fun ReadableMap.toPeekRoot(context: Context, source: InteractionSource,
+   val converterContext = WidgetConverterContext(context, size)
+   return EmittableColumn().also { root ->
+     root.children += toPeekNodes(converterContext, source)
++    // MATAF: dokununca uygulamayı aç (küçük uygulamanın tamamı tıklanabilir)
++    if (source is InteractionSource.Widget) {
++      context.packageManager.getLaunchIntentForPackage(context.packageName)?.let { launch ->
++        root.modifier = GlanceModifier.fillMaxSize().clickable(actionStartActivity(launch))
++      }
++    }
+   }
+ }
+ 
+diff --git a/node_modules/expo-widgets/android/src/main/java/expo/modules/widgets/WidgetsModule.kt b/node_modules/expo-widgets/android/src/main/java/expo/modules/widgets/WidgetsModule.kt
+index 05d6a9c..2196a2e 100644
+--- a/node_modules/expo-widgets/android/src/main/java/expo/modules/widgets/WidgetsModule.kt
++++ b/node_modules/expo-widgets/android/src/main/java/expo/modules/widgets/WidgetsModule.kt
+@@ -1,6 +1,8 @@
+ package expo.modules.widgets
+ 
++import android.appwidget.AppWidgetManager
+ import android.content.Context
++import android.os.Build
+ import expo.modules.kotlin.exception.Exceptions
+ import expo.modules.kotlin.functions.Coroutine
+ import expo.modules.kotlin.modules.Module
+@@ -48,6 +50,24 @@ class WidgetsModule : Module() {
+       WidgetsUpdater.reloadAll(context)
+     }
+ 
++    // MATAF: küçük uygulamayı ana ekrana ekleme isteği (Android 8+, başlatıcı destekliyorsa)
++    Function("isPinWidgetSupported") {
++      Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && AppWidgetManager.getInstance(context).isRequestPinAppWidgetSupported
++    }
++
++    Function("requestPinWidget") { name: String ->
++      val manager = AppWidgetManager.getInstance(context)
++      if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O || !manager.isRequestPinAppWidgetSupported) {
++        false
++      } else {
++        manager.requestPinAppWidget(widgetProviderComponentName(context, name), null, null)
++      }
++    }
++
++    Function("installedWidgetCount") { name: String ->
++      AppWidgetManager.getInstance(context).getAppWidgetIds(widgetProviderComponentName(context, name)).size
++    }
++
+     Class("Widget", WidgetObject::class) {
+       Constructor { name: String, layout: String, initialProps: Map<String, Any?>? ->
+         WidgetObject(context, name, layout, initialProps)
+diff --git a/node_modules/expo-widgets/plugin/build/android/withAndroidWidgetFiles.js b/node_modules/expo-widgets/plugin/build/android/withAndroidWidgetFiles.js
+index 0fcc4a9..ed2eacf 100644
+--- a/node_modules/expo-widgets/plugin/build/android/withAndroidWidgetFiles.js
++++ b/node_modules/expo-widgets/plugin/build/android/withAndroidWidgetFiles.js
+@@ -152,7 +152,7 @@ const createWidgetInfoXml = (widget)=>{
+   android:minHeight="${android.minHeight}dp"
+   android:targetCellWidth="${android.targetCellWidth}"
+   android:targetCellHeight="${android.targetCellHeight}"
+-  android:updatePeriodMillis="0"
++  android:updatePeriodMillis="1800000"
+   android:initialLayout="@layout/expo_widgets_initial_layout"
+   android:description="@string/${(0, _resourceNames.getWidgetDescriptionResourceName)(widget)}"
+   android:resizeMode="${getWidgetResizeMode(widget)}"

@@ -9,7 +9,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { DuaBlock } from '@/components/DuaBlock';
 import { Icon } from '@/components/Icon';
 import { TawafScene } from '@/components/TawafScene';
-import { Btn, Card, IconBtn, SectionTitle, T } from '@/components/ui';
+import { Btn, Card, IconBtn, SectionTitle, Segmented, T } from '@/components/ui';
 import { C, shadow, fs } from '@/constants/theme';
 import type { ML } from '@/data/sites';
 import {
@@ -26,6 +26,8 @@ import { usePersisted } from '@/services/usePersisted';
 import { duaSpeech, playSequence, stopVoice, type SpeechItem } from '@/services/voice';
 
 type Phase = 'prep' | 'active' | 'done';
+/** Sesli rehber: kısa = yalnız şavtlar ve istilam; ayrıntılı = her bölge, şavt başına dua, remel hatırlatması */
+type Guide = 'short' | 'full';
 type Lang = 'tr' | 'en' | 'ar';
 
 const L = {
@@ -62,6 +64,12 @@ const L = {
   lock: { tr: 'Ekranı kilitle', en: 'Lock screen', ar: 'قفل الشاشة' },
   locked: { tr: 'Ekran kilitli — açmak için basılı tutun', en: 'Screen locked — press and hold to unlock', ar: 'الشاشة مقفلة — اضغط مطولًا لفتحها' },
   lapLen: { tr: 'Bu halkada bir şavt ≈', en: 'One round on this ring ≈', ar: 'الشوط في هذه الحلقة ≈' },
+  guide: { tr: 'Sesli rehber', en: 'Voice guide', ar: 'الدليل الصوتي' },
+  gOff: { tr: 'Kapalı', en: 'Off', ar: 'مغلق' },
+  gShort: { tr: 'Kısa', en: 'Short', ar: 'مختصر' },
+  gFull: { tr: 'Ayrıntılı', en: 'Detailed', ar: 'مفصّل' },
+  gShortSub: { tr: 'Şavt başlarında sayı ve istilam; Hatîm ve Rükn-i Yemânî uyarısı.', en: 'Round number and istilam; Hatim and Yemeni Corner cues.', ar: 'رقم الشوط والاستلام وتنبيهات الحِجر والركن اليماني.' },
+  gFullSub: { tr: 'Her köşede yönlendirme, her şavtta bir dua, remel hatırlatması, GPS zayıfsa uyarı ve tavaftan sonra ne yapacağınız. Kulaklıkla kullanın; ekranı kilitleyip telefonu cebinize koyabilirsiniz.', en: 'Cues at every corner, one du‘a per round, ramal reminders, a weak-GPS warning and what to do afterwards. Use earphones; lock the screen and pocket the phone.', ar: 'تنبيهات عند كل ركن ودعاء لكل شوط وتذكير بالرمل. استخدم السماعات.' },
   toSay: { tr: 'Sa’y sayacını aç', en: 'Open the sa‘y counter', ar: 'افتح عدّاد السعي' },
   toGuide: { tr: 'Umre rehberi', en: 'Umrah guide', ar: 'دليل العمرة' },
   resumed: { tr: 'Yarım kalan tavaf geri yüklendi', en: 'Unfinished tawaf restored', ar: 'تمت استعادة الطواف غير المكتمل' },
@@ -79,9 +87,19 @@ function lapAnnouncement(completed: number, lang: Lang): string {
   return completed === 0 ? 'Tavaf başladı. Birinci şavt.' : `${o[completed - 1]} şavt tamamlandı. ${o[completed]} şavt.`.replace(/^./, (c) => c.toLocaleUpperCase('tr'));
 }
 const ZONE_VOICE: Partial<Record<ZoneId, ML>> = {
-  yamani: { tr: 'Rükn-i Yemânî. Dokunabiliyorsanız sağ elinizle dokunun.', en: 'Yemeni Corner. Touch it with your right hand if you can.', ar: 'الركن اليماني. استلمه بيدك اليمنى إن تيسّر.' },
+  door: { tr: 'Kâbe kapısı ve Mültezem. Durmadan yürümeye devam edin.', en: 'The Kaaba door and the Multazam. Keep walking.', ar: 'باب الكعبة والملتزم. واصل المشي.' },
+  iraqi: { tr: 'Rükn-i Irâkî. Dua ve zikre devam edin.', en: 'Iraqi Corner. Continue your prayers.', ar: 'الركن العراقي. واصل الدعاء.' },
   hijr: { tr: 'Hatîm. Duvarın dışından geçin.', en: 'Hatim. Stay outside the wall.', ar: 'الحِجر. طُف من خارجه.' },
+  shami: { tr: 'Rükn-i Şâmî.', en: 'Shami Corner.', ar: 'الركن الشامي.' },
+  west: { tr: 'Batı cephesi. Rükn-i Yemânî’ye yaklaşıyorsunuz.', en: 'Western side. You are approaching the Yemeni Corner.', ar: 'الجهة الغربية. تقترب من الركن اليماني.' },
+  yamani: { tr: 'Rükn-i Yemânî. Dokunabiliyorsanız sağ elinizle dokunun.', en: 'Yemeni Corner. Touch it with your right hand if you can.', ar: 'الركن اليماني. استلمه بيدك اليمنى إن تيسّر.' },
 };
+/** Kısa rehberde yalnız bunlar söylenir */
+const SHORT_ZONES: ZoneId[] = ['hijr', 'yamani'];
+const RAMAL_ON: ML = { tr: 'Erkekler bu şavtta remel yapar.', en: 'Men: ramal in this round.', ar: 'للرجال: الرمل في هذا الشوط.' };
+const RAMAL_OFF: ML = { tr: 'Remel bitti; normal yürüyün.', en: 'Ramal is over; walk normally.', ar: 'انتهى الرمل؛ امشِ عاديًا.' };
+const AFTER_VOICE: ML = { tr: 'Makam-ı İbrâhîm’e doğru gidin ve iki rekât tavaf namazı kılın. Sonra Zemzem için.', en: 'Go toward the Station of Abraham and pray two rak‘ahs. Then drink Zamzam.', ar: 'اتجه إلى مقام إبراهيم وصلِّ ركعتين، ثم اشرب من زمزم.' };
+const WEAK_VOICE: ML = { tr: 'Konum zayıf. Şavtları elle sayın.', en: 'Location is weak. Count rounds manually.', ar: 'الموقع ضعيف. عُدّ الأشواط يدويًا.' };
 const DONE_VOICE: ML = { tr: 'Yedi şavt tamamlandı. Allah kabul etsin.', en: 'Seven rounds complete. May Allah accept it.', ar: 'تمت الأشواط السبعة. تقبّل الله منك.' };
 
 const haptic = (kind: 'lap' | 'done') => {
@@ -99,7 +117,7 @@ export default function TawafScreen() {
   const { lang } = useI18n();
   const insets = useSafeAreaInsets();
   const { height: winH } = useWindowDimensions();
-  const [prefs, setPrefs] = usePersisted('tawaf:prefs', { type: 'umre' as TawafType, voice: true, auto: true, follow: true });
+  const [prefs, setPrefs] = usePersisted('tawaf:prefs', { type: 'umre' as TawafType, voice: true, auto: true, follow: true, guide: 'full' as Guide });
   const [phase, setPhase] = useState<Phase>('prep');
   const [lap, setLap] = useState<LapState>(initialLap);
   const [fix, setFix] = useState<Fix | null>(null);
@@ -114,6 +132,8 @@ export default function TawafScreen() {
   const prefsRef = useRef(prefs);
   const langRef = useRef(lang as Lang);
   const zoneRef = useRef<ZoneId | undefined>(undefined);
+  const weakSince = useRef<number | undefined>(undefined);
+  const weakSaid = useRef(false);
   useEffect(() => { phaseRef.current = phase; prefsRef.current = prefs; langRef.current = lang as Lang; });
 
   const speak = (items: SpeechItem[]) => { if (prefsRef.current.voice) playSequence(items).catch(() => undefined); };
@@ -123,10 +143,15 @@ export default function TawafScreen() {
     for (const e of events) {
       if (e.type === 'start' || e.type === 'lap') {
         haptic('lap');
-        speak([{ kind: 'speak', text: lapAnnouncement(e.type === 'start' ? 0 : e.laps, lg), lang: lg }, ...duaSpeech(ISTILAM)]);
+        const n = e.type === 'start' ? 0 : e.laps;
+        const full = prefsRef.current.guide === 'full';
+        const ramalType = TAWAF_TYPES.find((x) => x.id === prefsRef.current.type)?.ramal !== 'no';
+        const extra = full && ramalType ? (n < 3 ? ` ${pick(RAMAL_ON, lg)}` : n === 3 ? ` ${pick(RAMAL_OFF, lg)}` : '') : '';
+        speak([{ kind: 'speak', text: lapAnnouncement(n, lg) + extra, lang: lg }, ...duaSpeech(ISTILAM)]);
       } else if (e.type === 'done') {
         haptic('done');
-        speak([{ kind: 'speak', text: pick(DONE_VOICE, lg), lang: lg }, ...duaSpeech(ISTILAM)]);
+        const full = prefsRef.current.guide === 'full';
+        speak([{ kind: 'speak', text: pick(DONE_VOICE, lg), lang: lg }, ...duaSpeech(ISTILAM), ...(full ? [{ kind: 'speak' as const, text: pick(AFTER_VOICE, lg), lang: lg }] : [])]);
         setPhase('done');
         if (prefsRef.current.type === 'umre') markUmreStep('tavaf').catch(() => undefined);
       }
@@ -154,9 +179,25 @@ export default function TawafScreen() {
       if (z !== zoneRef.current) {
         zoneRef.current = z;
         const lg = langRef.current;
+        const full = prefsRef.current.guide === 'full';
         if (z === 'rabbana') speak(duaSpeech(ZONES.rabbana.dua!));
-        else if (ZONE_VOICE[z]) speak([{ kind: 'speak', text: pick(ZONE_VOICE[z]!, lg), lang: lg }]);
+        else if (ZONE_VOICE[z] && (full || SHORT_ZONES.includes(z))) {
+          // Ayrıntılı rehberde batı cephesinde o şavtın önerilen duası da okunur
+          const dua = full && z === 'west' ? duaSpeech(TAWAF_DHIKR[st.laps % TAWAF_DHIKR.length]) : [];
+          speak([{ kind: 'speak', text: pick(ZONE_VOICE[z]!, lg), lang: lg }, ...dua]);
+        }
       }
+    }
+    // GPS uzun süre zayıfsa bir kez sesli uyarı
+    if (st.started && st.quality !== 'good') {
+      weakSince.current = weakSince.current ?? f.t;
+      if (!weakSaid.current && f.t - weakSince.current > 30000) {
+        weakSaid.current = true;
+        speak([{ kind: 'speak', text: pick(WEAK_VOICE, langRef.current), lang: langRef.current }]);
+      }
+    } else if (st.quality === 'good') {
+      weakSince.current = undefined;
+      weakSaid.current = false;
     }
   };
 
@@ -267,6 +308,10 @@ export default function TawafScreen() {
               <Text style={T.body}>{niyet(prefs.type, lang as Lang)}</Text>
               <Text style={T.small}>{pick(NIYET_NOTE, lang)}</Text>
             </Card>
+            <SectionTitle>{pick(L.guide, lang)}</SectionTitle>
+            <Segmented value={prefs.voice ? prefs.guide : 'off'} onChange={(v) => (v === 'off' ? (stopVoice(), setPrefs({ voice: false })) : setPrefs({ voice: true, guide: v as Guide }))}
+              options={[{ value: 'off', label: pick(L.gOff, lang) }, { value: 'short', label: pick(L.gShort, lang) }, { value: 'full', label: pick(L.gFull, lang) }]} />
+            <Text style={T.small}>{pick(prefs.voice && prefs.guide === 'full' ? L.gFullSub : L.gShortSub, lang)}</Text>
             {PREP.filter((p) => !p.ramalOnly || ramal).map((p) => (
               <View key={p.id} style={{ flexDirection: 'row', gap: 10, alignItems: 'flex-start' }}>
                 <View style={{ width: 22, height: 22, borderRadius: 11, backgroundColor: C.openTint, alignItems: 'center', justifyContent: 'center', marginTop: 1 }}>
