@@ -66,19 +66,24 @@ export function OnlineMap(props: OnlineMapProps) {
     };
   }, []));
   useEffect(() => () => { if (sleepTimer.current) clearTimeout(sleepTimer.current); }, []);
-  // 25 sn içinde açılmazsa (ağ çok yavaş / engelli) sade haritaya geç
+  // 20 sn içinde açılmazsa (yavaş ağ) o sırada sade harita gösterilir; online harita arkada yüklenmeye devam eder
+  const [slow, setSlow] = useState(false);
+  const t0 = useRef(0);
   useEffect(() => {
-    if (ready || failed) return;
-    const id = setTimeout(() => setFailed(true), 25000);
+    if (ready || failed || sleeping || !mounted) return;
+    t0.current = Date.now();
+    const id = setTimeout(() => setSlow(true), 20000);
     return () => clearTimeout(id);
-  }, [ready, failed, attempt]);
+  }, [ready, failed, attempt, sleeping, mounted]);
 
   const onMessage = (e: WebViewMessageEvent) => {
     let m: { t: string; id?: string; lat?: number; lng?: number; m?: string };
     try { m = JSON.parse(e.nativeEvent.data); } catch { return; }
     if (m.t === 'ready') {
       ref.current?.injectJavaScript(`window.matafSet(${stateRef.current});true;`);
+      console.log('[harita] hazır', Date.now() - t0.current, 'ms');
       setReady(true);
+      setSlow(false);
     } else if (m.t === 'error') {
       console.warn('[harita] açılamadı:', m.m);
       setFailed(true);
@@ -94,7 +99,7 @@ export function OnlineMap(props: OnlineMapProps) {
     return (
       <View style={{ flex: 1 }}>
         <PlainMap pins={pins} lines={lines} user={user} selectedId={selectedId} onPin={onPin} onLongPress={onLongPress} center={center} />
-        <Pressable onPress={() => { setFailed(false); setReady(false); setAttempt((n) => n + 1); }} accessibilityRole="button"
+        <Pressable onPress={() => { setFailed(false); setReady(false); setSlow(false); setAttempt((n) => n + 1); }} accessibilityRole="button"
           style={[{ position: 'absolute', top: (padding?.top ?? 0) + 10, alignSelf: 'center', flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 12, height: 32, borderRadius: 16, backgroundColor: C.bg }, shadow]}>
           <Icon name="refresh" size={14} color={C.accent} />
           <Text style={{ fontSize: fs(12), fontWeight: '700', color: C.ink }}>Harita yüklenemedi · tekrar dene</Text>
@@ -124,7 +129,16 @@ export function OnlineMap(props: OnlineMapProps) {
         bounces={false}
         style={{ flex: 1, backgroundColor: C.mapGround }}
       />
-      {!ready && <ActivityIndicator style={{ position: 'absolute', top: '45%', alignSelf: 'center' }} color={C.accent} />}
+      {!ready && !slow && <ActivityIndicator style={{ position: 'absolute', top: '45%', alignSelf: 'center' }} color={C.accent} />}
+      {!ready && slow && (
+        <View style={{ position: 'absolute', left: 0, right: 0, top: 0, bottom: 0 }}>
+          <PlainMap pins={pins} lines={lines} user={user} selectedId={selectedId} onPin={onPin} onLongPress={onLongPress} center={center} />
+          <View style={[{ position: 'absolute', top: (padding?.top ?? 0) + 10, alignSelf: 'center', flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 12, height: 30, borderRadius: 15, backgroundColor: C.bg }, shadow]}>
+            <ActivityIndicator size="small" color={C.accent} />
+            <Text style={{ fontSize: fs(12), fontWeight: '700', color: C.ink }}>Harita yükleniyor…</Text>
+          </View>
+        </View>
+      )}
       {controls && ready && (
         <View style={{ position: 'absolute', right: (padding?.right ?? 0) + 10, top: (padding?.top ?? 0) + 10, gap: 8 }}>
           <Pressable onPress={() => setOwn3d((v) => !v)} accessibilityRole="button" accessibilityLabel={threeD ? '2B görünüm' : '3B görünüm'}

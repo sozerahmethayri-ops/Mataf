@@ -30,6 +30,14 @@ W=${SIZE%x*}; H=${SIZE#*x}
 Y=$(( H * 950 / 1000 ))
 tap() { adb shell input tap $(( W * $1 / 1000 )) $(( H * $2 / 1000 )); }
 
+# Önce Ulaşım sekmesi: sekme sayfasındaki online harita ne kadar sürede açılıyor?
+adb shell input tap $(( W * 700 / 1000 )) $Y
+step "02a-ulasim-10" 10
+step "02b-ulasim-25" 15
+step "02c-ulasim-45" 20
+adb shell input tap $(( W * 500 / 1000 )) $Y
+sleep 3
+
 # Alt çubuk: Harita, Kur'an, Ana sayfa (orta), Ulaşım, Menü
 n=1
 for f in 100 300 700 900 500; do
@@ -70,4 +78,5 @@ adb logcat -d > smoke/logcat.txt
 { grep -n -B1 -A40 -E "Process: $PKG" smoke/logcat.txt; grep -n -A20 -E "ReactNativeJS.*(Error|Exception)|JavascriptException" smoke/logcat.txt; grep -n -E "Killing [0-9]+:$PKG|$PKG.*has died|DeadSystemException" smoke/logcat.txt | head -20; } > smoke/crash.txt
 [ -s smoke/crash.txt ] || echo "çökme kaydı yok" > smoke/crash.txt
 grep -E "ReactNativeJS|chromium" smoke/logcat.txt | grep -iE "maplibre|webgl|harita|map error|ssl" | head -60 > smoke/map-log.txt || true
+[ -s smoke/map-log.txt ] || echo "harita günlüğü boş" > smoke/map-log.txt
 cat smoke/status.txt >> smoke/crash.txt
