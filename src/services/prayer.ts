@@ -36,6 +36,17 @@ export function nextPrayer(lat: number, lng: number, method: MethodId, now = new
   return { key: 'fajr' as PrayerKey, at: t2.fajr, prev: today.isha };
 }
 
+/**
+ * Ekranda gösterilecek günün vakitleri. Yatsı geçince yarının vakitleri döner; böylece vurgulanan
+ * imsak ile geri sayımın saati aynı olur (küçük uygulama da böyle davranır).
+ */
+export function shownDay(lat: number, lng: number, method: MethodId, now = new Date()) {
+  const today = times(lat, lng, method, now);
+  if (today.isha > now) return { t: today, date: now, tomorrow: false };
+  const date = new Date(now.getTime() + 24 * 3600 * 1000);
+  return { t: times(lat, lng, method, date), date, tomorrow: true };
+}
+
 function prevOf(k: PrayerKey, today: Record<PrayerKey, Date>, lat: number, lng: number, method: MethodId, now: Date) {
   const i = PRAYERS.indexOf(k);
   if (i > 0) return today[PRAYERS[i - 1]];

@@ -96,8 +96,16 @@ if [ $added = 0 ]; then
 fi
 echo "widget eklendi: $added" >> smoke/status.txt
 sleep 3
-# Diğer boylar: küçük (2×2) ve liste (2×3) de eklenip çiziliyor mu?
-for wname in NextPrayerWidget PrayerListWidget; do
+adb shell input keyevent KEYCODE_HOME; sleep 6; shot "41-widget-ana-ekran"
+# Dokununca uygulama açılıyor mu? (orta boy kutu sayfanın üst yarısında)
+tap 500 300; sleep 5
+top=$(adb shell dumpsys activity activities | grep -E "mResumedActivity|topResumedActivity" | head -2 | tr -d '\r')
+echo "dokununca öndeki: $top" >> smoke/status.txt
+shot "43-widget-dokun"
+# Diğer boylar: küçük (2×2), liste (2×3), şerit (4×1). Başlatıcı her birini yer bulduğu sayfaya koyar
+# ve Ana ekran tuşu o sayfayı açar; her eklemeden sonra o sayfanın görüntüsü alınır.
+n=44
+for wname in NextPrayerWidget PrayerListWidget PrayerStripWidget; do
   open "vakitler?widget=$wname"; sleep 6
   ok2=0
   if tapText "Add to home screen|ADD TO HOME SCREEN|Add automatically|ADD AUTOMATICALLY|Add|ADD|Ekle|EKLE|Ana ekrana ekle"; then sleep 4; fi
@@ -109,17 +117,13 @@ for wname in NextPrayerWidget PrayerListWidget; do
     done
   fi
   echo "$wname eklendi: $ok2" >> smoke/status.txt
-  sleep 2
+  adb shell input keyevent KEYCODE_HOME; sleep 6; shot "$n-widget-$wname"; n=$((n + 1))
 done
-adb shell input keyevent KEYCODE_HOME; sleep 6; shot "41-widget-ana-ekran"
-# Başlatıcı yer yoksa küçük uygulamayı sonraki sayfaya koyar: iki sayfa sağa bak
-adb shell input swipe $(( W * 85 / 100 )) $(( H * 45 / 100 )) $(( W * 15 / 100 )) $(( H * 45 / 100 )) 300; sleep 4; shot "42-widget-sayfa2"
 adb shell dumpsys appwidget > smoke/widget.txt 2>&1 || true
-# Dokununca uygulama açılıyor mu? (küçük uygulama sayfanın üst yarısında)
-tap 500 300; sleep 5
-top=$(adb shell dumpsys activity activities | grep -E "mResumedActivity|topResumedActivity" | head -2 | tr -d '\r')
-echo "dokununca öndeki: $top" >> smoke/status.txt
-shot "43-widget-dokun"
+# Vakit anında yenileme: uygulama sonraki vakitler için alarm kurdu mu?
+adb shell dumpsys alarm > smoke/alarm-all.txt 2>/dev/null || true
+grep -B2 -A4 "expo.modules.widgets.TICK" smoke/alarm-all.txt | head -60 > smoke/alarm.txt || true
+echo "vakit alarmı: $(grep -c 'expo.modules.widgets.TICK' smoke/alarm-all.txt)" >> smoke/status.txt
 adb shell monkey -p "$PKG" -c android.intent.category.LAUNCHER 1 >/dev/null 2>&1; sleep 6
 
 # Tema değiştirme (koyu/açık) sonrası uygulama açık kalmalı: Ayarlar'da tema satırına dokun

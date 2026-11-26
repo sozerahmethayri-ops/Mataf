@@ -1,5 +1,7 @@
 // Uzun (2×3) ana ekran küçük uygulaması: altı vakit alt alta, sıradaki vurgulu, geçenler soluk.
 // PrayerWidget ile aynı veriyi alır; görünüm ayrı JS ortamında çizilir ('widget' yönergesi).
+// Glance bir Column/Row içinde en çok 10 öğe çizer; fazlası sessizce kesilir. Bu yüzden altı satır
+// ayrı bir Column'da, aralarında Spacer olmadan durur (0.12.0'da Akşam ve Yatsı kesiliyordu).
 import type * as UI from '@expo/ui/jetpack-compose';
 import type * as M from '@expo/ui/jetpack-compose/modifiers';
 import { createWidget } from 'expo-widgets';
@@ -62,23 +64,22 @@ function listLayout(props: PrayerWidgetProps, env: { colorScheme?: 'light' | 'da
     const past = !tomorrow && k < pi;
     const col = on ? c.accent : past ? c.muted : c.ink;
     rows.push(
-      <Box key={'r' + k} modifiers={on ? [fillMaxWidth(), height(26), background(c.tint), cornerRadius(10)] : [fillMaxWidth(), height(26)]}>
-        <Box contentAlignment="centerStart" modifiers={[fillMaxWidth(), height(26), padding(8, 0, 8, 0)]}>
+      <Box key={'r' + k} modifiers={on ? [fillMaxWidth(), height(28), background(c.tint), cornerRadius(10)] : [fillMaxWidth(), height(28)]}>
+        <Box contentAlignment="centerStart" modifiers={[fillMaxWidth(), height(28), padding(8, 0, 8, 0)]}>
           <Text color={col} maxLines={1} style={{ fontSize: 14, fontWeight: on ? 'bold' : 'normal' }}>{names[k]}</Text>
         </Box>
-        <Box contentAlignment="centerEnd" modifiers={[fillMaxWidth(), height(26), padding(8, 0, 8, 0)]}>
+        <Box contentAlignment="centerEnd" modifiers={[fillMaxWidth(), height(28), padding(8, 0, 8, 0)]}>
           <Text color={col} maxLines={1} style={{ fontSize: 15, fontWeight: 'bold' }}>{day.t[k]}</Text>
         </Box>
       </Box>,
     );
-    rows.push(<Spacer key={'s' + k} modifiers={[height(2)]} />);
   }
 
   return (
     <Column modifiers={root} verticalAlignment="center">
       <Text color={c.muted} maxLines={1} style={{ fontSize: 12 }}>{head}</Text>
       <Spacer modifiers={[height(6)]} />
-      {rows}
+      <Column modifiers={[fillMaxWidth()]}>{rows}</Column>
     </Column>
   );
 }

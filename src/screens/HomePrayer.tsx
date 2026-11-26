@@ -13,7 +13,7 @@ import { TesrikNote, tesrikActive } from '@/components/TesrikNote';
 import { C, fs, isDark } from '@/constants/theme';
 import { pick, useI18n } from '@/i18n';
 import { hijriText, nextSpecial } from '@/services/hijri';
-import { PRAYERS, fmtTime, nextPrayer, times, type PrayerKey } from '@/services/prayer';
+import { PRAYERS, fmtTime, nextPrayer, shownDay, times, type PrayerKey } from '@/services/prayer';
 import { altitudeText, directionText, moonPhaseName, skyNow } from '@/services/sky';
 import { hajjSoon, type HajjPhase } from '@/services/hac';
 import { sceneKind } from '@/services/skyScene';
@@ -31,6 +31,7 @@ const L = {
   waiting: { tr: 'Konum alınıyor…', en: 'Getting location…', ar: 'جارٍ تحديد الموقع…' },
   noPerm: { tr: 'Konum izni yok · Mekke vakitleri', en: 'No location permission · Makkah times', ar: 'لا إذن للموقع · مواقيت مكة' },
   today: { tr: 'Bugün', en: 'Today', ar: 'اليوم' },
+  tomorrowTimes: { tr: 'Yarının vakitleri', en: 'Tomorrow’s times', ar: 'مواقيت الغد' },
   inDays: { tr: '{n} gün sonra', en: 'in {n} days', ar: 'بعد {n} يوم' },
   tonight: { tr: 'Bu gece', en: 'Tonight', ar: 'الليلة' },
   qibla: { tr: 'Kıble', en: 'Qibla', ar: 'القبلة' },
@@ -86,6 +87,7 @@ export default function HomePrayer() {
 
   const tt = useMemo(() => times(loc.lat, loc.lng, method, now), [loc.lat, loc.lng, method, now]);
   const nx = nextPrayer(loc.lat, loc.lng, method, now);
+  const day = useMemo(() => shownDay(loc.lat, loc.lng, method, now), [loc.lat, loc.lng, method, now]);
   const nearMakkah = kmTo('makkah', loc) < 80;
   const pilgrim = nearMakkah || kmTo('madinah', loc) < 80;
   const dayKey = now.toDateString();
@@ -158,14 +160,17 @@ export default function HomePrayer() {
               <Text style={{ fontSize: fs(26), color: C.accent, fontWeight: '800', fontVariant: ['tabular-nums'] }}>{fmtTime(nx.at, loc.tz)}</Text>
             </View>
           </View>
+          {day.tomorrow && (
+            <Text style={{ fontSize: fs(12), fontWeight: '700', color: C.muted, paddingHorizontal: 4, marginBottom: -6 }} numberOfLines={1}>{pick(L.tomorrowTimes, lg)}</Text>
+          )}
           <View style={{ flexDirection: 'row', gap: 4 }}>
             {PRAYERS.map((p) => {
               const on = nx.key === p;
-              const past = !on && tt[p] < now;
+              const past = !on && !day.tomorrow && day.t[p] < now;
               return (
                 <View key={p} style={{ flex: 1, paddingVertical: 9, borderRadius: 16, alignItems: 'center', gap: 3, backgroundColor: on ? C.accent : 'transparent' }}>
                   <Text style={{ fontSize: fs(11.5), fontWeight: '600', color: on ? C.onAccent : past ? C.muted : C.ink2 }} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75}>{names[p]}</Text>
-                  <Text style={{ fontSize: fs(15), fontWeight: '700', color: on ? C.onAccent : past ? C.muted : C.ink, fontVariant: ['tabular-nums'] }} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75}>{fmtTime(tt[p], loc.tz)}</Text>
+                  <Text style={{ fontSize: fs(15), fontWeight: '700', color: on ? C.onAccent : past ? C.muted : C.ink, fontVariant: ['tabular-nums'] }} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75}>{fmtTime(day.t[p], loc.tz)}</Text>
                 </View>
               );
             })}

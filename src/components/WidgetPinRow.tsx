@@ -18,10 +18,10 @@ const L = {
   manual: { tr: 'Olmadıysa: ana ekranda boş yere basılı tutun → Widget’lar → MATAF', en: 'If nothing happened: long-press the home screen → Widgets → MATAF', ar: 'إن لم يحدث شيء: اضغط مطولًا على الشاشة الرئيسية ← الأدوات ← MATAF' },
 };
 const SIZES: { name: WidgetName; icon: IconName; title: T3; sub: T3 }[] = [
-  { name: 'NextPrayerWidget', icon: 'clock', title: { tr: 'Küçük · sıradaki vakit', en: 'Small · next prayer', ar: 'صغير · الصلاة التالية' }, sub: { tr: '2×2 · büyük saat, ardından gelen vakit', en: '2×2 · large time and the one after', ar: '2×2 · وقت كبير والتي تليها' } },
-  { name: 'PrayerWidget', icon: 'grid', title: { tr: 'Orta · günün vakitleri', en: 'Medium · today’s times', ar: 'متوسط · مواقيت اليوم' }, sub: { tr: '4×2 · sıradaki vakit ve altı vakit yan yana', en: '4×2 · next prayer and all six side by side', ar: '4×2 · التالية والمواقيت الستة' } },
-  { name: 'PrayerListWidget', icon: 'list', title: { tr: 'Liste · alt alta', en: 'List · stacked', ar: 'قائمة · عمودية' }, sub: { tr: '2×3 · altı vakit alt alta, okuması en kolay', en: '2×3 · six times stacked, easiest to read', ar: '2×3 · المواقيت الستة عموديًا' } },
-  { name: 'PrayerStripWidget', icon: 'minus', title: { tr: 'İnce şerit', en: 'Slim strip', ar: 'شريط رفيع' }, sub: { tr: '4×1 · sıradaki ve sonraki vakit tek satırda', en: '4×1 · next and following prayer in one line', ar: '4×1 · التالية والتي تليها في سطر' } },
+  { name: 'NextPrayerWidget', icon: 'clock', title: { tr: 'Küçük · sıradaki vakit', en: 'Small · next prayer', ar: 'صغير · الصلاة التالية' }, sub: { tr: 'Kare · büyük saat, ardından gelen vakit', en: 'Square · large time and the one after', ar: 'مربع · وقت كبير والتي تليها' } },
+  { name: 'PrayerWidget', icon: 'grid', title: { tr: 'Orta · günün vakitleri', en: 'Medium · today’s times', ar: 'متوسط · مواقيت اليوم' }, sub: { tr: 'Geniş · sıradaki vakit ve altı vakit yan yana', en: 'Wide · next prayer and all six side by side', ar: 'عريض · التالية والمواقيت الستة' } },
+  { name: 'PrayerListWidget', icon: 'list', title: { tr: 'Liste · alt alta', en: 'List · stacked', ar: 'قائمة · عمودية' }, sub: { tr: 'Uzun · altı vakit alt alta, okuması en kolay', en: 'Tall · six times stacked, easiest to read', ar: 'طويل · المواقيت الستة عموديًا' } },
+  { name: 'PrayerStripWidget', icon: 'minus', title: { tr: 'İnce şerit', en: 'Slim strip', ar: 'شريط رفيع' }, sub: { tr: 'Tek satır · sıradaki ve sonraki vakit', en: 'One line · next and following prayer', ar: 'سطر واحد · التالية والتي تليها' } },
 ];
 
 export function WidgetPinRow() {

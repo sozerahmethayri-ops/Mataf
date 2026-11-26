@@ -32,7 +32,7 @@ import { altitudeText, directionText, moonLitPath, moonPhaseName, skyDay, skyNow
 import { newer } from '../src/services/version';
 import { guessKind, shareLink } from '../src/services/myPlaces';
 import { HHR_STATIONS } from '../src/data/train';
-import { nextPrayer, times as prayerTimes } from '../src/services/prayer';
+import { nextPrayer, shownDay, times as prayerTimes } from '../src/services/prayer';
 import { bodyPos, horizonGlow, sceneKind, scenePalette, textZone } from '../src/services/skyScene';
 import istanbulRail from '../src/data/istanbulRail.json';
 import { inIstanbul, planRail, railNetwork, textOn, type RailData } from '../src/services/railRouter';
@@ -712,6 +712,16 @@ async function transitChecks() {
     }
   }
   ok(allIn, 'gökyüzü: şu an ve sıradaki vakit her saatte pencerenin içinde, işaretler sıralı');
+  // Yatsıdan sonra ekranda yarının vakitleri: vurgulanan imsak geri sayımın saatiyle aynı
+  {
+    const before = new Date('2026-11-26T12:00:00Z');
+    const after = new Date('2026-11-26T16:30:00Z');
+    const a = shownDay(MK.lat, MK.lng, 'UmmAlQura', before);
+    const b = shownDay(MK.lat, MK.lng, 'UmmAlQura', after);
+    const nb = nextPrayer(MK.lat, MK.lng, 'UmmAlQura', after);
+    ok(!a.tomorrow && a.t.isha > before, 'vakit kartı: yatsıdan önce bugünün vakitleri');
+    ok(b.tomorrow && nb.key === 'fajr' && b.t.fajr.getTime() === nb.at.getTime(), 'vakit kartı: yatsıdan sonra yarının vakitleri, imsak geri sayımla aynı');
+  }
   // 24 Kasım 2026 dolunay, 9 Aralık 2026 yeni ay
   ok(skyNow(new Date('2026-11-24T15:00:00Z'), MK.lat, MK.lng).moon.fraction > 0.98, 'ay: 24 Kasım 2026 dolunay');
   ok(skyNow(new Date('2026-12-09T03:00:00Z'), MK.lat, MK.lng).moon.fraction < 0.03, 'ay: 9 Aralık 2026 yeni ay');

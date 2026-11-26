@@ -2,7 +2,7 @@
   "expo": {
     "name": "MATAF",
     "slug": "mataf",
-    "version": "0.12.0",
+    "version": "0.12.1",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "mataf",
@@ -36,7 +36,7 @@
       "blockedPermissions": [
         "android.permission.RECORD_AUDIO"
       ],
-      "versionCode": 16
+      "versionCode": 17
     },
     "web": {
       "output": "single",
@@ -93,7 +93,7 @@
             {
               "name": "PrayerWidget",
               "displayName": "MATAF · Günün vakitleri",
-              "description": "Sıradaki namaz ve altı vakit yan yana (orta, 4×2)",
+              "description": "Sıradaki namaz ve altı vakit yan yana",
               "android": {
                 "minWidth": 250,
                 "minHeight": 110,
@@ -107,7 +107,7 @@
             {
               "name": "NextPrayerWidget",
               "displayName": "MATAF · Sıradaki vakit",
-              "description": "Sıradaki namaz büyük yazıyla (küçük, 2×2)",
+              "description": "Sıradaki namaz büyük yazıyla",
               "android": {
                 "minWidth": 110,
                 "minHeight": 110,
@@ -121,7 +121,7 @@
             {
               "name": "PrayerListWidget",
               "displayName": "MATAF · Vakit listesi",
-              "description": "Altı vakit alt alta (liste, 2×3)",
+              "description": "Altı vakit alt alta",
               "android": {
                 "minWidth": 120,
                 "minHeight": 180,
@@ -135,7 +135,7 @@
             {
               "name": "PrayerStripWidget",
               "displayName": "MATAF · İnce şerit",
-              "description": "Sıradaki ve sonraki vakit tek satırda (4×1)",
+              "description": "Sıradaki ve sonraki vakit tek satırda",
               "android": {
                 "minWidth": 250,
                 "minHeight": 40,

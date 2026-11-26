@@ -67,4 +67,5 @@ jobs:
             smoke/map-log.txt
             smoke/widget.txt
             smoke/widget-log.txt
+            smoke/alarm.txt
             smoke/ui.xml

@@ -13,7 +13,7 @@ import { Header, ListRow, Screen, SectionTitle, Segmented, T } from '@/component
 import { C, fs } from '@/constants/theme';
 import { pick, useI18n } from '@/i18n';
 import { HIJRI_MONTHS, hijriText, specialOn, toHijri } from '@/services/hijri';
-import { METHODS, PRAYERS, fmtTime, nextPrayer, times, type PrayerKey } from '@/services/prayer';
+import { METHODS, PRAYERS, fmtTime, nextPrayer, shownDay, times, type PrayerKey } from '@/services/prayer';
 import { altitudeText, directionText, moonPhaseName, skyNow } from '@/services/sky';
 import { usePrayerPlace, type PlaceId } from '@/services/prayerPlace';
 import { sceneKind } from '@/services/skyScene';
@@ -43,6 +43,7 @@ const L = {
   set: { tr: 'Batış', en: 'Set', ar: 'الغروب' },
   lit: { tr: 'aydınlık', en: 'lit', ar: 'مضاء' },
   dayLen: { tr: 'gün {h} sa {m} dk', en: 'day {h} h {m} min', ar: 'النهار {h} س {m} د' },
+  tomorrow: { tr: 'Yarın', en: 'Tomorrow', ar: 'غدًا' },
 };
 
 /** 21,4230° K · 39,8263° D */
@@ -63,6 +64,8 @@ export default function PrayerTimes({ back = false }: { back?: boolean }) {
 
   const tt = useMemo(() => times(loc.lat, loc.lng, method, now), [loc.lat, loc.lng, method, now]);
   const nx = nextPrayer(loc.lat, loc.lng, method, now);
+  // Yatsıdan sonra liste yarının vakitlerini gösterir (vurgulanan imsak ile üstteki saat aynı olsun)
+  const day = useMemo(() => shownDay(loc.lat, loc.lng, method, now), [loc.lat, loc.lng, method, now]);
   const dayKey = now.toDateString();
   const week = useMemo(() => {
     const base = new Date(dayKey);
@@ -119,12 +122,12 @@ export default function PrayerTimes({ back = false }: { back?: boolean }) {
             <View key={p} style={{ height: 52, flexDirection: 'row', alignItems: 'center', borderBottomWidth: i < 5 ? 1 : 0, borderBottomColor: C.border }}>
               <View style={{ width: 8, height: 8, borderRadius: 4, marginRight: 10, backgroundColor: on ? C.route : 'transparent' }} />
               <Text style={{ flex: 1, fontSize: fs(15), fontWeight: on ? '700' : '500', color: on ? C.accent : p === 'sunrise' ? C.muted : C.ink }}>{t(`pray.${p}` as const)}</Text>
-              <Text style={{ fontSize: fs(16), fontWeight: on ? '700' : '600', color: on ? C.accent : C.ink, fontVariant: ['tabular-nums'] }}>{fmtTime(tt[p], loc.tz)}</Text>
+              <Text style={{ fontSize: fs(16), fontWeight: on ? '700' : '600', color: on ? C.accent : C.ink, fontVariant: ['tabular-nums'] }}>{fmtTime(day.t[p], loc.tz)}</Text>
             </View>
           );
         })}
       </View>
-      <Text style={T.small}>{new Intl.DateTimeFormat(lang, { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }).format(now)} · {hijriText(now, lg)} · {t('times.method', { m: METHODS.find((x) => x.id === method)?.label ?? method })}</Text>
+      <Text style={T.small}>{day.tomorrow ? `${pick(L.tomorrow, lg)} · ` : ''}{new Intl.DateTimeFormat(lang, { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }).format(day.date)} · {hijriText(day.date, lg)} · {t('times.method', { m: METHODS.find((x) => x.id === method)?.label ?? method })}</Text>
 
       {/* Güneş, ay ve konum */}
       <SectionTitle>{pick(L.skyTitle, lg)}</SectionTitle>
