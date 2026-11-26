@@ -37,7 +37,7 @@ import { bodyPos, horizonGlow, sceneKind, scenePalette, textZone } from '../src/
 import istanbulRail from '../src/data/istanbulRail.json';
 import makkahBus from '../src/data/makkahBus.json';
 import { covers, inIstanbul, planRail, railNetwork, textOn, type RailData } from '../src/services/railRouter';
-import { alightText, boardText, tidyName, walkText } from '../src/services/transitText';
+import { alightText, boardText, stopsText, tidyName, walkText } from '../src/services/transitText';
 import { nextSpecial } from '../src/services/hijri';
 import { SKIP, parseBackup } from '../src/services/backupFormat';
 import { AREAS, GLYPH_RANGES, fontStacks, lat2tile, lon2tile, resolveMataf, rewriteStyle, spriteRoot, tilesFor } from '../src/services/offlineMath';
@@ -830,6 +830,7 @@ ok(shareLink({ lat: 21.4225, lng: 39.8262 }) === 'https://maps.google.com/?q=21.
   }
   const bus = { ...m1b!, kind: 'bus' as const, line: '129T', headsign: 'BOSTANCI PERONLAR', to: { name: 'KISIKLI', time: '' } };
   ok(boardText(bus, 'tr').head === '129T otobüsüne binin' && boardText(bus, 'tr').dir === 'Bostancı Peronlar yönü' && alightText(bus, 'tr') === 'Kısıklı durağında inin', 'dil: otobüs (büyük harfli İETT adları düzeltilir)');
+  ok(stopsText(1, 'en') === '1 stop' && stopsText(4, 'en') === '4 stops' && stopsText(1, 'tr') === '1 durak' && stopsText(2, 'ar') === 'محطتان' && stopsText(5, 'ar') === '5 محطات' && stopsText(12, 'ar') === '12 محطة', 'dil: durak sayısı (İngilizce tekil, Arapça sayı kuralı)');
   ok(tidyName('GÜMÜŞSUYU PERON', 'tr') === 'Gümüşsuyu Peron' && tidyName('Bağcılar Meydan', 'tr') === 'Bağcılar Meydan', 'dil: büyük harfli durak adı');
   const marm = { ...m1b!, kind: 'train' as const, line: 'B1' };
   ok(boardText(marm, 'tr').head === 'Marmaray trenine binin', 'dil: Marmaray');

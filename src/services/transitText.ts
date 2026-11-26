@@ -29,7 +29,6 @@ const PLACE: Record<LegKind, { at: { tr: string; en: string; ar: string }; to: {
 };
 const TOWARDS = { tr: '{h} yönü', en: 'towards {h}', ar: 'باتجاه {h}' };
 const TO_DEST = { tr: 'Varış noktasına yürüyün', en: 'Walk to your destination', ar: 'امشِ إلى وجهتك' };
-const STOPS = { tr: '{n} durak', en: '{n} stops', ar: '{n} محطات' };
 const MIN = { tr: '{n} dk', en: '{n} min', ar: '{n} د' };
 
 /** Büyük harfle yazılmış durak adlarını (İETT: "GÜMÜŞSUYU PERON") okunur yap. */
@@ -55,5 +54,10 @@ export function walkText(next: TransitLeg | undefined, toName: string, lang: Lan
   return PLACE[next.kind].to[lang].replace('{s}', tidyName(toName, lang));
 }
 
-export const stopsText = (n: number, lang: Lang) => STOPS[lang].replace('{n}', String(n));
+/** "4 durak", "1 stop" / "4 stops", Arapçada sayıya göre: محطة واحدة، محطتان، ٣–١٠ محطات، ١١+ محطة */
+export function stopsText(n: number, lang: Lang) {
+  if (lang === 'en') return n === 1 ? '1 stop' : `${n} stops`;
+  if (lang === 'ar') return n === 1 ? 'محطة واحدة' : n === 2 ? 'محطتان' : n <= 10 ? `${n} محطات` : `${n} محطة`;
+  return `${n} durak`;
+}
 export const minText = (n: number, lang: Lang) => MIN[lang].replace('{n}', String(n));
