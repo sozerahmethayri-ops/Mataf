@@ -1,0 +1,31 @@
+# OSM verisi çekme (elle): Overpass sorgusunu GitHub üzerinde çalıştırır, sonucu "osm" eseri olarak yükler.
+# Kullanım: gh workflow run osm-fetch.yml -f query='[out:json];node(1);out;'  →  gh run download <id> -n osm
+name: OSM verisi
+on:
+  workflow_dispatch:
+    inputs:
+      query:
+        description: Overpass QL sorgusu
+        required: true
+jobs:
+  fetch:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Overpass
+        env:
+          Q: ${{ inputs.query }}
+        run: |
+          printf '%s' "$Q" > q.overpassql
+          ok=0
+          for u in https://overpass-api.de/api/interpreter https://overpass.private.coffee/api/interpreter https://maps.mail.ru/osm/tools/overpass/api/interpreter; do
+            echo "deneniyor: $u"
+            if curl -sS --fail --max-time 300 -A "MATAF/0.9 (+https://github.com/sozerahmethayri-ops/Mataf)" --data-urlencode "data@q.overpassql" "$u" -o out.json \
+               && python3 -c "import json,sys; d=json.load(open('out.json')); print('öğe:', len(d.get('elements', [])))"; then ok=1; break; fi
+          done
+          [ $ok = 1 ]
+          ls -la out.json
+      - uses: actions/upload-artifact@v4
+        with:
+          name: osm
+          path: out.json
