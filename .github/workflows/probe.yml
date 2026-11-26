@@ -1,0 +1,44 @@
+# Geçici sınama: toplu taşıma verisinin kapsamı (yalnız probe dalında çalışır).
+name: Probe
+on:
+  push:
+    branches: [probe]
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Transitous plan
+        run: |
+          UA="MATAF/0.11.1 (https://github.com/sozerahmethayri-ops/Mataf)"
+          q() {
+            echo "===== $1 ($2 -> $3) v=$4"
+            curl -sS -m 40 -A "$UA" "https://api.transitous.org/api/$4/plan?fromPlace=$2&toPlace=$3&time=2026-11-27T07:30:00Z&language=tr&detailedTransfers=false" -o out.json -w "HTTP %{http_code}\n" || true
+            jq -r '(.itineraries // [])[:3][] | "-- \(.duration/60|floor) dk, aktarma \(.transfers)\n" + ([.legs[] | "   \(.mode) | \(.routeShortName // "") | \(.displayName // "") | \(.headsign // "") | \(.agencyName // "") | \(.from.name) -> \(.to.name) | durak \((.intermediateStops // [])|length) | \(.duration/60|floor) dk"] | join("\n"))' out.json 2>/dev/null | head -60 || head -c 600 out.json
+            echo; head -c 300 out.json | tr -d '\n' | cut -c1-300; echo
+            sleep 2
+          }
+          q yenikapi-bagcilar 41.0045,28.9520 41.0397,28.8567 v5
+          q yenikapi-bagcilar 41.0045,28.9520 41.0397,28.8567 v6
+          q taksim-kadikoy 41.0369,28.9850 40.9925,29.0236 v5
+          q sultanahmet-bagcilar 41.0054,28.9768 41.0391,28.8566 v5
+          q kizilay-asti 39.9208,32.8541 39.9180,32.8106 v5
+          q haram-aziziye 21.4225,39.8262 21.4073,39.8735 v5
+      - name: Istanbul GTFS rail lines
+        run: |
+          curl -sSL -m 120 -o ist.zip https://jbb.ghsq.de/gtfs/tr-istanbul.gtfs.zip || true
+          ls -la ist.zip || true
+          unzip -o -q ist.zip routes.txt agency.txt -d ist 2>/dev/null || true
+          head -5 ist/agency.txt || true
+          head -1 ist/routes.txt || true
+          python3 - <<'PY'
+          import csv, collections
+          try:
+              rows = list(csv.DictReader(open('ist/routes.txt', encoding='utf-8-sig')))
+          except Exception as e:
+              print('routes yok', e); raise SystemExit
+          c = collections.Counter(r.get('route_type') for r in rows)
+          print('route_type sayıları:', dict(c))
+          for r in rows:
+              if r.get('route_type') in ('0','1','2','4','5','6','7','12','100','400','401','900','1000','1200'):
+                  print(r.get('route_type'), '|', r.get('route_short_name'), '|', r.get('route_long_name','')[:70], '|', r.get('route_color',''))
+          PY
