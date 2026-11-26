@@ -96,6 +96,14 @@ type NetId = 'ist' | 'mkk';
 const NET_DATA: Record<NetId, RailData> = { ist: istanbulRail as unknown as RailData, mkk: makkahBus as unknown as RailData };
 const NETS: Partial<Record<NetId, RailNet>> = {};
 const netOf = (id: NetId) => (NETS[id] ??= railNetwork(NET_DATA[id]));
+/** Hedefe göre önerilen yol türü: 1,5 km'den kısa yürüme; toplu taşıma tarifi varsa o; uzaksa araç. */
+function autoMode(from: LatLng | null | undefined, to: LatLng): Travel {
+  const d = from ? meters(from, to) : 0;
+  if (d && d < 1500) return 'walk';
+  if ((from && remoteFor(from, to)) || netFor(from, to)) return 'transit';
+  return d > 4000 ? 'car' : 'walk';
+}
+
 /** Her iki nokta da aynı çevrimdışı ağın alanındaysa o ağ */
 const netFor = (a?: LatLng | null, b?: LatLng | null): NetId | null =>
   (a && b ? (['ist', 'mkk'] as NetId[]).find((id) => covers(NET_DATA[id], a) && covers(NET_DATA[id], b)) : undefined) ?? null;
@@ -191,7 +199,8 @@ export default function TransportScreen() {
   // Hedef ve rota
   const [dest, setDest] = useState<Place | null>(null);
   const [from, setFrom] = useState<LatLng | null>(null);
-  const [mode, setMode] = useState<Travel>('walk');
+  // Kullanıcının seçtiği yol türü; null iken hedefe ve konuma göre kendiliğinden seçilir (konum sonradan gelse de)
+  const [modeSel, setMode] = useState<Travel | null>('walk');
   const [street, setStreet] = useState<Record<string, StreetRoute | undefined>>({});
   const [transit, setTransit] = useState<Record<string, Itinerary[] | 'error' | undefined>>({});
   const [sel, setSel] = useState(0);
@@ -203,13 +212,11 @@ export default function TransportScreen() {
     setResults(null);
     setFrom(here);
     setSel(0);
-    const d = here ? meters(here, p) : 0;
-    const railOk = !!netFor(here, p);
-    setMode(d && d < 1500 ? 'walk' : (here && remoteFor(here, p)) || railOk ? 'transit' : d > 4000 ? 'car' : 'walk');
+    setMode(here ? autoMode(here, p) : null);
     if (remember) setRecent({ items: [p, ...recent.items.filter((x) => x.id !== p.id)].slice(0, 6) });
   };
   // Derin bağlantı: mataf://ulasim?to=21.4225,39.8262&name=Mescid-i Haram (haritadaki "Nasıl giderim" de bunu kullanır).
-  // Konum birkaç saniyede gelmezse hedef yine de açılır.
+  // Konum henüz yoksa yol türü konum gelince kendiliğinden seçilir.
   const params = useLocalSearchParams<{ to?: string; name?: string }>();
   const linked = useRef('');
   useEffect(() => {
@@ -221,14 +228,15 @@ export default function TransportScreen() {
     const id = setTimeout(() => {
       linked.current = to;
       choose({ id: `pt:${la.toFixed(5)},${ln.toFixed(5)}`, name, sub: `${la.toFixed(5)}, ${ln.toFixed(5)}`, lat: la, lng: ln }, false);
-    }, here ? 0 : 5000);
+    }, 0);
     return () => clearTimeout(id);
-  }, [params.to, !!here]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [params.to]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Başlangıç: hedef seçildiği andaki konum; o an konum yoksa ~100 m'ye yuvarlanmış güncel konum
   // (rota her GPS güncellemesinde yeniden hesaplanmasın diye).
   const from2 = useMemo(() => from ?? (here ? { lat: +here.lat.toFixed(3), lng: +here.lng.toFixed(3) } : null), [from, here]);
   const routeKey = dest && from2 ? `${dest.id}|${from2.lat.toFixed(4)},${from2.lng.toFixed(4)}` : '';
+  const mode: Travel = modeSel ?? (dest ? autoMode(from2, dest) : 'walk');
   useEffect(() => {
     if (!dest || !from2 || mode === 'transit') return;
     const profile = mode === 'walk' ? 'foot' : 'car';

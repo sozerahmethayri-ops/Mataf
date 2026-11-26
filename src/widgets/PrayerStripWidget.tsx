@@ -59,14 +59,16 @@ function stripLayout(props: PrayerWidgetProps, env: { colorScheme?: 'light' | 'd
   }
   let then = '';
   if (ni < days.length) then = (props.after ? props.after + ' ' : '') + names[nj] + ' ' + days[ni].t[nj];
+  // Yatsıdan sonra yan yazı yalnız "yarın" (tek satıra sığsın; gece "Sonra Güneş" gereksiz)
+  const side = tomorrow && props.tomorrow ? props.tomorrow : then;
 
   return (
     <Row modifiers={root} verticalAlignment="center">
       <Text color={c.accent} maxLines={1} style={{ fontSize: 17, fontWeight: 'bold' }}>{names[pi]}</Text>
       <Spacer modifiers={[width(6)]} />
-      <Text color={c.ink} maxLines={1} style={{ fontSize: 17, fontWeight: 'bold' }}>{day.t[pi] + (tomorrow && props.tomorrow ? ' · ' + props.tomorrow : '')}</Text>
+      <Text color={c.ink} maxLines={1} style={{ fontSize: 17, fontWeight: 'bold' }}>{day.t[pi]}</Text>
       <Spacer modifiers={[width(14)]} />
-      <Text color={c.muted} maxLines={1} style={{ fontSize: 13 }}>{then}</Text>
+      <Text color={c.muted} maxLines={1} style={{ fontSize: 13 }}>{side}</Text>
     </Row>
   );
 }
