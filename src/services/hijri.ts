@@ -57,11 +57,14 @@ export function hijriText(date: Date, lang: Lang) {
 }
 
 type Special = { m: number; d: number; name: { tr: string; en: string; ar: string }; night?: boolean };
+/** Regaib Kandili: Recep'in ilk cuma gecesi (perşembe akşamı). Sabit hicrî günü olmadığı için ayrıca bulunur. */
+export const REGAIB: Special = { m: 7, d: 0, name: { tr: 'Regaib Kandili', en: 'Laylat al-Ragha’ib', ar: 'ليلة الرغائب' }, night: true };
 /** Mübarek gün ve geceler (hicrî ay/gün). Kandiller önceki akşam başlar. */
 export const SPECIAL_DAYS: Special[] = [
   { m: 1, d: 1, name: { tr: 'Hicrî Yılbaşı', en: 'Islamic New Year', ar: 'رأس السنة الهجرية' } },
   { m: 1, d: 10, name: { tr: 'Âşûrâ Günü', en: 'Day of Ashura', ar: 'يوم عاشوراء' } },
   { m: 3, d: 12, name: { tr: 'Mevlid Kandili', en: 'Mawlid', ar: 'المولد النبوي' }, night: true },
+  { m: 7, d: 1, name: { tr: 'Üç Ayların Başlangıcı', en: 'Start of the three holy months', ar: 'بداية الأشهر الثلاثة' } },
   { m: 7, d: 27, name: { tr: 'Mîrac Kandili', en: "Isra and Mi'raj", ar: 'الإسراء والمعراج' }, night: true },
   { m: 8, d: 15, name: { tr: 'Berat Kandili', en: "Mid-Sha'ban", ar: 'ليلة النصف من شعبان' }, night: true },
   { m: 9, d: 1, name: { tr: 'Ramazan Başlangıcı', en: 'Start of Ramadan', ar: 'بداية رمضان' } },
@@ -71,13 +74,22 @@ export const SPECIAL_DAYS: Special[] = [
   { m: 12, d: 10, name: { tr: 'Kurban Bayramı', en: 'Eid al-Adha', ar: 'عيد الأضحى' } },
 ];
 
+/**
+ * Bu (miladî) güne düşen mübarek gün. Kandillerde gün, kandil gecesinin ertesi günüdür (gece önceki akşam başlar).
+ * Regaib: Recep'in ilk cuması (gecesi perşembe akşamı); aynı gün Üç Ayların Başlangıcı'na denk gelirse Regaib öne çıkar.
+ */
+export function specialOn(date: Date): Special | undefined {
+  const h = toHijri(date);
+  if (h.m === 7 && h.d <= 7 && date.getDay() === 5) return REGAIB;
+  return SPECIAL_DAYS.find((x) => x.m === h.m && x.d === h.d);
+}
+
 /** Bugün ve sonraki `days` gün içindeki ilk mübarek gün (bugünse inDays = 0). */
 export function nextSpecial(from: Date, days = 400): { s: Special; date: Date; inDays: number } | null {
   const base = new Date(from.getFullYear(), from.getMonth(), from.getDate(), 12);
   for (let i = 0; i <= days; i++) {
     const d = new Date(base.getTime() + i * 864e5);
-    const h = toHijri(d);
-    const s = SPECIAL_DAYS.find((x) => x.m === h.m && x.d === h.d);
+    const s = specialOn(d);
     if (s) return { s, date: d, inDays: i };
   }
   return null;

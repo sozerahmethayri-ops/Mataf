@@ -4,7 +4,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Location from 'expo-location';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { ActivityIndicator, Platform, Pressable, ScrollView, Text, View } from 'react-native';
+import { ActivityIndicator, Linking, Platform, Pressable, ScrollView, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Icon, type IconName } from '@/components/Icon';
@@ -13,6 +13,7 @@ import { C, fs } from '@/constants/theme';
 import { pick, useI18n } from '@/i18n';
 import { LANGS } from '@/i18n/strings';
 import { NOTIF_KEY, applySchedule, loadNotifPrefs, notificationsSupported } from '@/services/adhanNotify';
+import { APK_URL } from '@/services/shareApp';
 import { setOnboarded } from '@/services/onboarding';
 
 type Lang = 'tr' | 'en' | 'ar';
@@ -30,6 +31,10 @@ const L = {
   notifBtn: { tr: 'Bildirimleri aç', en: 'Turn on reminders', ar: 'تشغيل التنبيهات' },
   notifNo: { tr: 'Açılamadı. Ayarlar → Ezan bildirimleri’nden deneyebilirsiniz.', en: 'Could not turn on. Try Settings → Adhan notifications.', ar: 'تعذّر التشغيل. جرّب الإعدادات ← إشعارات الأذان.' },
   done: { tr: 'Açık', en: 'On', ar: 'مفعّل' },
+  home: { tr: 'Ana ekrana ekleyin', en: 'Add to your home screen', ar: 'أضفه إلى الشاشة الرئيسية' },
+  homeIos: { tr: 'Safari’de alttaki Paylaş düğmesine (kare ve yukarı ok) dokunun, sonra “Ana Ekrana Ekle”yi seçin. Uygulama gibi açılır.', en: 'In Safari tap the Share button (square with an arrow), then “Add to Home Screen”. It opens like an app.', ar: 'في سفاري اضغط زر المشاركة (مربع وسهم) ثم «إضافة إلى الشاشة الرئيسية». يفتح كتطبيق.' },
+  homeAndroid: { tr: 'Android uygulamasını indirip kurabilir ya da Chrome menüsünden (⋮) “Ana ekrana ekle”yi seçebilirsiniz.', en: 'Install the Android app, or choose “Add to Home screen” from the Chrome menu (⋮).', ar: 'ثبّت تطبيق أندرويد أو اختر «إضافة إلى الشاشة الرئيسية» من قائمة كروم (⋮).' },
+  apk: { tr: 'Android uygulamasını indir', en: 'Download the Android app', ar: 'نزّل تطبيق أندرويد' },
   start: { tr: 'Başla', en: 'Start', ar: 'ابدأ' },
 };
 
@@ -87,13 +92,31 @@ export default function Welcome() {
           btn={pick(L.notifBtn, lg)} doneLabel={pick(L.done, lg)} onPress={askNotif} />
       )}
 
+      {webDevice === 'ios' && <Step icon="share" title={pick(L.home, lg)} sub={pick(L.homeIos, lg)} st="ok" doneLabel="" info />}
+      {webDevice === 'android' && (
+        <Step icon="phone" title={pick(L.home, lg)} sub={pick(L.homeAndroid, lg)} st="idle" btn={pick(L.apk, lg)} doneLabel="" onPress={() => Linking.openURL(APK_URL)} />
+      )}
+
       <View style={{ flex: 1 }} />
       <Btn title={pick(L.start, lg)} onPress={finish} />
     </ScrollView>
   );
 }
 
-function Step({ icon, title, sub, st, btn, doneLabel, onPress }: { icon: IconName; title: string; sub: string; st: St; btn: string; doneLabel: string; onPress: () => void }) {
+/** Web'de, ana ekrana eklenmemiş bir telefondan açıldıysa: 'ios' | 'android'; aksi halde null. */
+const webDevice: 'ios' | 'android' | null = (() => {
+  if (Platform.OS !== 'web' || typeof navigator === 'undefined' || typeof window === 'undefined') return null;
+  try {
+    const nav = navigator as Navigator & { standalone?: boolean };
+    if (nav.standalone || window.matchMedia?.('(display-mode: standalone)').matches) return null;
+    const ua = nav.userAgent || '';
+    if (/iPad|iPhone|iPod/.test(ua) || (/Macintosh/.test(ua) && nav.maxTouchPoints > 1)) return 'ios';
+    if (/Android/.test(ua)) return 'android';
+  } catch { /* tarayıcı bilgisi okunamadı */ }
+  return null;
+})();
+
+function Step({ icon, title, sub, st, btn = '', doneLabel, onPress, info }: { icon: IconName; title: string; sub: string; st: St; btn?: string; doneLabel: string; onPress?: () => void; info?: boolean }) {
   return (
     <View style={{ flexDirection: 'row', gap: 14, padding: 16, borderRadius: 20, backgroundColor: C.surface }}>
       <View style={{ width: 40, height: 40, borderRadius: 20, backgroundColor: C.bg, alignItems: 'center', justifyContent: 'center' }}>
@@ -102,7 +125,7 @@ function Step({ icon, title, sub, st, btn, doneLabel, onPress }: { icon: IconNam
       <View style={{ flex: 1, gap: 8 }}>
         <Text style={{ fontSize: fs(16), fontWeight: '700', color: C.ink }}>{title}</Text>
         <Text style={{ fontSize: fs(13.5), color: st === 'no' ? C.limited : C.muted, lineHeight: fs(19) }}>{sub}</Text>
-        {st === 'ok' ? (
+        {info ? null : st === 'ok' ? (
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
             <Icon name="check" size={16} color={C.green} />
             <Text style={{ fontSize: fs(14), fontWeight: '700', color: C.green }}>{doneLabel}</Text>

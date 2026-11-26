@@ -32,7 +32,9 @@ import { altitudeText, directionText, moonLitPath, moonPhaseName, skyDay, skyNow
 import { newer } from '../src/services/version';
 import { guessKind, shareLink } from '../src/services/myPlaces';
 import { HHR_STATIONS } from '../src/data/train';
-import { nextPrayer } from '../src/services/prayer';
+import { nextPrayer, times as prayerTimes } from '../src/services/prayer';
+import { isTesrik, planExtras } from '../src/services/adhanPlan';
+import { nextSpecial } from '../src/services/hijri';
 import { SKIP, parseBackup } from '../src/services/backupFormat';
 import { AREAS, GLYPH_RANGES, fontStacks, lat2tile, lon2tile, resolveMataf, rewriteStyle, spriteRoot, tilesFor } from '../src/services/offlineMath';
 import { daysToFinish, initialKaza, lastDays, markKaza, prayersLeft, remaining, setOwedDays, toDays } from '../src/services/kaza';
@@ -726,6 +728,38 @@ ok(shareLink({ lat: 21.4225, lng: 39.8262 }) === 'https://maps.google.com/?q=21.
   const dMd = meters(st('madinah'), { lat: 24.4672, lng: 39.6111 });
   ok(HHR_STATIONS.length === 5 && dMk > 3000 && dMk < 5500 && dMd > 7000 && dMd < 11000, `tren: istasyonlar yerinde (Mekke–Harem ${Math.round(dMk)} m, Medine–Mescid ${Math.round(dMd)} m)`);
   ok(HHR_STATIONS.every((x, i) => i === 0 || x.lat >= HHR_STATIONS[i - 1].lat - 0.01), 'tren: istasyonlar hat sırasında (güneyden kuzeye)');
+}
+
+// ── Teşrik tekbiri, mübarek gün ve hac hatırlatmaları ──
+{
+  const MK = { lat: 21.4225, lng: 39.8262 };
+  let n = 0;
+  for (let d = 14; d <= 20; d++) {
+    const t = prayerTimes(MK.lat, MK.lng, 'UmmAlQura', new Date(2027, 4, d, 12));
+    for (const k of ['fajr', 'dhuhr', 'asr', 'maghrib', 'isha'] as const) if (isTesrik(k, t[k])) n++;
+    if (isTesrik('sunrise', t.sunrise)) n += 100;
+  }
+  ok(n === 23, `teşrik tekbiri: Arefe sabahından bayramın 4. günü ikindisine 23 vakit (${n})`);
+  const t15 = prayerTimes(MK.lat, MK.lng, 'UmmAlQura', new Date(2027, 4, 15, 12));
+  const t19 = prayerTimes(MK.lat, MK.lng, 'UmmAlQura', new Date(2027, 4, 19, 12));
+  ok(isTesrik('fajr', t15.fajr) && isTesrik('asr', t19.asr) && !isTesrik('maghrib', t19.maghrib), 'teşrik: ilk vakit Arefe sabahı, son vakit 13 Zilhicce ikindi');
+
+  const tf = (day: Date) => prayerTimes(41.0369, 28.985, 'Turkey', day);
+  const at = (lat: number, lng: number, day: Date) => prayerTimes(lat, lng, 'UmmAlQura', day);
+  const ex = planExtras({ now: new Date(2026, 11, 8, 9), days: 7, lang: 'tr', special: true, hajj: false, timesFor: tf, timesAt: at });
+  const titles = ex.map((x) => x.title);
+  ok(titles.includes('Yarın Üç Ayların Başlangıcı') && titles.includes('Bu gece Regaib Kandili'), `mübarek gün: üç aylar ve Regaib hatırlatması (${titles.join(' | ')})`);
+  const reg = ex.find((x) => x.title === 'Bu gece Regaib Kandili');
+  ok(!!reg && reg.at.getDate() === 10 && reg.at.getMonth() === 11, 'Regaib: 10 Aralık 2026 perşembe akşamı (Diyanet ile aynı)');
+  const nx = nextSpecial(new Date(2027, 0, 1, 9));
+  ok(!!nx && nx.s.name.tr === 'Mîrac Kandili' && nx.date.getDate() === 5, 'Miraç: 27 Recep = 5 Ocak 2027 (kandil gecesi 4 Ocak akşamı)');
+  const hx = planExtras({ now: new Date(2027, 4, 13, 9), days: 7, lang: 'tr', special: false, hajj: true, timesFor: tf, timesAt: at });
+  const ids = hx.map((x) => x.id.split('-').slice(0, 2).join('-'));
+  ok(['hac-8', 'hac-9a', 'hac-9b', 'hac-10', 'hac-11', 'hac-12', 'hac-12b', 'hac-13'].every((k) => ids.includes(k)) && hx.length === 8, `hac hatırlatmaları: 8 an (${ids.join(',')})`);
+  const arafat = hx.find((x) => x.id.startsWith('hac-9a'))!;
+  const ar = at(21.3549, 39.9841, new Date(2027, 4, 15, 12));
+  ok(arafat.at.getTime() === ar.dhuhr.getTime(), 'hac: Arafat vakfesi bildirimi Arafat’ta öğle vaktinde');
+  ok(planExtras({ now: new Date(2027, 4, 13, 9), days: 7, lang: 'tr', special: false, hajj: false, timesFor: tf, timesAt: at }).length === 0, 'hatırlatmalar kapalıyken bildirim yok');
 }
 
 mosqueChecks().then(transitChecks).then(() => process.exit(fails ? 1 : 0));

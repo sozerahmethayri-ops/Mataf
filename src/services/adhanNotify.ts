@@ -10,7 +10,7 @@ import * as Location from 'expo-location';
 import * as Notifications from 'expo-notifications';
 import { Platform } from 'react-native';
 
-import { DEFAULT_NOTIF, SOUNDS, channelId, notifText, planNotifications, type NotifPrefs } from './adhanPlan';
+import { DEFAULT_NOTIF, SOUNDS, channelId, notifText, planExtras, planNotifications, type NotifPrefs } from './adhanPlan';
 import { PLACES, fmtTime, getMethod, times, type MethodId } from './prayer';
 
 export const NOTIF_KEY = 'adhan:prefs';
@@ -40,8 +40,17 @@ export function initNotifications() {
   });
 }
 
+const REMINDER_CHANNEL = 'hatirlatma-v1';
+
 async function ensureChannels(lang: Lang) {
   if (Platform.OS !== 'android') return;
+  await Notifications.setNotificationChannelAsync(REMINDER_CHANNEL, {
+    name: { tr: 'Mübarek gün ve hac hatırlatmaları', en: 'Holy day and Hajj reminders', ar: 'تذكيرات الأيام المباركة والحج' }[lang],
+    importance: Notifications.AndroidImportance.HIGH, // eslint-disable-line import/namespace
+    sound: 'default',
+    enableVibrate: true,
+    lockscreenVisibility: Notifications.AndroidNotificationVisibility.PUBLIC, // eslint-disable-line import/namespace
+  });
   const title = { tr: 'Ezan hatırlatma', en: 'Adhan reminder', ar: 'تذكير الأذان' }[lang];
   for (const s of SOUNDS) {
     await Notifications.setNotificationChannelAsync(channelId(s.id), {
@@ -89,12 +98,28 @@ export type ApplyResult = { ok: boolean; count: number; first?: Date; reason?: '
 export async function applySchedule(prefs: NotifPrefs, lang: Lang, { ask = false } = {}): Promise<ApplyResult> {
   if (!notificationsSupported) return { ok: false, count: 0, reason: 'web' };
   await Notifications.cancelAllScheduledNotificationsAsync();
-  if (!prefs.enabled) return { ok: true, count: 0, reason: 'off' };
+  // Hac hatırlatmaları ezan bildirimlerinden bağımsız açılabilir
+  if (!prefs.enabled && !prefs.hajj) return { ok: true, count: 0, reason: 'off' };
   if (!(await notifPermission(ask))) return { ok: false, count: 0, reason: 'permission' };
-  const place = await resolvePlace(prefs);
-  if (!place) return { ok: false, count: 0, reason: 'location' };
+  const resolved = await resolvePlace(prefs);
+  if (!resolved && prefs.enabled) return { ok: false, count: 0, reason: 'location' };
+  const place = resolved ?? { ...PLACES.makkah, method: 'UmmAlQura' as MethodId };
   await ensureChannels(lang);
-  const plan = planNotifications((day) => times(place.lat, place.lng, place.method, day), new Date(), prefs);
+  const now = new Date();
+  const extras = planExtras({
+    now, days: 7, lang, special: prefs.enabled && prefs.special, hajj: prefs.hajj,
+    timesFor: (day) => times(place.lat, place.lng, place.method, day),
+    timesAt: (lat, lng, day) => times(lat, lng, 'UmmAlQura', day),
+  }).slice(0, 20);
+  for (const x of extras) {
+    await Notifications.scheduleNotificationAsync({
+      identifier: x.id,
+      content: { title: x.title, body: x.body, sound: 'default', data: { kind: 'reminder', url: x.url } },
+      trigger: { type: Notifications.SchedulableTriggerInputTypes.DATE, date: x.at, channelId: REMINDER_CHANNEL },
+    });
+  }
+  // iOS en çok 64 bekleyen bildirim tutar: hatırlatmalar önce, ezanlar kalan yere
+  const plan = prefs.enabled ? planNotifications((day) => times(place.lat, place.lng, place.method, day), now, prefs, { max: 60 - extras.length }) : [];
   const sound = SOUNDS.find((s) => s.id === prefs.sound) ?? SOUNDS[0];
   for (const p of plan) {
     const minutes = Math.round((p.prayerAt.getTime() - p.at.getTime()) / 60000);
@@ -111,14 +136,15 @@ export async function applySchedule(prefs: NotifPrefs, lang: Lang, { ask = false
       trigger: { type: Notifications.SchedulableTriggerInputTypes.DATE, date: p.at, channelId: channelId(sound.id) },
     });
   }
-  return { ok: true, count: plan.length, first: plan[0]?.at };
+  const firsts = [plan[0]?.at, extras[0]?.at].filter((d): d is Date => !!d).sort((a, b) => a.getTime() - b.getTime());
+  return { ok: true, count: plan.length + extras.length, first: firsts[0] };
 }
 
 /** Uygulama açılışında / öne gelişinde sessizce yenile (izin istemeden). */
 export async function refreshSchedule(lang: Lang) {
   if (!notificationsSupported) return;
   const prefs = await loadNotifPrefs();
-  if (!prefs.enabled) return;
+  if (!prefs.enabled && !prefs.hajj) return;
   await applySchedule(prefs, lang).catch(() => undefined);
 }
 

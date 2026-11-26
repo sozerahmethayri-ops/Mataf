@@ -80,7 +80,9 @@ export function AdhanHost() {
       maybePlay(n.request.content.data as AdhanData);
     });
     const resp = Notifications.addNotificationResponseReceivedListener((r) => {
-      const d = r.notification.request.content.data as AdhanData;
+      const d = r.notification.request.content.data as AdhanData & { url?: string };
+      // Mübarek gün / hac hatırlatması: ilgili ekrana git
+      if ((d.kind as string) === 'reminder') { if (d.url) router.push(d.url as never); return; }
       if (d.kind !== 'adhan') return;
       // Vakit girdikten 15 dk sonra dokunulursa ezanı yeniden başlatma
       if (Date.now() - r.notification.date < 15 * 60 * 1000) maybePlay(d);

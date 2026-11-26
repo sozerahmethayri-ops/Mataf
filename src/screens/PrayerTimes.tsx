@@ -7,11 +7,12 @@ import { getTimes } from 'suncalc';
 
 import { Icon, type IconName } from '@/components/Icon';
 import { SkyArc } from '@/components/SkyArc';
+import { TesrikNote, tesrikActive } from '@/components/TesrikNote';
 import { WidgetPinRow } from '@/components/WidgetPinRow';
 import { Header, ListRow, Screen, SectionTitle, Segmented, T } from '@/components/ui';
 import { C, fs } from '@/constants/theme';
 import { pick, useI18n } from '@/i18n';
-import { HIJRI_MONTHS, SPECIAL_DAYS, hijriText, toHijri } from '@/services/hijri';
+import { HIJRI_MONTHS, hijriText, specialOn, toHijri } from '@/services/hijri';
 import { METHODS, PRAYERS, fmtTime, nextPrayer, times, type PrayerKey } from '@/services/prayer';
 import { altitudeText, directionText, moonPhaseName, skyNow } from '@/services/sky';
 import { usePrayerPlace, type PlaceId } from '@/services/prayerPlace';
@@ -75,8 +76,7 @@ export default function PrayerTimes({ back = false }: { back?: boolean }) {
     const base = new Date(b0.getFullYear(), b0.getMonth(), b0.getDate(), 12);
     for (let i = 0; i < 370 && out.length < 4; i++) {
       const d = new Date(base.getTime() + i * 864e5);
-      const hh = toHijri(d);
-      const s = SPECIAL_DAYS.find((x) => x.m === hh.m && x.d === hh.d);
+      const s = specialOn(d);
       if (s) out.push({ name: pick(s.name, lg), date: d, night: s.night });
     }
     return out;
@@ -106,6 +106,8 @@ export default function PrayerTimes({ back = false }: { back?: boolean }) {
         </View>
         <Countdown to={nx.at} size={20} />
       </View>
+
+      {tesrikActive(tt, now, nx) && <TesrikNote lang={lg} />}
 
       {/* Günün vakitleri */}
       <View style={{ borderWidth: 1, borderColor: C.border, borderRadius: 20, paddingHorizontal: 16 }}>

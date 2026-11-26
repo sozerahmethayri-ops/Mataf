@@ -1,5 +1,6 @@
 // Ezan hatırlatmaları: hangi bildirimin ne zaman kurulacağını hesaplayan saf mantık.
 // React Native'e bağlı değil — scripts/check-logic.ts doğrudan test eder.
+import { specialOn, toHijri } from './hijri';
 import type { PrayerKey } from './prayer';
 
 const KEYS: PrayerKey[] = ['fajr', 'sunrise', 'dhuhr', 'asr', 'maghrib', 'isha'];
@@ -30,6 +31,10 @@ export type NotifPrefs = {
   adhanUri: string;
   adhanName: string;
   playAdhan: boolean;
+  /** Kandil, bayram ve Ramazan için bir önceki akşam hatırlatma (ezan bildirimleri açıkken). */
+  special: boolean;
+  /** Hac günlerinde (8–13 Zilhicce) Arafat, Müzdelife ve şeytan taşlama hatırlatmaları (ezan bildirimlerinden bağımsız). */
+  hajj: boolean;
   /** "Bulunduğum yer" için son bilinen konum. */
   lat?: number;
   lng?: number;
@@ -45,6 +50,8 @@ export const DEFAULT_NOTIF: NotifPrefs = {
   adhanUri: '',
   adhanName: '',
   playAdhan: true,
+  special: true,
+  hajj: false,
 };
 
 export const BEFORE_CHOICES = [0, 5, 10, 15, 20, 30, 45];
@@ -100,6 +107,9 @@ export const prayerName = (k: PrayerKey, lang: 'tr' | 'en' | 'ar') => NAMES[k][l
 
 /** Bildirim başlığı ve metni. `time` hazır biçimlenmiş saat (ör. "12:21"). */
 export function notifText(p: Planned, lang: 'tr' | 'en' | 'ar', time: string, minutes: number) {
+  const tesrik = p.kind === 'at' && isTesrik(p.prayer, p.prayerAt)
+    ? { tr: ' Farzdan sonra teşrik tekbiri.', en: ' Takbir al-tashriq after the fard.', ar: ' تكبير التشريق بعد الفريضة.' }[lang]
+    : '';
   const n = NAMES[p.prayer][lang];
   if (p.prayer === 'sunrise') {
     return {
@@ -118,9 +128,104 @@ export function notifText(p: Planned, lang: 'tr' | 'en' | 'ar', time: string, mi
     : '';
   return {
     title: { tr: `${n} ezanı vakti`, en: `${n} adhan time`, ar: `حان وقت أذان ${n}` }[lang],
-    body: { tr: `${n} namazının vakti girdi — ${time}.${fajrNote}`, en: `It is time for ${n} prayer — ${time}.${fajrNote}`, ar: `دخل وقت صلاة ${n} — ${time}.${fajrNote}` }[lang],
+    body: { tr: `${n} namazının vakti girdi — ${time}.${fajrNote}${tesrik}`, en: `It is time for ${n} prayer — ${time}.${fajrNote}${tesrik}`, ar: `دخل وقت صلاة ${n} — ${time}.${fajrNote}${tesrik}` }[lang],
   };
 }
 
 /** Android'de kanal sesi kanal oluşturulduktan sonra değiştirilemez; her ses için ayrı kanal. */
 export const channelId = (s: SoundId) => `ezan-${s}-v1`;
+
+/**
+ * Teşrik tekbiri (Hanefî, tercih edilen görüş): Arefe (9 Zilhicce) sabah namazından bayramın 4. günü (13 Zilhicce)
+ * ikindi namazına kadar her farzdan sonra; toplam 23 vakit. Hicrî gün Ümmü'l-Kurâ takvimine göredir.
+ */
+export function isTesrik(k: PrayerKey, at: Date) {
+  if (k === 'sunrise') return false;
+  const h = toHijri(at);
+  if (h.m !== 12 || h.d < 9 || h.d > 13) return false;
+  return h.d < 13 || k === 'fajr' || k === 'dhuhr' || k === 'asr';
+}
+
+/** Ezan dışındaki hatırlatmalar (mübarek günler, hac günleri). */
+export type Extra = { id: string; at: Date; title: string; body: string; url: string };
+type L3 = 'tr' | 'en' | 'ar';
+type TimesAt = (lat: number, lng: number, day: Date) => Record<PrayerKey, Date>;
+const ARAFAT = { lat: 21.3549, lng: 39.9841 };
+const MINA = { lat: 21.4133, lng: 39.8933 };
+const MAKKAH = { lat: 21.4225, lng: 39.8262 };
+
+const SPECIAL_TEXT: Record<'night' | 'ramadan' | 'eid' | 'arefe' | 'day', { title: Record<L3, string>; body: Record<L3, string> }> = {
+  night: { title: { tr: 'Bu gece {n}', en: 'Tonight: {n}', ar: 'الليلة: {n}' }, body: { tr: 'Kandiliniz mübarek olsun. Dua, Kur’an ve namaz için güzel bir gece.', en: 'A blessed night for prayer, du‘a and the Quran.', ar: 'ليلة مباركة للصلاة والدعاء وقراءة القرآن.' } },
+  ramadan: { title: { tr: 'Yarın Ramazan başlıyor', en: 'Ramadan starts tomorrow', ar: 'رمضان يبدأ غدًا' }, body: { tr: 'İlk sahur bu gece. Ramazanınız mübarek olsun.', en: 'The first suhur is tonight. Ramadan Mubarak.', ar: 'السحور الأول الليلة. رمضان مبارك.' } },
+  eid: { title: { tr: 'Yarın {n}', en: 'Tomorrow: {n}', ar: 'غدًا: {n}' }, body: { tr: 'Bayramınız mübarek olsun.', en: 'Eid Mubarak.', ar: 'عيد مبارك.' } },
+  arefe: { title: { tr: 'Yarın Arefe günü', en: 'Tomorrow is the Day of Arafah', ar: 'غدًا يوم عرفة' }, body: { tr: 'Teşrik tekbiri yarın sabah namazından itibaren her farzdan sonra getirilir.', en: 'Takbir al-tashriq starts after tomorrow’s Fajr, after every fard prayer.', ar: 'يبدأ تكبير التشريق بعد فجر الغد عقب كل فريضة.' } },
+  day: { title: { tr: 'Yarın {n}', en: 'Tomorrow: {n}', ar: 'غدًا: {n}' }, body: { tr: 'Hayırlı ve mübarek olsun.', en: 'May it be blessed.', ar: 'جعله الله مباركًا.' } },
+};
+
+/**
+ * `days` gün içindeki mübarek gün ve hac hatırlatmaları. Mübarek günler bir önceki akşam (akşam vakti, kullanıcının
+ * yeri), hac anları Arafat/Mina vakitlerine göre (Ümmü'l-Kurâ). Sıralı döner.
+ */
+export function planExtras(opts: {
+  now: Date; days: number; lang: L3; special: boolean; hajj: boolean;
+  timesFor: (day: Date) => Record<PrayerKey, Date>;
+  timesAt: TimesAt;
+  minLeadMs?: number;
+}): Extra[] {
+  const { now, days, lang, timesFor, timesAt } = opts;
+  const lead = opts.minLeadMs ?? 5000;
+  const out: Extra[] = [];
+  const add = (id: string, at: Date | undefined, title: string, body: string, url: string) => {
+    if (!(at instanceof Date) || Number.isNaN(at.getTime()) || at.getTime() - now.getTime() < lead) return;
+    out.push({ id, at, title, body, url });
+  };
+  for (let i = 0; i <= days; i++) {
+    const day = new Date(now.getFullYear(), now.getMonth(), now.getDate() + i, 12);
+    const next = new Date(day.getFullYear(), day.getMonth(), day.getDate() + 1, 12);
+    const tag = `${day.getFullYear()}${day.getMonth() + 1}${day.getDate()}`;
+    if (opts.special) {
+      const hn = toHijri(next);
+      const sp = specialOn(next);
+      if (sp) {
+        const kind = sp.night ? 'night' : hn.m === 9 && hn.d === 1 ? 'ramadan' : hn.m === 12 && hn.d === 9 ? 'arefe' : (hn.m === 10 && hn.d === 1) || (hn.m === 12 && hn.d === 10) ? 'eid' : 'day';
+        const tx = SPECIAL_TEXT[kind];
+        add(`ozel-${tag}`, timesFor(day).maghrib, tx.title[lang].replace('{n}', sp.name[lang]), tx.body[lang], '/vakitler');
+      }
+    }
+    if (opts.hajj) {
+      const h = toHijri(day);
+      if (h.m === 12 && h.d >= 8 && h.d <= 13) {
+        const ar = timesAt(ARAFAT.lat, ARAFAT.lng, day);
+        const mi = timesAt(MINA.lat, MINA.lng, day);
+        const T = (tr: string, en: string, ar2: string) => ({ tr, en, ar: ar2 })[lang];
+        if (h.d === 8) {
+          const mk = timesAt(MAKKAH.lat, MAKKAH.lng, day);
+          add(`hac-8-${tag}`, new Date(mk.fajr.getTime() + 60 * 60e3), T('Bugün Terviye (8 Zilhicce)', 'Today is Tarwiyah (8 Dhu al-Hijjah)', 'اليوم يوم التروية'),
+            T('Hac ihramı ve Mina. Çadırınızın yerini Yerlerim’e kaydedin.', 'Hajj ihram and Mina. Save your tent in My places.', 'إحرام الحج ومنى. احفظ موقع خيمتك.'), '/hac');
+        }
+        if (h.d === 9) {
+          add(`hac-9a-${tag}`, ar.dhuhr, T('Arafat vakfesi başladı', 'The standing at Arafat has begun', 'بدأ الوقوف بعرفة'),
+            T('Öğle vakti girdi. Güneş batana kadar Arafat sınırları içinde kalın; dua vaktidir.', 'Dhuhr has entered. Stay within Arafat until sunset; it is the time for du‘a.', 'دخل وقت الظهر. ابقَ في حدود عرفة حتى الغروب.'), '/hac-harita?yer=arafat');
+          add(`hac-9b-${tag}`, ar.maghrib, T('Güneş battı: Müzdelife’ye hareket', 'Sunset: move to Muzdalifah', 'غربت الشمس: النفرة إلى مزدلفة'),
+            T('Akşam ve yatsıyı Müzdelife’de, yatsı vaktinde birlikte kılın; taşları toplayın.', 'Pray Maghrib and Isha together in Muzdalifah at Isha time; collect pebbles.', 'صلِّ المغرب والعشاء جمعًا في مزدلفة واجمع الحصى.'), '/hac-harita?yer=muzdelife');
+        }
+        if (h.d === 10) {
+          add(`hac-10-${tag}`, mi.fajr, T('Bayramın 1. günü: Akabe cemresi', 'Eid day 1: Jamrat al-Aqabah', 'يوم النحر: جمرة العقبة'),
+            T('Taş atma vakti girdi. Sıra: taş, kurban, tıraş.', 'Stoning time has begun. Order: stoning, sacrifice, shaving.', 'دخل وقت الرمي. الترتيب: الرمي ثم النحر ثم الحلق.'), '/cemerat');
+        }
+        if (h.d === 11 || h.d === 12 || h.d === 13) {
+          const n = h.d - 9;
+          add(`hac-${h.d}-${tag}`, mi.dhuhr, T(`Taşlama vakti girdi (bayramın ${n}. günü)`, `Stoning time (Eid day ${n})`, `دخل وقت الرمي (اليوم ${n})`),
+            h.d === 13
+              ? T('Mina’da kalanlar: küçük, orta, büyük cemre, yedişer taş. Vakit güneş batınca biter.', 'If you stayed in Mina: small, middle, large jamrah, seven each. Time ends at sunset.', 'لمن بقي في منى: سبع حصيات لكل جمرة؛ ينتهي الوقت بالغروب.')
+              : T('Küçük, orta, büyük cemre; yedişer taş. Vakit yarın imsaka kadar.', 'Small, middle, large jamrah; seven each. Time lasts until tomorrow’s Fajr.', 'الصغرى ثم الوسطى ثم الكبرى، سبع حصيات لكل منها.'), '/cemerat');
+        }
+        if (h.d === 12) {
+          add(`hac-12b-${tag}`, mi.maghrib, T('Mina’dan erken ayrılacak mısınız?', 'Leaving Mina early?', 'هل ستتعجل من منى؟'),
+            T('Erken ayrılacaksanız (nefr-i evvel) 13’ünün imsakından önce Mina’dan çıkın; yoksa 13’ünde de taş atarsınız.', 'If leaving early, exit Mina before Fajr of the 13th; otherwise you stone on the 13th too.', 'إن تعجلت فاخرج من منى قبل فجر الثالث عشر.'), '/cemerat');
+        }
+      }
+    }
+  }
+  return out.sort((a, b) => a.at.getTime() - b.at.getTime());
+}

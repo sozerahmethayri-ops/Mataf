@@ -1,17 +1,19 @@
 // Hac rehberi: hac türü seçimi, hac günlerinin tarihleri (Ümmü'l-Kurâ), gün gün adımlar (yapılacaklar, dualar,
 // sık hatalar, dayanak), farz/vacip/sünnet listesi, ihram yasakları. İlerleme ve tür cihazda saklanır.
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { router } from 'expo-router';
-import { useMemo, useState } from 'react';
-import { Pressable, ScrollView, Text, View } from 'react-native';
+import { useEffect, useMemo, useState } from 'react';
+import { Platform, Pressable, ScrollView, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { GuideStepCard } from '@/components/GuideStepCard';
 import { Icon, type IconName } from '@/components/Icon';
-import { Card, IconBtn, SectionTitle, Segmented, T } from '@/components/ui';
+import { Card, IconBtn, SectionTitle, Segmented, T, Toggle } from '@/components/ui';
 import { C, fs } from '@/constants/theme';
 import { HAC_NOTE, HAC_PILLARS, HAC_SOURCES, HAC_STEPS, HAC_TYPES, type HacStep, type HacType } from '@/data/hac';
 import { IHRAM_RULES, RULES_NOTE, type T3 } from '@/data/umre';
 import { pick, useI18n } from '@/i18n';
+import { NOTIF_KEY, applySchedule, loadNotifPrefs } from '@/services/adhanNotify';
 import { hajjCalendar, hajjPhase, type HajjCal } from '@/services/hac';
 import { usePersisted } from '@/services/usePersisted';
 
@@ -129,6 +131,8 @@ export default function HacScreen() {
         />
         <Text style={T.small}>{pick(typeInfo.text, lg)}</Text>
 
+        {Platform.OS !== 'web' && <HajjReminders lg={lg} />}
+
         <View style={{ flexDirection: 'row', gap: 8 }}>
           {TOOLS.map((t) => (
             <Pressable key={t.to} onPress={() => router.push(t.to as never)} accessibilityRole="button"
@@ -204,5 +208,41 @@ function Collapse({ title, icon, open, onToggle, tint, color = C.accent }: { tit
       <Text style={{ flex: 1, fontSize: fs(15), fontWeight: '700', color: C.ink }}>{title}</Text>
       <View style={{ transform: [{ rotate: open ? '90deg' : '0deg' }] }}><Icon name="chevron" size={16} color={C.muted} /></View>
     </Pressable>
+  );
+}
+
+/** Hac günleri hatırlatmaları: Arafat vakfesinin başlaması, Müzdelife'ye hareket, taşlama vakitleri (bildirim). */
+function HajjReminders({ lg }: { lg: 'tr' | 'en' | 'ar' }) {
+  const [on, setOn] = useState(false);
+  const [msg, setMsg] = useState('');
+  useEffect(() => { loadNotifPrefs().then((p) => setOn(p.hajj)).catch(() => undefined); }, []);
+  const T3x = {
+    title: { tr: 'Hac günleri hatırlatmaları', en: 'Hajj day reminders', ar: 'تذكيرات أيام الحج' },
+    sub: { tr: 'Arafat vakfesinin başlaması, Müzdelife’ye hareket ve taşlama vakitleri için bildirim (Arafat ve Mina vakitlerine göre).', en: 'Alerts when the standing at Arafat begins, when to move to Muzdalifah and when stoning time starts.', ar: 'تنبيه عند بدء الوقوف بعرفة والنفرة إلى مزدلفة ودخول وقت الرمي.' },
+    perm: { tr: 'Bildirim izni verilmedi; telefon ayarlarından açabilirsiniz.', en: 'Notification permission was not granted.', ar: 'لم يُمنح إذن الإشعارات.' },
+  };
+  const change = async (v: boolean) => {
+    setOn(v); setMsg('');
+    try {
+      const p = await loadNotifPrefs();
+      const next = { ...p, hajj: v };
+      await AsyncStorage.setItem(NOTIF_KEY, JSON.stringify(next));
+      const r = await applySchedule(next, lg, { ask: v });
+      if (v && !r.ok && r.reason === 'permission') {
+        setOn(false); setMsg(pick(T3x.perm, lg));
+        await AsyncStorage.setItem(NOTIF_KEY, JSON.stringify({ ...next, hajj: false }));
+      }
+    } catch { /* yerinde kalsın */ }
+  };
+  return (
+    <Card style={{ gap: 6 }}>
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+        <Icon name="bell" size={20} color={C.accent} />
+        <Text style={{ flex: 1, fontSize: fs(15), fontWeight: '700', color: C.ink }}>{pick(T3x.title, lg)}</Text>
+        <Toggle value={on} onChange={change} label={pick(T3x.title, lg)} />
+      </View>
+      <Text style={T.small}>{pick(T3x.sub, lg)}</Text>
+      {!!msg && <Text style={[T.small, { color: C.limited }]}>{msg}</Text>}
+    </Card>
   );
 }

@@ -38,6 +38,7 @@ const L = {
   multifaith: { tr: 'İbadet odası (çok inançlı)', en: 'Multi-faith prayer room', ar: 'غرفة صلاة متعددة الأديان' },
   wheelchair: { tr: 'Tekerlekli sandalyeye uygun', en: 'Wheelchair accessible', ar: 'مهيأ للكراسي المتحركة' },
   hours: { tr: 'Açık', en: 'Open', ar: 'مفتوح' },
+  missing: { tr: 'Bildiğiniz bir cami listede yok mu? Haritaya not bırakın', en: 'Know a mosque that is missing? Leave a note on the map', ar: 'هل تعرف مسجدًا غير موجود؟ اترك ملاحظة على الخريطة' },
   next: { tr: 'Sıradaki vakit', en: 'Next prayer', ar: 'الصلاة القادمة' },
   min: { tr: 'dk', en: 'min', ar: 'د' },
   hr: { tr: 'sa', en: 'h', ar: 'س' },
@@ -231,6 +232,13 @@ export default function NearestMosque() {
               <Icon name="compass" size={18} color={C.accent} />
               <Text style={{ color: C.accent, fontWeight: '700' }}>{pick(L.qibla, lang)}</Text>
             </Pressable>
+            {pos && (
+              <Pressable onPress={() => Linking.openURL(osmNoteUrl(pos.lat, pos.lng))} accessibilityRole="link"
+                style={{ flexDirection: 'row', alignItems: 'center', gap: 8, paddingVertical: 6 }}>
+                <Icon name="pin" size={18} color={C.accent} />
+                <Text style={{ flex: 1, color: C.accent, fontWeight: '700' }}>{pick(L.missing, lang)}</Text>
+              </Pressable>
+            )}
             <Text style={T.small}>{pick(L.osm, lang)}</Text>
           </View>
         </ScrollView>
@@ -257,4 +265,9 @@ function Pill({ text }: { text: string }) {
       <Text style={{ color: '#FFFFFF', fontSize: fs(12), fontWeight: '600' }}>{text}</Text>
     </View>
   );
+}
+
+/** OpenStreetMap'te bulunduğunuz yere "eksik cami" notu bırakma sayfası (hesap gerekmez). */
+function osmNoteUrl(lat: number, lng: number) {
+  return `https://www.openstreetmap.org/note/new#map=19/${lat.toFixed(5)}/${lng.toFixed(5)}`;
 }

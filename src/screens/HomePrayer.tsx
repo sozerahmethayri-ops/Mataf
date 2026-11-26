@@ -8,6 +8,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Icon, type IconName } from '@/components/Icon';
 import { SkyArc } from '@/components/SkyArc';
+import { TesrikNote, tesrikActive } from '@/components/TesrikNote';
 import { C, fs } from '@/constants/theme';
 import { pick, useI18n } from '@/i18n';
 import { hijriText, nextSpecial } from '@/services/hijri';
@@ -182,6 +183,8 @@ export default function HomePrayer() {
           </Text>
         </View>
       )}
+
+      {tesrikActive(tt, now, nx) && <TesrikNote lang={lg} />}
 
       {hajj && (
         <Pressable onPress={() => router.push((hajj.phase.kind === 'during' && hajj.phase.dh >= 10 ? '/cemerat' : '/hac') as never)} accessibilityRole="button"
