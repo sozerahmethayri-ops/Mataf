@@ -54,4 +54,7 @@ export const SOURCES = [
   { id: 'osm', title: 'Şehir haritası yerleri', meta: 'OpenStreetMap (Overpass) · haftalık', live: false, cacheKey: 'osm' },
   { id: 'rawdah', title: 'Ravza saatleri', meta: `SPA · sürüm ${'2026-10-20'}`, live: false },
   { id: 'prayer', title: 'Namaz vakitleri', meta: 'Telefonda hesaplanır (adhan)', live: false },
+  { id: 'fiqh', title: 'Umre ve hac rehberleri', meta: 'Diyanet Hac İlmihali (Hanefî) · TDV İslâm Ansiklopedisi · her adımda dayanak', live: false },
+  { id: 'duas', title: 'Dualar ve zikirler', meta: 'Kur’an ve hadis (sunnah.com numaraları) · her duada kaynak', live: false },
+  { id: 'hacsites', title: 'Hac yerleri ve sınırlar', meta: 'OpenStreetMap (ODbL) · Arafat, Mina, Harem sınırı yaklaşık · 26 Kasım 2026', live: false },
 ];

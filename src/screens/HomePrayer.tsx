@@ -12,6 +12,7 @@ import { C, fs } from '@/constants/theme';
 import { pick, useI18n } from '@/i18n';
 import { hijriText, nextSpecial } from '@/services/hijri';
 import { PRAYERS, fmtTime, nextPrayer, times } from '@/services/prayer';
+import { hajjSoon, type HajjPhase } from '@/services/hac';
 import { kmTo } from '@/services/location';
 import { usePrayerPlace, type PlaceId } from '@/services/prayerPlace';
 import { usePrayerWidgetSync } from '@/services/widgetSync';
@@ -38,7 +39,26 @@ const L = {
   rawdah: { tr: 'Ravza', en: 'Rawdah', ar: 'الروضة' },
   map: { tr: 'Harita', en: 'Map', ar: 'الخريطة' },
   all: { tr: 'Tüm vakitler', en: 'All times', ar: 'كل المواقيت' },
+  hajj: { tr: 'Hac', en: 'Hajj', ar: 'الحج' },
+  hajjGuide: { tr: 'Hac rehberi', en: 'Hajj guide', ar: 'دليل الحج' },
+  hajjJamarat: { tr: 'Şeytan taşlama sayacı', en: 'Jamarat counter', ar: 'عداد الجمرات' },
+  hajjSoon: { tr: 'Hac günleri yaklaşıyor · Arefe’ye {n} gün', en: 'Hajj is near · {n} days to Arafah', ar: 'اقتربت أيام الحج · {n} يومًا إلى عرفة' },
+  hajj8: { tr: 'Bugün Terviye: hac ihramı', en: 'Today is Tarwiyah: Hajj ihram', ar: 'اليوم يوم التروية' },
+  hajj9: { tr: 'Bugün Arefe: Arafat vakfesi', en: 'Today is Arafah: standing at Arafat', ar: 'اليوم يوم عرفة' },
+  hajj10: { tr: 'Bayramın 1. günü: Akabe, kurban, tıraş', en: 'Eid day 1: al-Aqabah, sacrifice, haircut', ar: 'يوم النحر: العقبة والهدي والحلق' },
+  hajj11: { tr: 'Bayramın {n}. günü: üç cemreye taş', en: 'Eid day {n}: all three Jamarat', ar: 'اليوم {n} من العيد: رمي الجمرات' },
+  hajj13: { tr: 'Bayramın 4. günü: Mina’da kaldıysanız üç cemre', en: 'Eid day 4: all three Jamarat if you stayed at Mina', ar: 'رابع أيام العيد' },
 };
+
+function hajjTitle(p: HajjPhase, lg: Lang) {
+  if (p.kind === 'before') return pick(L.hajjSoon, lg).replace('{n}', String(p.days));
+  if (p.kind !== 'during') return '';
+  if (p.dh === 8) return pick(L.hajj8, lg);
+  if (p.dh === 9) return pick(L.hajj9, lg);
+  if (p.dh === 10) return pick(L.hajj10, lg);
+  if (p.dh === 13) return pick(L.hajj13, lg);
+  return pick(L.hajj11, lg).replace('{n}', String(p.dh - 9));
+}
 
 export default function HomePrayer() {
   const { t, lang } = useI18n();
@@ -57,6 +77,7 @@ export default function HomePrayer() {
   const dayKey = now.toDateString();
   const special = useMemo(() => nextSpecial(new Date(dayKey), 120), [dayKey]);
   const greg = new Intl.DateTimeFormat(lang, { weekday: 'long', day: 'numeric', month: 'long' }).format(now);
+  const hajj = useMemo(() => (nearMakkah ? hajjSoon(new Date(dayKey)) : null), [nearMakkah, dayKey]);
   const placeLabel = label === 'makkah' ? pick(L.makkah, lg) : label === 'madinah' ? pick(L.madinah, lg) : label || pick(L.here, lg);
 
   const R = 104;
@@ -122,6 +143,17 @@ export default function HomePrayer() {
         </View>
       )}
 
+      {hajj && (
+        <Pressable onPress={() => router.push((hajj.phase.kind === 'during' && hajj.phase.dh >= 10 ? '/cemerat' : '/hac') as never)} accessibilityRole="button"
+          style={{ flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 12, paddingHorizontal: 14, borderRadius: 16, backgroundColor: C.accentSoft, borderWidth: 1, borderColor: C.accent }}>
+          <Icon name={hajj.phase.kind === 'during' && hajj.phase.dh >= 10 ? 'flag' : 'sun'} size={20} color={C.accent} />
+          <View style={{ flex: 1, gap: 2 }}>
+            <Text style={{ fontSize: fs(14.5), fontWeight: '700', color: C.ink }}>{hajjTitle(hajj.phase, lg)}</Text>
+            <Text style={{ fontSize: fs(12.5), color: C.accent, fontWeight: '700' }}>{pick(hajj.phase.kind === 'during' && hajj.phase.dh >= 10 ? L.hajjJamarat : L.hajjGuide, lg)} ›</Text>
+          </View>
+        </Pressable>
+      )}
+
       {/* Kısayollar */}
       <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
         <Shortcut icon="compass" label={pick(L.qibla, lg)} onPress={() => router.push('/kible')} />
@@ -132,7 +164,7 @@ export default function HomePrayer() {
       {/* Mekke ya da Medine'deyken (ya da vakitler oraya göreyken) ziyaretçi kısayolları */}
       {pilgrim && (
         <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-          {nearMakkah && <Shortcut icon="list" label={pick(L.umre, lg)} onPress={() => router.push('/umre')} />}
+          {nearMakkah && (hajj ? <Shortcut icon="sun" label={pick(L.hajj, lg)} onPress={() => router.push('/hac')} /> : <Shortcut icon="list" label={pick(L.umre, lg)} onPress={() => router.push('/umre')} />)}
           {nearMakkah && <Shortcut icon="kaaba" label={pick(L.tawaf, lg)} onPress={() => router.push('/tavaf')} />}
           <Shortcut icon="hotel" label={pick(L.hotel, lg)} onPress={() => router.push('/otel')} />
           <Shortcut icon="sos" label={pick(L.sos, lg)} onPress={() => router.push('/acil')} tint={C.closed} />

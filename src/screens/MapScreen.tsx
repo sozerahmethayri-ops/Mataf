@@ -7,6 +7,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { HaramScene } from '@/components/HaramScene';
 import { OnlineMap } from '@/components/OnlineMap';
 import { Icon } from '@/components/Icon';
+import { LayersPanel, useMapLayers } from '@/components/MapLayers';
 import { Btn, Chip, IconBtn, T } from '@/components/ui';
 import { C, shadow, fs } from '@/constants/theme';
 import { RAWDAH } from '@/data/content';
@@ -38,6 +39,8 @@ export default function MapScreen() {
   const [is3d, setIs3d] = useState(prefs.map3d);
 
   const { pos: user, demo } = localPosition(city, fix);
+  const [layersOpen, setLayersOpen] = useState(false);
+  const [selLayer, setSelLayer] = useState<string | undefined>(undefined);
   const km = fix && demo ? kmTo(city, fix) : null;
   const dest = DESTINATIONS.find((d) => d.id === destId && d.city === city) ?? DESTINATIONS.find((d) => d.city === city)!;
   // Mescitte değilken rota yalnız "Örnek rota" ile (örnek başlangıçtan) gösterilir
@@ -57,7 +60,10 @@ export default function MapScreen() {
   const ctrl = { w: 44, h: 44 + 8 + 44 * 2 + 8 + 44 + 8 + 44, right: 12, bottom: sheetH + 12 };
   const ll = (p: Pt) => { const q = toLatLng(city, p); return { lat: q.latitude, lng: q.longitude }; };
   const mapUser = showRoute ? (demo ? ll(user) : fix ? { lat: fix.lat, lng: fix.lng } : null) : null;
-  const pins2d = [
+  // Katman verisi kullanıcının yakınından (şehirdeyse), değilse mescidin çevresinden
+  const layerOrigin = fix && !demo ? { lat: fix.lat, lng: fix.lng } : ll([0, 0]);
+  const lyr = useMapLayers(city, layerOrigin, lang as 'tr' | 'en' | 'ar');
+  const basePins = [
     ...GATES.filter((g) => g.city === city).map((g) => {
       const s = summaries[g.id]?.status ?? 'open';
       const isRoute = g.id === plan?.gate?.id;
@@ -65,6 +71,11 @@ export default function MapScreen() {
     }),
     { id: 'dest', ...ll(dest.pos), color: C.route, label: t(dest.label).split(' · ')[0], big: true },
   ];
+  const pins2d = [...lyr.pins, ...basePins];
+  // Çerçeve: kapılar + hedef (katman noktaları çerçeveyi değiştirmez); hac yerleri açılınca onlar da
+  const hacFit = city === 'makkah' && lyr.layers.hac;
+  const routePts = plan?.points && plan.points.length > 1 ? plan.points.map(ll) : [];
+  const fitTo = [...basePins, ...routePts, ...(hacFit ? lyr.pins.filter((p) => p.id.startsWith('L:hac:')) : [])];
   // Bakî seçiliyse mezarlığın batı yarısı da çerçeveye girsin (yalnız giriş kapısı değil)
   const fit = [...(city === 'makkah' ? MAKKAH_CORE : MADINAH_CORE), ...(plan?.points ?? []), dest.pos, ...(dest.id === 'baqi' ? ([[340, -70], [340, 130]] as Pt[]) : [])];
 
@@ -97,11 +108,17 @@ export default function MapScreen() {
           user={mapUser}
           center={ll([0, 0])}
           padding={{ top: topH, bottom: sheetH, left: 16, right: 64 }}
-          fitKey={`${city}:${dest.id}:${showRoute ? 1 : 0}`}
+          fitKey={`${city}:${dest.id}:${showRoute ? 1 : 0}:${hacFit ? 'hac' : ''}`}
+          fitTo={fitTo}
           recenterKey={recenter}
           controls={false}
           threeD={false}
-          onPin={(id) => (id.startsWith('g:') ? router.push({ pathname: '/kapi/[id]', params: { id: id.slice(2) } }) : undefined)}
+          areas={lyr.areas}
+          selectedId={selLayer}
+          onPin={(id) => {
+            if (id.startsWith('g:')) router.push({ pathname: '/kapi/[id]', params: { id: id.slice(2) } });
+            else if (id.startsWith('L:')) { if (selLayer === id) lyr.open(id); else setSelLayer(id); }
+          }}
         />
       )}
 
@@ -156,8 +173,16 @@ export default function MapScreen() {
         <CompassBtn rot={rot} label={lang === 'en' ? 'Rotate north up' : lang === 'ar' ? 'اتجاه الشمال للأعلى' : 'Kuzeyi yukarı al'}
           onPress={() => setRot((r) => (Math.abs(((r % 360) + 360) % 360) < 1 ? -35 : 0))} />
         )}
+        {!is3d && (
+          <IconBtn name="layers" label={lang === 'en' ? 'Layers' : lang === 'ar' ? 'الطبقات' : 'Katmanlar'} tint={layersOpen ? C.ink : C.bg} color={layersOpen ? C.onInk : C.ink} elevated onPress={() => setLayersOpen((v) => !v)} />
+        )}
         <IconBtn name="locate" label={t('map.recenter')} tint={C.bg} color={C.user} elevated onPress={() => { setZoom(1); setRecenter((n) => n + 1); }} />
       </View>
+      {!is3d && layersOpen && (
+        <View style={{ position: 'absolute', right: ctrl.right + ctrl.w + 8, bottom: ctrl.bottom }}>
+          <LayersPanel lg={lang as 'tr' | 'en' | 'ar'} layers={lyr.layers} onChange={lyr.setLayers} available={lyr.available} hasHotel={lyr.hasHotel} onClose={() => setLayersOpen(false)} />
+        </View>
+      )}
 
       <View onLayout={(e) => setSheetH(Math.round(e.nativeEvent.layout.height))}
         style={[{ position: 'absolute', left: 0, right: 0, bottom: 0, backgroundColor: C.bg, borderTopLeftRadius: 22, borderTopRightRadius: 22, paddingHorizontal: 16, paddingTop: 8, paddingBottom: 12, gap: 10 }, shadow]}>

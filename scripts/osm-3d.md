@@ -46,3 +46,32 @@ sırasını doğrular (sayılar değişirse testteki beklentiyi güncelleyin).
 - Kâbe, Hicr ve Makam OSM parçaları yerine ayrıntılı kendi modelimiz kullanılır.
 - Medine'deki 250 şemsiye 26 m aralıklı düzenle yerleştirilir (gerçek düzene yakın, birebir değil);
   yüksekliği OSM'de olmayan oteller tahmini yüksekliktedir.
+
+## Hac yerleri (src/data/osm/hacSites.ts)
+
+Arafat ve Mina alanları, Harem sınırı, cemreler, Nemire / Meş'ar-i Haram / Hayf mescitleri, Cebel-i Rahme,
+Meşâir treni istasyonları ve Mina–Arafat hastaneleri. Veri **© OpenStreetMap katkıcıları, ODbL 1.0**.
+
+Sorgu (GitHub'da çalıştırmak için: `gh workflow run osm-fetch.yml -f query="$(cat sorgu.overpassql)"`,
+sonuç "osm-data" sürümündeki `out.json`):
+
+```
+[out:json][timeout:200];
+(
+  nwr["name:en"~"Jamara|Jamra|Namira|Namirah|Mash.?ar|Khayf|Kheef|Rahma|Muhassir|Arafat|Arafah|Muzdalif|Mina",i](21.33,39.84,21.45,40.00);
+  nwr["name"~"جمر|نمرة|المشعر|الخيف|الرحمة|محسر|عرفات|عرفة|مزدلفة|منى"](21.33,39.84,21.45,40.00);
+  nwr["name:tr"](21.33,39.84,21.45,40.00);
+  nwr[railway=station](21.33,39.84,21.45,40.00);
+  nwr[boundary](21.33,39.84,21.45,40.00);
+);
+out geom;
+```
+
+Dönüştürme: `python3 -I scripts/hac_sites.py out.json > src/data/osm/hacSites.ts`. Betik öğeleri OSM kimliğiyle seçer
+(Arafat way 1377422823, Mina way 1249259763, Harem sınırı ilişki 19590020, cemreler node 4144223248–50 …);
+kimlik değişirse betik hata verir, yeni kimlik elle bakılıp yazılır. Kapalı halkalar sadeleştirilir
+(Mina 8 m, Nemire 2 m, Cemerat köprüsü 3 m, Harem sınırı 25 m).
+
+Bilinen sınırlar: Arafat hattı sahadaki sınır işaretlerinden çizilmiştir ama yaklaşıktır; Nemire Mescidi'nin
+ön (kıble) kısmı Arafat dışındadır (Urene vadisi). Uygulama sınıra 75–100 m'den yakınken "içindesiniz" demez,
+tabelalara bakmayı söyler.

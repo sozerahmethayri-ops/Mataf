@@ -7,9 +7,14 @@ import { MAKKAH_CORE, buildMakkah } from '../src/scene/makkah';
 import { CORNERS, KAABA_POLY, adjustLap, bearingOf, initialLap, pointAt, startManual, stepLap, zoneOf, type Fix, type LapState } from '../src/services/tawaf';
 import { globalAyah, surahLength } from '../src/services/quranIndex';
 import { DUA_LIB, isQuranRef } from '../src/data/duas';
+import { TAWAF_DHIKR, type DuaText } from '../src/data/tawaf';
 import { OVERPASS_ENDPOINTS, bearingDeg, distanceM, findMosques, parseOverpass, parsePhotonMosques, pickMosques, type El, type Fetcher } from '../src/services/mosques';
 import { PALETTES, colorsFor, contrast, type PaletteId } from '../src/constants/theme';
 import { WIDGET_DAYS, buildWidgetProps, widgetNext, widgetPlace } from '../src/services/widgetProps';
+import { ARAFAT_AREA, HAC_PLACES, NAMIRA_MOSQUE } from '../src/data/osm/hacSites';
+import { MEMBER_COLORS, colorFor, freshness, inviteText, isValidCode, makeCode, normalizeCode, shouldSend, sortMembers, type GroupMember } from '../src/services/groupLogic';
+import { AREFE_DUA, CEMRE_TEKBIR, HAC_STEPS, MESAR_AYAH, TESRIK_TEKBIR } from '../src/data/hac';
+import { CEMRE_IDS, arafatCheck, dayThrown, eidDayAt, emptyCount, hajjCalendar, hajjPhase, hajjSoon, haramCheck, insidePoly, pebblesTotal, throwPebble, throwWindow, undoPebble, windowState, type ThrowResult } from '../src/services/hac';
 import { CalculationMethod, Coordinates, PrayerTimes } from 'adhan';
 import { DEFAULT_NOTIF, notifText, planNotifications } from '../src/services/adhanPlan';
 import type { PrayerKey } from '../src/services/prayer';
@@ -290,6 +295,99 @@ function simulate(o: Sim, st0: LapState = initialLap()) {
   ok(n3?.day === 1 && n3.prayer === 0 && n3.tomorrow === Number(wd[1].s) > t3, 'küçük uygulama: gece → imsak, "yarın" etiketi gün sınırına göre');
   ok(widgetNext(wp, Number(wd[29].a[5]) + 1) === null, 'küçük uygulama: veri bitince güncelleme istenir');
   ok(wp.light?.accent === PALETTES.kabe.light.accent && wp.dark?.accent === PALETTES.kabe.dark.accent && wp.dark?.bg !== wp.light?.bg, 'küçük uygulama: tema renkleri');
+}
+
+// ── Hac modu ──
+{
+  const ymd = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  const cal = hajjCalendar(new Date(2026, 10, 26, 9));
+  ok(!!cal && ymd(cal.arefe) === '2027-05-15' && ymd(cal.days[0].date) === '2027-05-14' && ymd(cal.days[5].date) === '2027-05-19', `hac: 1448 Arefe 15 Mayıs 2027 (${cal && ymd(cal.arefe)})`);
+  const calIn = hajjCalendar(new Date(2027, 4, 16, 20));
+  ok(!!calIn && ymd(calIn.days[0].date) === '2027-05-14', 'hac: bayram günündeyken bu yılın takvimi');
+  if (cal) {
+    const p1 = hajjPhase(new Date(2027, 4, 15, 14), cal);
+    const p2 = hajjPhase(new Date(2027, 4, 10, 9), cal);
+    const p3 = hajjPhase(new Date(2027, 4, 21, 9), cal);
+    ok(p1.kind === 'during' && p1.dh === 9 && p2.kind === 'before' && p2.days === 5 && p3.kind === 'after', 'hac: gün evresi (Arefe, 5 gün kala, sonra)');
+    const fajr = (d: number, h = 4, m = 20) => new Date(2027, 4, d, h, m);
+    ok(eidDayAt(new Date(2027, 4, 17, 3, 0), cal, fajr(17)) === 1 && eidDayAt(new Date(2027, 4, 17, 10, 0), cal, fajr(17)) === 2 && eidDayAt(new Date(2027, 4, 15, 10, 0), cal, fajr(15)) === null, 'hac: imsaktan önce önceki günün atışı sürer');
+  }
+  const s1 = hajjSoon(new Date(2027, 4, 10, 9));
+  const s2 = hajjSoon(new Date(2027, 4, 15, 9));
+  ok(!hajjSoon(new Date(2026, 10, 26, 9)) && s1?.phase.kind === 'before' && s1.phase.days === 5 && s2?.phase.kind === 'during' && !hajjSoon(new Date(2027, 4, 21, 9)), 'hac: ana sayfa kartı yalnız hac günlerine yakınken');
+  const rahme = HAC_PLACES.find((x) => x.id === 'rahme')!;
+  const kabe = { lat: 21.4225, lng: 39.8262 };
+  ok(arafatCheck(rahme).state === 'inside' && arafatCheck(kabe).state === 'outside', 'hac: Cebel-i Rahme Arafat içinde, Kâbe dışında');
+  ok(haramCheck(kabe).state === 'inside' && haramCheck(rahme).state === 'outside', 'hac: Kâbe Harem içinde, Arafat Harem dışında');
+  const mina = HAC_PLACES.find((x) => x.id === 'mina')!;
+  ok(haramCheck(mina).state === 'inside', 'hac: Mina Harem sınırları içinde');
+  // Arafat batı sınırındaki bir işaretten 40 m ve 400 m dışarı (batıya)
+  const edge = { lat: 21.3501, lng: 39.96094 };
+  const west = (m: number) => ({ lat: edge.lat, lng: edge.lng - m / (111320 * Math.cos((edge.lat * Math.PI) / 180)) });
+  ok(arafatCheck(west(40)).state === 'near' && arafatCheck(west(400)).state === 'outside', 'hac: sınıra yakınken "tabelaya bakın"');
+  ok(arafatCheck(rahme, 2000).state === 'near', 'hac: GPS hatası büyükse kesin söylenmez');
+  const nam = NAMIRA_MOSQUE.map(([lat, lng]) => insidePoly({ lat, lng }, ARAFAT_AREA));
+  ok(nam.some((x) => x) && nam.some((x) => !x), 'hac: Nemire Mescidi sınırın üzerinde (bir kısmı dışarıda)');
+
+  let c = emptyCount();
+  let r = throwPebble(c, 1, 'kucuk');
+  ok(r.event === 'not-today', 'cemre: 1. gün küçük cemre yok');
+  for (let i = 0; i < 7; i++) { r = throwPebble(c, 1, 'akabe'); c = r.counts; }
+  ok(r.event === 'day-done' && throwPebble(c, 1, 'akabe').event === 'full', 'cemre: 1. gün Akabe 7 taş');
+  c = emptyCount();
+  r = throwPebble(c, 2, 'orta');
+  ok(r.orderWarn && r.event === 'ok', 'cemre: sıra uyarısı (Hanefî: sünnet, engellemez)');
+  c = emptyCount();
+  let last: ThrowResult = r;
+  for (const id of CEMRE_IDS) for (let i = 0; i < 7; i++) { last = throwPebble(c, 2, id); c = last.counts; if (i === 6 && id !== 'akabe') ok(last.event === 'cemre-done', `cemre: ${id} bitti`); }
+  ok(last.event === 'day-done' && dayThrown(c, 2) === 21 && !last.orderWarn, 'cemre: 2. gün 21 taş');
+  ok(undoPebble(c, 'akabe').akabe === 6 && undoPebble(emptyCount(), 'akabe').akabe === 0, 'cemre: geri al');
+  ok(pebblesTotal(true) === 70 && pebblesTotal(false) === 49, 'cemre: toplam 70 / 49');
+  const t = (d: number) => ({ fajr: new Date(2027, 4, d, 4, 20), sunrise: new Date(2027, 4, d, 5, 40), dhuhr: new Date(2027, 4, d, 12, 20), maghrib: new Date(2027, 4, d, 19, 0) });
+  const w1 = throwWindow(1, t(16), t(17));
+  const w2 = throwWindow(2, t(17), t(18));
+  const w4 = throwWindow(4, t(19), t(20));
+  ok(windowState(new Date(2027, 4, 16, 3, 0), w1) === 'before' && windowState(new Date(2027, 4, 16, 23, 0), w1) === 'open' && windowState(new Date(2027, 4, 17, 4, 30), w1) === 'after', 'cemre: 1. gün imsaktan ertesi imsaka');
+  ok(windowState(new Date(2027, 4, 17, 11, 0), w2) === 'before' && windowState(new Date(2027, 4, 17, 13, 0), w2) === 'open', 'cemre: 2. gün öğleden önce olmaz');
+  ok(windowState(new Date(2027, 4, 19, 9, 0), w4) === 'early' && windowState(new Date(2027, 4, 19, 19, 30), w4) === 'after', 'cemre: 4. gün (Ebû Hanîfe: öğleden önce caiz), gün batımında biter');
+}
+
+// ── Dini içerik: her dua ve adımın dayanağı var ──
+{
+  const texts = [...DUA_LIB.flatMap((c) => c.items.filter((d): d is DuaText => 'ar' in d)), ...TAWAF_DHIKR, TESRIK_TEKBIR, CEMRE_TEKBIR, MESAR_AYAH, AREFE_DUA];
+  const noRef = texts.filter((d) => !d.ref || d.ref.trim().length < 4).map((d) => d.id);
+  ok(noRef.length === 0, `kaynak: her duada kaynak var (${texts.length} dua${noRef.length ? '; eksik: ' + noRef.join(',') : ''})`);
+  const noSrc = HAC_STEPS.filter((s) => s.src.length === 0).map((s) => s.id);
+  ok(noSrc.length === 0 && HAC_STEPS.length === 9, 'kaynak: her hac adımında dayanak var');
+  const types = (['temettu', 'kiran', 'ifrad'] as const).map((ty) => HAC_STEPS.filter((s) => !s.types || s.types.includes(ty)).map((s) => s.id));
+  ok(types.every((l) => l.includes('arafat') && l.includes('ziyaret') && l.length === 8) && types[0].includes('umre') && !types[2].includes('umre'), 'hac: her türde 8 adım (temettu umreyle, ifrad/kıran kudümle)');
+  const arOk = texts.every((d) => /[\u0600-\u06FF]/.test(d.ar));
+  ok(arOk, 'kaynak: her duanın Arapça metni var');
+}
+
+// ── Aile / grup konumu ──
+{
+  ok(normalizeCode(' ab-c2 3x9 ') === 'ABC23X' && isValidCode('ABC23X') && !isValidCode('ABC10X') && !isValidCode('ABC23'), 'grup: davet kodu biçimi (karışan harf yok)');
+  let seed = 7;
+  const rnd = () => ((seed = (seed * 16807) % 2147483647) / 2147483647);
+  const codes = Array.from({ length: 200 }, () => makeCode(rnd));
+  ok(codes.every(isValidCode) && new Set(codes).size > 195, 'grup: üretilen kodlar geçerli ve çeşitli');
+  ok(colorFor('Ahmet') === colorFor('Ahmet') && MEMBER_COLORS.includes(colorFor('Zeynep')), 'grup: ada göre kararlı renk');
+  const now = 1_800_000_000_000;
+  ok(freshness(now - 30e3, now) === 'live' && freshness(now - 10 * 60e3, now) === 'recent' && freshness(now - 60 * 60e3, now) === 'stale' && freshness(null, now) === 'none', 'grup: konum tazeliği');
+  const me = { lat: 21.4225, lng: 39.8262 };
+  const list: GroupMember[] = [
+    { userId: 'z', name: 'Uzak', color: '#000000', sharing: true, lat: 21.43, lng: 39.83 },
+    { userId: 'y', name: 'Konumsuz', color: '#000000', sharing: true },
+    { userId: 'x', name: 'Yakın', color: '#000000', sharing: true, lat: 21.4228, lng: 39.8265 },
+    { userId: 'm', name: 'Ben', color: '#000000', sharing: true, me: true },
+  ];
+  ok(sortMembers(list, me).map((m) => m.userId).join('') === 'mxzy', 'grup: ben, yakın, uzak, konumsuz sırası');
+  const t0 = now;
+  const last = { at: t0, lat: 21.4225, lng: 39.8262 };
+  ok(shouldSend(null, me, t0) && !shouldSend(last, { lat: 21.4228, lng: 39.8262 }, t0 + 10e3) && shouldSend(last, { lat: 21.4228, lng: 39.8262 }, t0 + 20e3)
+    && !shouldSend(last, { lat: 21.42252, lng: 39.8262 }, t0 + 60e3) && shouldSend(last, me, t0 + 121e3), 'grup: konum gönderme sıklığı (25 m / 2 dk)');
+  ok(inviteText('ABC23X', 'Ailem', 'tr').includes('ABC23X') && inviteText('ABC23X', 'Ailem', 'en').includes('Ailem'), 'grup: davet metni');
 }
 
 // ── Umre rehberi içeriği ──

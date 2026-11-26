@@ -5,11 +5,11 @@ import { useCallback, useState } from 'react';
 import { Pressable, ScrollView, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { DuaBlock } from '@/components/DuaBlock';
+import { GuideStepCard } from '@/components/GuideStepCard';
 import { Icon } from '@/components/Icon';
-import { Btn, Card, IconBtn, SectionTitle, T } from '@/components/ui';
+import { Card, IconBtn, SectionTitle, T } from '@/components/ui';
 import { C, fs } from '@/constants/theme';
-import { IHRAM_RULES, RULES_NOTE, SPECIAL_CASES, UMRE_STEPS, type T3, type UmreStep } from '@/data/umre';
+import { IHRAM_RULES, RULES_NOTE, SPECIAL_CASES, UMRE_STEPS, type T3 } from '@/data/umre';
 import { pick, useI18n } from '@/i18n';
 import { readUmre, writeUmre, type UmreProgress } from '@/services/umreProgress';
 
@@ -21,11 +21,6 @@ const L = {
   my: { tr: 'Umrem', en: 'My umrah', ar: 'عمرتي' },
   steps: { tr: 'adım tamamlandı', en: 'steps done', ar: 'خطوات مكتملة' },
   reset: { tr: 'Yeni umre', en: 'New umrah', ar: 'عمرة جديدة' },
-  todo: { tr: 'Yapılacaklar', en: 'What to do', ar: 'ما تفعله' },
-  duas: { tr: 'Dualar', en: 'Du‘as', ar: 'الأدعية' },
-  care: { tr: 'Dikkat: sık yapılan hatalar', en: 'Common mistakes', ar: 'أخطاء شائعة' },
-  doneBtn: { tr: 'Bu adımı tamamladım', en: 'I’ve done this step', ar: 'أتممت هذه الخطوة' },
-  undo: { tr: 'Tamamlandı · geri al', en: 'Done · undo', ar: 'تم · تراجع' },
   rules: { tr: 'İhram yasakları ve cezaları', en: 'Ihram restrictions and penalties', ar: 'محظورات الإحرام وكفاراتها' },
   special: { tr: 'Özel durumlar', en: 'Special cases', ar: 'حالات خاصة' },
   allDone: { tr: 'Umreniz tamamlandı. Allah kabul etsin!', en: 'Your umrah is complete. May Allah accept it!', ar: 'تمّت عمرتك، تقبّل الله منك!' },
@@ -93,7 +88,7 @@ export default function UmreScreen() {
         </Card>
 
         {UMRE_STEPS.map((step, i) => (
-          <StepCard key={step.id} step={step} n={i + 1} lg={lg} done={prog.done.includes(step.id)} open={open === step.id}
+          <GuideStepCard key={step.id} step={step} n={i + 1} lg={lg} done={prog.done.includes(step.id)} open={open === step.id}
             onToggleOpen={() => setOpen((o) => (o === step.id ? null : step.id))} onToggleDone={() => toggle(step.id)} />
         ))}
 
@@ -124,67 +119,6 @@ export default function UmreScreen() {
         ))}
         <Text style={[T.small, { marginTop: 6 }]}>{pick(L.source, lg)}</Text>
       </ScrollView>
-    </View>
-  );
-}
-
-function StepCard({ step, n, lg, done, open, onToggleOpen, onToggleDone }: {
-  step: UmreStep; n: number; lg: Lang; done: boolean; open: boolean; onToggleOpen: () => void; onToggleDone: () => void;
-}) {
-  return (
-    <View style={{ borderRadius: 18, borderWidth: open ? 1.5 : 1, borderColor: open ? C.accent : C.border, overflow: 'hidden' }}>
-      <Pressable onPress={onToggleOpen} accessibilityRole="button" accessibilityState={{ expanded: open }}
-        style={{ flexDirection: 'row', alignItems: 'center', gap: 12, padding: 14, backgroundColor: done ? C.openTint : C.bg }}>
-        <View style={{ width: 32, height: 32, borderRadius: 16, alignItems: 'center', justifyContent: 'center', backgroundColor: done ? C.open : C.accentTint }}>
-          {done ? <Icon name="check" size={17} color="#FFFFFF" width={3} /> : <Text style={{ fontSize: fs(14), fontWeight: '800', color: C.accent }}>{n}</Text>}
-        </View>
-        <View style={{ flex: 1, gap: 2 }}>
-          <Text style={{ fontSize: fs(15.5), fontWeight: '700', color: C.ink }}>{pick(step.title, lg)}</Text>
-          {!open && <Text style={T.small} numberOfLines={2}>{pick(step.summary, lg)}</Text>}
-        </View>
-        <Icon name={step.icon} size={20} color={done ? C.open : C.muted} />
-      </Pressable>
-      {open && (
-        <View style={{ padding: 14, paddingTop: 4, gap: 12 }}>
-          <Text style={T.body}>{pick(step.summary, lg)}</Text>
-          {step.callout && (
-            <Card tint={C.accentSoft} style={{ gap: 6 }}>
-              <Text style={[T.small, { color: C.accent, fontWeight: '700' }]}>{pick(step.callout.title, lg)}</Text>
-              <Text style={T.body}>{pick(step.callout.text, lg)}</Text>
-              {step.callout.note && <Text style={T.small}>{pick(step.callout.note, lg)}</Text>}
-            </Card>
-          )}
-          <SectionTitle>{pick(L.todo, lg)}</SectionTitle>
-          {step.todo.map((x, i) => (
-            <View key={i} style={{ flexDirection: 'row', gap: 10 }}>
-              <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: C.accent, marginTop: 8 }} />
-              <Text style={[T.body, { flex: 1 }]}>{pick(x, lg)}</Text>
-            </View>
-          ))}
-          {step.action && <Btn title={pick(step.action.label, lg)} icon={step.action.icon} onPress={() => router.push(step.action!.to as never)} />}
-          {step.duas && step.duas.length > 0 && (
-            <>
-              <SectionTitle>{pick(L.duas, lg)}</SectionTitle>
-              {step.duas.map((d) => <DuaBlock key={d.id} d={d} compact />)}
-            </>
-          )}
-          {step.mistakes && step.mistakes.length > 0 && (
-            <>
-              <SectionTitle>{pick(L.care, lg)}</SectionTitle>
-              {step.mistakes.map((m, i) => (
-                <View key={i} style={{ flexDirection: 'row', gap: 10 }}>
-                  <Icon name="alert" size={16} color={C.closed} />
-                  <View style={{ flex: 1, gap: 2 }}>
-                    <Text style={[T.body, { fontWeight: '600' }]}>{pick(m.text, lg)}</Text>
-                    {m.penalty && <Text style={T.small}>{pick(m.penalty, lg)}</Text>}
-                  </View>
-                </View>
-              ))}
-            </>
-          )}
-          <Btn title={pick(done ? L.undo : L.doneBtn, lg)} kind={done ? 'secondary' : 'green'} icon={done ? undefined : 'check'} onPress={onToggleDone} />
-        </View>
-      )}
     </View>
   );
 }

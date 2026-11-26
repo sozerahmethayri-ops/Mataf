@@ -16,6 +16,7 @@ const GROUPS: { title: { tr: string; en: string; ar: string }; items: Item[] }[]
     items: [
       { icon: 'clock', title: { tr: 'Namaz vakitleri', en: 'Prayer times', ar: 'مواقيت الصلاة' }, to: '/vakitler' },
       { icon: 'list', title: { tr: 'Umre rehberi', en: 'Umrah guide', ar: 'دليل العمرة' }, to: '/umre' },
+      { icon: 'sun', title: { tr: 'Hac rehberi', en: 'Hajj guide', ar: 'دليل الحج' }, to: '/hac' },
       { icon: 'compass', title: { tr: 'Kıble', en: 'Qibla', ar: 'القبلة' }, to: '/kible' },
       { icon: 'beads', title: { tr: 'Zikirmatik', en: 'Dhikr counter', ar: 'المسبحة' }, to: '/zikir' },
       { icon: 'check', title: { tr: 'Kaza namazı ve oruç takibi', en: 'Missed prayers and fasts', ar: 'قضاء الصلوات والصيام' }, to: '/kaza' },
@@ -31,7 +32,10 @@ const GROUPS: { title: { tr: string; en: string; ar: string }; items: Item[] }[]
       { icon: 'map', title: { tr: 'Haram / Nebevî haritası', en: 'Haram / Nabawi map', ar: 'خريطة الحرم' }, to: '/harita' },
       { icon: 'kaaba', title: { tr: 'Tavaf asistanı', en: 'Tawaf assistant', ar: 'مساعد الطواف' }, to: '/tavaf' },
       { icon: 'walk', title: { tr: 'Sa’y sayacı', en: 'Sa‘y counter', ar: 'عدّاد السعي' }, to: '/say' },
+      { icon: 'flag', title: { tr: 'Şeytan taşlama sayacı', en: 'Jamarat counter', ar: 'عداد الجمرات' }, to: '/cemerat' },
+      { icon: 'map', title: { tr: 'Hac yerleri haritası', en: 'Hajj sites map', ar: 'خريطة المشاعر' }, to: '/hac-harita' },
       { icon: 'hotel', title: { tr: 'Otelime dön', en: 'Back to my hotel', ar: 'العودة إلى فندقي' }, to: '/otel' },
+      { icon: 'users', title: { tr: 'Aile ve grup konumu', en: 'Family & group location', ar: 'موقع العائلة والمجموعة' }, to: '/grup' },
       { icon: 'gate', title: { tr: 'Kapı durumu', en: 'Gate status', ar: 'حالة الأبواب' }, to: '/kapilar' },
       { icon: 'alert', title: { tr: 'Kapı bildir', en: 'Report a gate', ar: 'الإبلاغ عن باب' }, to: '/bildir' },
       { icon: 'nav', title: { tr: 'Yol tarifi (mescit içi)', en: 'Directions (in the mosque)', ar: 'الاتجاهات' }, to: '/navigasyon' },

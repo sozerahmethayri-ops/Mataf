@@ -56,7 +56,10 @@
 | Çevrimdışı paket: cdn.islamic.network/quran/audio | Dua kütüphanesindeki Kur'an ayetlerinin sesleri | Kayıt hakları kâri/yayıncılara aittir |
 | Kaza takibi | Hesap telefonda yapılır, veri gönderilmez | Bilgi notları: Diyanet İşleri Başkanlığı (kaza namazı ve oruç) |
 | Ana ekran küçük uygulaması (expo-widgets, Android) | Vakitler telefonda hesaplanıp küçük uygulamaya yazılır | Ağ kullanmaz |
-| Supabase (isteğe bağlı) | Canlı kapı bildirimleri | Kendi projeniz |
+| Hac rehberi ve şeytan taşlama | Fıkhî bilgiler ve vakitler | Diyanet İşleri Başkanlığı, Hac İlmihali (Hanefî); Diyanet Fetva Kurulu (Akabe cemresi, izdiham); TDV İslâm Ansiklopedisi “Cemre”, “Vakfe”; Buhârî 1549, 1751; Tirmizî 3585 |
+| Hac yerleri (`src/data/osm/hacSites.ts`) | Arafat ve Mina alanı, Harem sınırı, cemreler, mescitler, istasyonlar, hastaneler | © OpenStreetMap katkıcıları, ODbL 1.0 (26 Kasım 2026, `scripts/hac_sites.py`); Harem sınırı ilişkisinin kaynağı: Hadrân es-Sübeytî ve Suûd es-Sübeytî, A‘lâm ve hudûdü’l-Harem (2012). Sınırlar yaklaşıktır |
+| Hac günlerinin tarihi | Ümmü’l-Kurâ takvimi (cihazda, Intl) | Suudi Arabistan’ın ilanıyla bir gün kayabilir |
+| Supabase (isteğe bağlı) | Canlı kapı bildirimleri ve aile/grup konumu | Kendi projeniz (`docs/SUPABASE.md`); konum geçmişi tutulmaz |
 
 ## Tavaf asistanı ve dualar
 

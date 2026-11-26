@@ -6,6 +6,7 @@ import { AdhanHost } from '@/components/AdhanHost';
 import { C } from '@/constants/theme';
 import { I18nProvider } from '@/i18n';
 import { AppProvider } from '@/services/AppContext';
+import { GroupProvider } from '@/services/GroupContext';
 import { QuranPrefsProvider } from '@/services/QuranPrefs';
 import { ScreenRemount, ThemeProvider, useTheme } from '@/services/ThemeContext';
 import { ReportsProvider } from '@/services/ReportsContext';
@@ -18,7 +19,9 @@ export default function RootLayout() {
           <AppProvider>
             <QuranPrefsProvider>
               <ThemeProvider>
-                <AppStack />
+                <GroupProvider>
+                  <AppStack />
+                </GroupProvider>
               </ThemeProvider>
               <AdhanHost />
             </QuranPrefsProvider>

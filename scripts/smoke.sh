@@ -52,7 +52,7 @@ adb shell input swipe $(( W * 85 / 100 )) $(( H / 2 )) $(( W * 15 / 100 )) $(( H
 step "08-kaydir-ana" 4
 
 i=10
-for r in "kuran/18?b=hatim&a=10" zikir vakitler kible cami sehir ulasim tavaf umre say otel acil kaza cevrimdisi navigasyon ayarlar hadis-dua; do
+for r in "kuran/18?b=hatim&a=10" zikir vakitler kible cami sehir ulasim tavaf umre hac cemerat "hac-harita?yer=arafat" grup say otel acil kaza cevrimdisi navigasyon ayarlar hadis-dua; do
   i=$((i + 1))
   open "$r"
   name=$(echo "$r" | cut -d'?' -f1 | tr '/' '-')

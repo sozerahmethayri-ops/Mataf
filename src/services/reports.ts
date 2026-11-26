@@ -2,7 +2,8 @@
 //  - Yerel demo (AsyncStorage + örnek bildirimler) — kurulum gerektirmez.
 //  - Supabase (gerçek zamanlı, çok kullanıcılı) — EXPO_PUBLIC_SUPABASE_URL ve _ANON_KEY tanımlıysa.
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { createClient, type SupabaseClient } from '@supabase/supabase-js';
+import type { SupabaseClient } from '@supabase/supabase-js';
+import { supabase } from './supabase';
 
 export type GateStatus = 'open' | 'closed' | 'crowded' | 'exitOnly' | 'entryOnly' | 'women' | 'noAccess';
 export type Floor = 'basement' | 'ground' | 'first' | 'roof';
@@ -163,13 +164,8 @@ class SupabaseBackend implements Backend {
 }
 
 export function createBackend(): Backend {
-  const url = process.env.EXPO_PUBLIC_SUPABASE_URL;
-  const key = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY;
-  if (url && key) {
-    const sb = createClient(url, key, { auth: { storage: AsyncStorage, persistSession: true, autoRefreshToken: true, detectSessionInUrl: false } });
-    return new SupabaseBackend(sb);
-  }
-  return new LocalBackend();
+  const sb = supabase();
+  return sb ? new SupabaseBackend(sb) : new LocalBackend();
 }
 
 export async function localUser() {

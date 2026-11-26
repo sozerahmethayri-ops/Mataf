@@ -1,8 +1,10 @@
-import type { PlainLine, PlainLL, PlainPin } from './PlainMap';
+import type { PlainArea, PlainLine, PlainLL, PlainPin } from './PlainMap';
 
 export type OnlineMapProps = {
   pins: PlainPin[];
   lines?: PlainLine[];
+  /** Dolgulu alanlar (çerçevelemeye katılmaz). */
+  areas?: PlainArea[];
   user?: PlainLL | null;
   selectedId?: string;
   onPin?: (id: string) => void;
@@ -13,6 +15,8 @@ export type OnlineMapProps = {
   padding?: { top: number; bottom: number; left: number; right: number };
   /** Değişince harita noktaları + çizgileri kapsayacak şekilde yeniden çerçevelenir. */
   fitKey?: string;
+  /** Verilirse çerçeveleme noktalar yerine bunlara göre yapılır. */
+  fitTo?: PlainLL[];
   /** Çerçevelemeye kullanıcının konumunu da kat. */
   fitUser?: boolean;
   /** Verilirse 2D/3D dışarıdan yönetilir; yoksa haritanın kendi düğmesi kullanılır. */

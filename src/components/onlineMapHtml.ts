@@ -82,10 +82,12 @@ function init(){
         paint:{'fill-extrusion-color':CFG.building,'fill-extrusion-height':['coalesce',['get','render_height'],6],
           'fill-extrusion-base':['coalesce',['get','render_min_height'],0],'fill-extrusion-opacity':0.85}});
     }
+    map.addSource('areas',{type:'geojson',data:fc([])});
     map.addSource('lines',{type:'geojson',data:fc([])});
     map.addSource('pins',{type:'geojson',data:fc([])});
     map.addSource('user',{type:'geojson',data:fc([])});
     var lay={'line-cap':'round','line-join':'round'};
+    map.addLayer({id:'areas',type:'fill',source:'areas',paint:{'fill-color':['get','c'],'fill-opacity':['get','o']}});
     map.addLayer({id:'lines-case',type:'line',source:'lines',filter:['!',['get','d']],layout:lay,paint:{'line-color':'#ffffff','line-width':['+',['get','w'],3],'line-opacity':0.85}});
     map.addLayer({id:'lines',type:'line',source:'lines',filter:['!',['get','d']],layout:lay,paint:{'line-color':['get','c'],'line-width':['get','w']}});
     map.addLayer({id:'lines-dash',type:'line',source:'lines',filter:['get','d'],layout:lay,paint:{'line-color':['get','c'],'line-width':['get','w'],'line-dasharray':[0.1,2]}});
@@ -124,7 +126,10 @@ function init(){
 }
 function apply(st,first){
   state=st;if(!ready)return;
-  map.getSource('lines').setData(fc((st.lines||[]).filter(function(l){return l.coords.length>1}).map(function(l){
+  var rings=(st.areas||[]).filter(function(a){return a.coords.length>2}).map(function(a){var r=a.coords.map(function(p){return[p.lng,p.lat]});r.push(r[0]);return{a:a,r:r}});
+  map.getSource('areas').setData(fc(rings.map(function(x){return{type:'Feature',properties:{c:x.a.color,o:x.a.opacity==null?0.15:x.a.opacity},geometry:{type:'Polygon',coordinates:[x.r]}}})));
+  var outl=rings.filter(function(x){return x.a.outline!==false}).map(function(x){return{coords:x.r.map(function(q){return{lng:q[0],lat:q[1]}}),color:x.a.color,width:2,dashed:!!x.a.dashed}});
+  map.getSource('lines').setData(fc((st.lines||[]).concat(outl).filter(function(l){return l.coords.length>1}).map(function(l){
     return{type:'Feature',properties:{c:l.color,w:l.width||5,d:!!l.dashed},geometry:{type:'LineString',coordinates:l.coords.map(function(p){return[p.lng,p.lat]})}}})));
   map.getSource('pins').setData(fc((st.pins||[]).map(function(p){
     var pr={id:p.id,c:p.color,b:!!p.big,s:p.id===st.selectedId};if(p.label)pr.l=p.label;
@@ -136,8 +141,9 @@ function apply(st,first){
 }
 function fit(st,anim){
   var pts=[];
+  if(st.fitTo&&st.fitTo.length){st.fitTo.forEach(function(p){pts.push([p.lng,p.lat])})}else{
   (st.pins||[]).forEach(function(p){pts.push([p.lng,p.lat])});
-  (st.lines||[]).forEach(function(l){l.coords.forEach(function(p){pts.push([p.lng,p.lat])})});
+  (st.lines||[]).forEach(function(l){l.coords.forEach(function(p){pts.push([p.lng,p.lat])})});}
   if(st.fitUser&&st.user)pts.push([st.user.lng,st.user.lat]);
   if(!pts.length&&st.user)pts.push([st.user.lng,st.user.lat]);
   if(!pts.length&&st.center)pts.push([st.center.lng,st.center.lat]);

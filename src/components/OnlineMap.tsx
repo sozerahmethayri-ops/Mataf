@@ -22,7 +22,7 @@ type WebViewHandle = { injectJavaScript: (js: string) => void };
 const WebView = RNWebView as unknown as ComponentType<WebViewProps & { ref?: Ref<WebViewHandle> }>;
 
 export function OnlineMap(props: OnlineMapProps) {
-  const { pins, lines = [], user, selectedId, onPin, onLongPress, center, padding, fitUser, controls = true } = props;
+  const { pins, lines = [], areas = [], fitTo, user, selectedId, onPin, onLongPress, center, padding, fitUser, controls = true } = props;
   const { dark, prefs } = useTheme();
   const ref = useRef<WebViewHandle>(null);
   const [ready, setReady] = useState(false);
@@ -45,7 +45,7 @@ export function OnlineMap(props: OnlineMapProps) {
   // Kullanıcı haritayı kaydırmışken her konum değişiminde yeniden çerçevelenmesin: yalnız noktalar/çizgiler değişince
   const autoKey = `${pins.length}:${pins[0]?.id ?? ''}:${pins[pins.length - 1]?.id ?? ''}:${lines.map((l) => `${l.coords.length}`).join(',')}`;
   const state = JSON.stringify({
-    pins, lines, user: user ?? null, selectedId, center, padding, fitUser, threeD,
+    pins, lines, areas, fitTo, user: user ?? null, selectedId, center, padding, fitUser, threeD,
     fitKey: props.fitKey ?? autoKey,
     recenter: (props.recenterKey ?? 0) * 1000 + recenter,
   });
@@ -126,7 +126,7 @@ export function OnlineMap(props: OnlineMapProps) {
   if (failed) {
     return (
       <View style={{ flex: 1 }}>
-        <PlainMap pins={pins} lines={lines} user={user} selectedId={selectedId} onPin={onPin} onLongPress={onLongPress} center={center} />
+        <PlainMap pins={pins} lines={lines} areas={areas} user={user} selectedId={selectedId} onPin={onPin} onLongPress={onLongPress} center={center} />
         <Pressable onPress={() => { setFailed(false); setReady(false); setSlow(false); setAttempt((n) => n + 1); }} accessibilityRole="button"
           style={[{ position: 'absolute', top: (padding?.top ?? 0) + 10, alignSelf: 'center', flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 12, height: 32, borderRadius: 16, backgroundColor: C.bg }, shadow]}>
           <Icon name="refresh" size={14} color={C.accent} />
@@ -163,7 +163,7 @@ export function OnlineMap(props: OnlineMapProps) {
       {!ready && !slow && <ActivityIndicator style={{ position: 'absolute', top: '45%', alignSelf: 'center' }} color={C.accent} />}
       {!ready && slow && (
         <View style={{ position: 'absolute', left: 0, right: 0, top: 0, bottom: 0 }}>
-          <PlainMap pins={pins} lines={lines} user={user} selectedId={selectedId} onPin={onPin} onLongPress={onLongPress} center={center} />
+          <PlainMap pins={pins} lines={lines} areas={areas} user={user} selectedId={selectedId} onPin={onPin} onLongPress={onLongPress} center={center} />
           <View style={[{ position: 'absolute', top: (padding?.top ?? 0) + 10, alignSelf: 'center', flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 12, height: 30, borderRadius: 15, backgroundColor: C.bg }, shadow]}>
             <ActivityIndicator size="small" color={C.accent} />
             <Text style={{ fontSize: fs(12), fontWeight: '700', color: C.ink }}>Harita yükleniyor…</Text>

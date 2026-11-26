@@ -2,6 +2,11 @@
 
 Mekke ve Medine'deki ziyaretçiler için iOS ve Android uygulaması:
 
+- **Hac modu (0.9.0)** — gün gün hac rehberi (Terviye, Arafat, Müzdelife, bayramın 1. günü, ziyaret tavafı, üç cemre, veda), hac türüne göre (temettu, kıran, ifrad) adımlar; her adımda yapılacaklar, dualar, sık hatalar, cezası ve dayanağı (Diyanet Hac İlmihali, Hanefî; diğer mezhepler yerinde belirtildi). Hac günlerinin tarihleri Ümmü’l-Kurâ takviminden; hac günlerinde ana sayfada o günün kartı.
+- **Şeytan taşlama sayacı (0.9.0)** — bayram günü seçimi, Mina için hesaplanan Hanefî atış vakti (1. gün imsaktan, 2.–3. gün öğleden; 4. gün Ebû Hanîfe’ye göre öğleden önce de), cemre cemre 7 taş, sıra uyarısı, küçük ve orta cemreden sonra dua hatırlatması, vekâlet için ayrı sayaç, toplam 49/70.
+- **Hac yerleri haritası (0.9.0)** — Arafat, Mina, Müzdelife, cemreler, Nemire Mescidi, Cebel-i Rahme, Meş’ar-i Harâm, Hayf Mescidi, Meşâir treni istasyonları, hastaneler ve Harem sınırı (OpenStreetMap). Konumla “Arafat / Mina / Harem sınırı içinde misiniz?” denetimi; sınıra yakınken kesin söylemez, tabelalara yönlendirir.
+- **Tek harita, katmanlar (0.9.0)** — ana haritanın gerçek (2D) görünümünde otelim, camiler, hastane ve eczaneler, hac yerleri ve Harem sınırı katmanları.
+- **Aile ve grup konumu (0.9.0)** — davet koduyla grup; üyeler haritada ve listede (ne kadar önce, ne kadar uzakta), seçilen üyeye yürüyüş rotası. Konum yalnız gruptakilere görünür, geçmiş tutulmaz. Sunucu (Supabase, `docs/SUPABASE.md`) bağlanana kadar yalnız önizleme.
 - **Ana ekran küçük uygulaması (0.8.0, Android)** — telefonun ana ekranında bugünün altı vakti ve sıradaki namaz; dokununca uygulama açılır. 30 günlük vakit yazılır, Android en geç 30 dakikada bir yeniler, uygulama açılmasa da gün ve sıradaki vakit ilerler. Vakitler ekranında ve Ayarlar'da "Ana ekrana vakit kutusu ekle" satırı (başlatıcı onay penceresi açar).
 - **Çevrimdışı paket (0.8.0)** — internet yokken de çalışsın diye: Mekke (Mina, Müzdelife, Arafat dahil) ve Medine haritaları (vektör karolar, yazı tipleri, simgeler, çizim kütüphanesi), Kur'an metni ve mealler, dua ayetlerinin sesleri. Ayarlar → Çevrimdışı paket; indirilen parça silinebilir.
 - **Kaza namazı ve oruç takibi (0.8.0)** — borç hesaplayıcı (yıl/ay/gün ya da doğrudan sayı), vakit vakit "kıldım" sayacı (vitir isteğe bağlı), günlük hedef ve bitiş tahmini, haftalık grafik.
@@ -35,7 +40,7 @@ Mekke ve Medine'deki ziyaretçiler için iOS ve Android uygulaması:
 - **Ravza rehberi** — ziyaret saatleri, Nusuk izni, resmî 360° sanal tur bağlantısı.
 - **Türkçe, İngilizce, Arapça** (Arapça sağdan sola).
 
-> Durum: **0.8.0 — geliştirme sürümü.** Bina biçimleri ve kapı yerleri OpenStreetMap'ten gelir (doğruluğu bu veri kadardır); mescit içi hizmet noktaları örnektir. Ayrıntı: [docs/VERI-KAYNAKLARI.md](docs/VERI-KAYNAKLARI.md), [scripts/osm-3d.md](scripts/osm-3d.md).
+> Durum: **0.9.0 — geliştirme sürümü.** Bina biçimleri ve kapı yerleri OpenStreetMap'ten gelir (doğruluğu bu veri kadardır); mescit içi hizmet noktaları örnektir. Ayrıntı: [docs/VERI-KAYNAKLARI.md](docs/VERI-KAYNAKLARI.md), [scripts/osm-3d.md](scripts/osm-3d.md).
 
 ## Hızlı başlangıç
 

@@ -10,10 +10,13 @@ import { niceScale } from '@/scene/layout';
 export type PlainLL = { lat: number; lng: number };
 export type PlainPin = PlainLL & { id: string; color: string; label?: string; big?: boolean };
 export type PlainLine = { coords: PlainLL[]; color: string; dashed?: boolean; width?: number };
+/** Dolgulu alan (ör. Arafat sınırı). Çerçevelemeye katılmaz. */
+export type PlainArea = { coords: PlainLL[]; color: string; opacity?: number; outline?: boolean; dashed?: boolean };
 
 type Props = {
   pins: PlainPin[];
   lines?: PlainLine[];
+  areas?: PlainArea[];
   user?: PlainLL | null;
   selectedId?: string;
   onPin?: (id: string) => void;
@@ -24,7 +27,7 @@ type Props = {
 
 const M = 111320;
 
-export function PlainMap({ pins, lines = [], user, selectedId, onPin, onLongPress, center }: Props) {
+export function PlainMap({ pins, lines = [], areas = [], user, selectedId, onPin, onLongPress, center }: Props) {
   const [box, setBox] = useState({ w: 0, h: 0 });
   const onLayout = (e: LayoutChangeEvent) => setBox({ w: e.nativeEvent.layout.width, h: e.nativeEvent.layout.height });
   const all: PlainLL[] = [...pins, ...lines.flatMap((l) => l.coords), ...(user ? [user] : [])];
@@ -62,6 +65,10 @@ export function PlainMap({ pins, lines = [], user, selectedId, onPin, onLongPres
         <Pressable style={{ flex: 1 }} onLongPress={onLongPress ? onLong : undefined} delayLongPress={450}>
           <Svg width={box.w} height={box.h}>
             <Path d={grid.join(' ')} stroke={C.border} strokeWidth={1} opacity={0.7} />
+            {areas.map((a, i) => a.coords.length > 2 && (
+              <Path key={`a${i}`} d={a.coords.map((p, j) => { const [x, y] = S(p); return `${j ? 'L' : 'M'}${x.toFixed(1)} ${y.toFixed(1)}`; }).join(' ') + 'Z'}
+                fill={a.color} fillOpacity={a.opacity ?? 0.15} stroke={a.outline === false ? 'none' : a.color} strokeWidth={2} strokeDasharray={a.dashed ? '2 6' : undefined} />
+            ))}
             {lines.map((l, i) => l.coords.length > 1 && (
               <Path key={i} d={l.coords.map((p, j) => { const [a, b] = S(p); return `${j ? 'L' : 'M'}${a.toFixed(1)} ${b.toFixed(1)}`; }).join(' ')}
                 stroke={l.color} strokeWidth={l.width ?? 5} strokeLinecap="round" strokeLinejoin="round" strokeDasharray={l.dashed ? '2 8' : undefined} fill="none" />
