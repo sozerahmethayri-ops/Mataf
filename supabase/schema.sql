@@ -1,5 +1,5 @@
 -- MATAF canlı bildirim sunucusu (Supabase / PostgreSQL)
--- Supabase SQL Editor'da çalıştırın. Ardından Authentication > Anonymous sign-ins'i açın.
+-- Supabase SQL Editor'da çalıştırın. Ardından Authentication > Sign In / Providers > "Allow anonymous sign-ins"'i açın.
 
 create table if not exists public.reports (
   id          uuid primary key default gen_random_uuid(),
@@ -21,6 +21,12 @@ create table if not exists public.reports (
 create index if not exists reports_gate_time on public.reports (gate_id, created_at desc);
 
 alter table public.reports enable row level security;
+
+-- Açık yetkiler: 30 Mayıs 2026'dan sonra açılan Supabase projelerinde yeni tablolar Data API'ye kendiliğinden
+-- açılmaz ("Automatically expose new tables" kapalı); eski projelerde bu satırlar zararsızdır. Satırları RLS süzer.
+grant usage on schema public to anon, authenticated;
+grant select on public.reports to anon, authenticated;
+grant insert on public.reports to authenticated;
 
 -- Herkes son 24 saatin bildirimlerini okuyabilir
 create policy "reports read" on public.reports
@@ -108,6 +114,9 @@ create policy "members update own" on public.group_members
 -- Satırın grubu ve sahibi değiştirilemez: yalnız bu sütunlar güncellenebilir
 revoke update on public.group_members from anon, authenticated;
 grant update (name, color, sharing, lat, lng, accuracy, updated_at) on public.group_members to authenticated;
+-- Okuma ve çıkma (satırları RLS süzer); doğrudan ekleme yetkisi yok, üyelik yalnız işlevlerle
+grant select on public.groups to authenticated;
+grant select, delete on public.group_members to authenticated;
 
 drop policy if exists "members leave" on public.group_members;
 create policy "members leave" on public.group_members

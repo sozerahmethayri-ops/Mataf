@@ -35,6 +35,7 @@ const HOMES: { id: HomeId; l: { tr: string; en: string; ar: string } }[] = [
 ];
 
 const L = {
+  backendNote: { tr: 'Sunucu bağlı değil: kapı bildirimleri ve aile/grup konumu yalnız bu cihazda önizleme olarak çalışır.', en: 'No server connected: gate reports and family/group location run only as a preview on this device.', ar: 'لا يوجد خادم متصل: بلاغات الأبواب وموقع العائلة/المجموعة تعمل كمعاينة على هذا الجهاز فقط.' },
   look: { tr: 'Görünüm', en: 'Appearance', ar: 'المظهر' },
   light: { tr: 'Açık', en: 'Light', ar: 'فاتح' },
   dark: { tr: 'Koyu', en: 'Dark', ar: 'داكن' },
@@ -180,7 +181,7 @@ export default function Settings() {
       <SectionTitle>{t('settings.backend')}</SectionTitle>
       <Card tint={C.surface}>
         <Text style={T.body}>{backend === 'supabase' ? t('settings.backendRemote') : t('settings.backendLocal')}</Text>
-        <Text style={T.small}>Canlı sunucu için EXPO_PUBLIC_SUPABASE_URL ve EXPO_PUBLIC_SUPABASE_ANON_KEY tanımlayın (README).</Text>
+        {backend !== 'supabase' && <Text style={T.small}>{l('backendNote')}</Text>}
       </Card>
 
       <SectionTitle>{t('settings.about')}</SectionTitle>

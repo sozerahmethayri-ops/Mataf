@@ -1,16 +1,18 @@
-// Ortak Supabase istemcisi (kapı bildirimleri ve aile/grup konumu). EXPO_PUBLIC_SUPABASE_URL ve
-// EXPO_PUBLIC_SUPABASE_ANON_KEY derlemede verilmezse null döner; uygulama yerel/önizleme moduyla çalışır.
+// Ortak Supabase istemcisi (kapı bildirimleri ve aile/grup konumu). EXPO_PUBLIC_SUPABASE_URL ve anahtar derlemede
+// verilmezse null döner; uygulama yerel/önizleme moduyla çalışır. Anahtar: projenin "Publishable key"i
+// (sb_publishable_…). Eski projelerdeki "anon" anahtarı da olur (EXPO_PUBLIC_SUPABASE_ANON_KEY).
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 
 let client: SupabaseClient | null | undefined;
 
-export const SUPABASE_CONFIGURED = !!(process.env.EXPO_PUBLIC_SUPABASE_URL && process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY);
+const KEY = process.env.EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY || process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY;
+export const SUPABASE_CONFIGURED = !!(process.env.EXPO_PUBLIC_SUPABASE_URL && KEY);
 
 export function supabase(): SupabaseClient | null {
   if (client !== undefined) return client;
   const url = process.env.EXPO_PUBLIC_SUPABASE_URL;
-  const key = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY;
+  const key = KEY;
   client = url && key
     ? createClient(url, key, { auth: { storage: AsyncStorage, persistSession: true, autoRefreshToken: true, detectSessionInUrl: false } })
     : null;

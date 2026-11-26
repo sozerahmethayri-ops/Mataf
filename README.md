@@ -82,16 +82,19 @@ Derleme bitince verilen bağlantıdan dosyayı indirip GitHub'da **Releases** b�
 
 Kurulumsuz çalıştırdığınızda kapı bildirimleri **yalnızca o telefonda** tutulur (yerel demo, örnek bildirimlerle). Herkesin bildirimini herkesin görmesi için ücretsiz bir [Supabase](https://supabase.com) projesi açın:
 
+Ayrıntılı adımlar: [`docs/SUPABASE.md`](docs/SUPABASE.md). Kısaca:
+
 1. Supabase'de yeni proje → **SQL Editor** → [`supabase/schema.sql`](supabase/schema.sql) dosyasını çalıştırın.
-2. **Authentication → Providers → Anonymous sign-ins**'i açın.
+2. **Authentication → Sign In / Providers → Allow anonymous sign-ins**'i açın.
 3. Proje kök klasöründe `.env` dosyası oluşturun (örnek: [`.env.example`](.env.example)):
 
 ```
 EXPO_PUBLIC_SUPABASE_URL=https://xxxx.supabase.co
-EXPO_PUBLIC_SUPABASE_ANON_KEY=eyJ...
+EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY=sb_publishable_...
 ```
 
 4. `npx expo start` ile yeniden başlatın. Ayarlar ekranında "Canlı sunucu (Supabase)" yazmalı.
+   GitHub derlemeleri için aynı iki değer `SUPABASE_URL` ve `SUPABASE_PUBLISHABLE_KEY` gizli değerleri olarak girilir.
 
 ## Ulaşım ve toplu taşıma
 

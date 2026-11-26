@@ -1,6 +1,6 @@
 // Kapı bildirimleri ve yorumlar. İki arka uç:
 //  - Yerel demo (AsyncStorage + örnek bildirimler) — kurulum gerektirmez.
-//  - Supabase (gerçek zamanlı, çok kullanıcılı) — EXPO_PUBLIC_SUPABASE_URL ve _ANON_KEY tanımlıysa.
+//  - Supabase (gerçek zamanlı, çok kullanıcılı) — EXPO_PUBLIC_SUPABASE_URL ve anahtar tanımlıysa (services/supabase.ts).
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { supabase } from './supabase';
