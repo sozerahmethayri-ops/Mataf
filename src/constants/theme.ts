@@ -5,43 +5,45 @@
 export type ThemeMode = 'light' | 'dark' | 'system';
 export type PaletteId = 'kabe' | 'zumrut' | 'gece' | 'altin' | 'gul';
 
+// Sıcak tonlar: krem zemin, kum rengi yüzeyler, kahveye çalan koyu yazı
 const LIGHT = {
-  bg: '#FFFFFF',
-  surface: '#F5F5F3',
-  border: '#ECEAE6',
-  borderStrong: '#E2E0DC',
-  ink: '#17181C',
-  ink2: '#2E3036',
-  muted: '#5E636E',
+  bg: '#FBF7F1',
+  surface: '#F3EBDF',
+  border: '#E9DFD1',
+  borderStrong: '#DCCFBE',
+  ink: '#2A2018',
+  ink2: '#4A3D33',
+  muted: '#6F5D4C',
   onInk: '#FFFFFF', // koyu (ink) zemin üstündeki yazı
-  overlay: 'rgba(255,255,255,0.94)', // harita etiketleri
+  overlay: 'rgba(251,247,241,0.94)', // harita etiketleri
   closed: '#B42318',
-  closedTint: '#FEECEB',
+  closedTint: '#FCE9E6',
   limited: '#92400E',
   limitedFill: '#F5A524',
-  limitedTint: '#FEF3C7',
+  limitedTint: '#FBEFD0',
   open: '#0F766E',
-  openTint: '#E6F4F1',
+  openTint: '#E4F2EE',
   user: '#2563EB',
-  userTint: '#EEF3FE',
-  green: '#277F4C',
+  userTint: '#EAF0FC',
+  green: '#26754A',
   greenDark: '#1E5A38',
-  greenTint: '#EEF7F1',
+  greenTint: '#E9F3EA',
   gold: '#C9A227',
   mapGround: '#EFECE6',
 };
 type Base = typeof LIGHT;
 
+// Koyu tema da sıcak: kahveye çalan gece tonları
 const DARK: Base = {
-  bg: '#121316',
-  surface: '#1D1F23',
-  border: '#2A2D33',
-  borderStrong: '#3A3E45',
-  ink: '#F1F1EF',
-  ink2: '#D6D8DD',
-  muted: '#A0A6B1',
-  onInk: '#121316',
-  overlay: 'rgba(29,31,35,0.94)',
+  bg: '#17120E',
+  surface: '#231C16',
+  border: '#30271F',
+  borderStrong: '#40352B',
+  ink: '#F6EFE7',
+  ink2: '#E2D7CA',
+  muted: '#B3A393',
+  onInk: '#17120E',
+  overlay: 'rgba(35,28,22,0.94)',
   closed: '#FF8A80',
   closedTint: '#3A1715',
   limited: '#F7C55A',
@@ -53,7 +55,7 @@ const DARK: Base = {
   userTint: '#16233F',
   green: '#2A8550',
   greenDark: '#1E5A38',
-  greenTint: '#13281C',
+  greenTint: '#14261A',
   gold: '#D9B440',
   mapGround: '#1B1D21',
 };
@@ -61,9 +63,9 @@ const DARK: Base = {
 type Accent = { route: string; accent: string; onAccent: string; accentTint: string; accentSoft: string };
 export const PALETTES: Record<PaletteId, { name: { tr: string; en: string; ar: string }; light: Accent; dark: Accent }> = {
   kabe: {
-    name: { tr: 'Turuncu (varsayılan)', en: 'Orange (default)', ar: 'برتقالي (افتراضي)' },
-    light: { route: '#F26A1B', accent: '#C2410C', onAccent: '#FFFFFF', accentTint: '#FFF1E8', accentSoft: '#FFF6F0' },
-    dark: { route: '#F68A47', accent: '#F7934F', onAccent: '#1F0F05', accentTint: '#3A2214', accentSoft: '#29190F' },
+    name: { tr: 'Kiremit (varsayılan)', en: 'Terracotta (default)', ar: 'طوبي (افتراضي)' },
+    light: { route: '#F26A1B', accent: '#B4420F', onAccent: '#FFFFFF', accentTint: '#FBE4D3', accentSoft: '#FDF0E5' },
+    dark: { route: '#F68A47', accent: '#F7934F', onAccent: '#1F0F05', accentTint: '#3A2214', accentSoft: '#2B1B11' },
   },
   zumrut: {
     name: { tr: 'Zümrüt', en: 'Emerald', ar: 'زمردي' },
@@ -95,7 +97,7 @@ export const R = { sm: 10, md: 14, lg: 18, xl: 24, pill: 999 } as const;
 export const S = { xs: 4, sm: 8, md: 12, lg: 16, xl: 20, xxl: 24 } as const;
 
 export const shadow = {
-  shadowColor: '#17181C',
+  shadowColor: '#4A3424',
   shadowOpacity: 0.12,
   shadowRadius: 10,
   shadowOffset: { width: 0, height: 3 },
@@ -131,7 +133,7 @@ export function colorsFor(dark: boolean, palette: PaletteId): Colors {
 export function applyTheme(dark: boolean, palette: PaletteId) {
   Object.assign(C, colorsFor(dark, palette));
   darkNow = dark;
-  shadow.shadowColor = dark ? '#000000' : '#17181C';
+  shadow.shadowColor = dark ? '#000000' : '#4A3424';
   shadow.shadowOpacity = dark ? 0.45 : 0.12;
   for (const fn of listeners) fn();
 }

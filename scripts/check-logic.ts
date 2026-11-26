@@ -16,7 +16,7 @@ import { MEMBER_COLORS, colorFor, freshness, inviteText, isValidCode, makeCode, 
 import { AREFE_DUA, CEMRE_TEKBIR, HAC_STEPS, MESAR_AYAH, TESRIK_TEKBIR } from '../src/data/hac';
 import { CEMRE_IDS, arafatCheck, dayThrown, eidDayAt, emptyCount, hajjCalendar, hajjPhase, hajjSoon, haramCheck, insidePoly, pebblesTotal, throwPebble, throwWindow, undoPebble, windowState, type ThrowResult } from '../src/services/hac';
 import { CalculationMethod, Coordinates, PrayerTimes } from 'adhan';
-import { DEFAULT_NOTIF, notifText, planNotifications } from '../src/services/adhanPlan';
+import { DEFAULT_NOTIF, isTesrik, notifText, planExtras, planNotifications } from '../src/services/adhanPlan';
 import type { PrayerKey } from '../src/services/prayer';
 import { Cam } from '../src/scene/oblique';
 import { buildModel, convexPieces, decodeOsm3d, drawModel, findTowers, mergePrims, signedArea } from '../src/scene/osm3d';
@@ -33,7 +33,7 @@ import { newer } from '../src/services/version';
 import { guessKind, shareLink } from '../src/services/myPlaces';
 import { HHR_STATIONS } from '../src/data/train';
 import { nextPrayer, times as prayerTimes } from '../src/services/prayer';
-import { isTesrik, planExtras } from '../src/services/adhanPlan';
+import { bodyPos, horizonGlow, sceneKind, scenePalette, textZone } from '../src/services/skyScene';
 import { nextSpecial } from '../src/services/hijri';
 import { SKIP, parseBackup } from '../src/services/backupFormat';
 import { AREAS, GLYPH_RANGES, fontStacks, lat2tile, lon2tile, resolveMataf, rewriteStyle, spriteRoot, tilesFor } from '../src/services/offlineMath';
@@ -760,6 +760,33 @@ ok(shareLink({ lat: 21.4225, lng: 39.8262 }) === 'https://maps.google.com/?q=21.
   const ar = at(21.3549, 39.9841, new Date(2027, 4, 15, 12));
   ok(arafat.at.getTime() === ar.dhuhr.getTime(), 'hac: Arafat vakfesi bildirimi Arafat’ta öğle vaktinde');
   ok(planExtras({ now: new Date(2027, 4, 13, 9), days: 7, lang: 'tr', special: false, hajj: false, timesFor: tf, timesAt: at }).length === 0, 'hatırlatmalar kapalıyken bildirim yok');
+}
+
+// ── Resimli gökyüzü sahnesi ──
+{
+  const hex = /^#[0-9a-f]{6}$/i;
+  const keys = ['skyTop', 'skyMid', 'skyLow', 'glow', 'sun', 'far', 'far2', 'wall', 'shade', 'ground', 'cloud', 'cloudShade'] as const;
+  let badHex = 0, badText = 0, jump = 0, prev: ReturnType<typeof scenePalette> | null = null;
+  const ch = (a: string, b: string) => Math.max(...[1, 3, 5].map((i) => Math.abs(parseInt(a.slice(i, i + 2), 16) - parseInt(b.slice(i, i + 2), 16))));
+  for (const morning of [true, false]) {
+    prev = null;
+    for (let alt = -40; alt <= 90; alt += 0.5) {
+      const p = scenePalette(alt, morning);
+      if (keys.some((k) => !hex.test(p[k]))) badHex++;
+      if (contrast(p.text, textZone(p)) < 3) badText++;
+      if (prev && keys.some((k) => ch(p[k], prev![k]) > 14)) jump++;
+      prev = p;
+    }
+  }
+  ok(!badHex, `sahne: her yükseklikte geçerli renkler (${badHex} hata)`);
+  ok(!badText, `sahne: üstteki çiplerin yazısı gökyüzü üstünde okunur, kontrast ≥ 3 (${badText} hata)`);
+  ok(!jump, `sahne: renkler yarım derecede sıçramıyor, akıcı geçiş (${jump} sıçrama)`);
+  const n = scenePalette(-30, true), d = scenePalette(40, false);
+  ok(n.stars === 1 && n.lights === 1 && d.stars === 0 && d.lights === 0, 'sahne: gece yıldızlar ve ışıklar yanar, gündüz söner');
+  const e = bodyPos(0, 90), w = bodyPos(0, 270), s = bodyPos(45, 180), z = bodyPos(90, 30);
+  ok(e.x < 0.1 && w.x > 0.9 && Math.abs(s.x - 0.5) < 1e-9 && Math.abs(z.x - 0.5) < 1e-6 && Math.abs(z.h - 1) < 1e-9 && Math.abs(e.h) < 1e-9, 'sahne: doğu solda, batı sağda, güney ortada, tepe noktası en üstte');
+  ok(horizonGlow(0) > 0.95 && horizonGlow(30) < 0.01 && horizonGlow(-25) < 0.01, 'sahne: ufuk kızıllığı yalnız güneş ufka yakınken');
+  ok(sceneKind(21.4225, 39.8262) === 'makkah' && sceneKind(21.39, 39.86) === 'makkah' && sceneKind(21.54, 39.17) === 'mosque' && sceneKind(24.4672, 39.6111) === 'madinah' && sceneKind(41.0369, 28.985) === 'mosque', 'sahne: Mekke, Medine ve başka yer ayrımı');
 }
 
 mosqueChecks().then(transitChecks).then(() => process.exit(fails ? 1 : 0));

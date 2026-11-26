@@ -1,4 +1,4 @@
-// Namaz vakitleri (tam ekran): gökyüzü yayı (güneş ve ayın yeri), sonraki vakit, günün vakitleri, güneş/ay/konum
+// Namaz vakitleri (tam ekran): resimli gökyüzü (güneş ve ayın yeri), sonraki vakit, günün vakitleri, güneş/ay/konum
 // ayrıntısı, 7 günlük çizelge, yaklaşan mübarek günler ve ilgili ayarlar.
 import { router } from 'expo-router';
 import { useEffect, useMemo, useState } from 'react';
@@ -6,7 +6,7 @@ import { Text, View } from 'react-native';
 import { getTimes } from 'suncalc';
 
 import { Icon, type IconName } from '@/components/Icon';
-import { SkyArc } from '@/components/SkyArc';
+import { SkyScene } from '@/components/SkyScene';
 import { TesrikNote, tesrikActive } from '@/components/TesrikNote';
 import { WidgetPinRow } from '@/components/WidgetPinRow';
 import { Header, ListRow, Screen, SectionTitle, Segmented, T } from '@/components/ui';
@@ -16,6 +16,7 @@ import { HIJRI_MONTHS, hijriText, specialOn, toHijri } from '@/services/hijri';
 import { METHODS, PRAYERS, fmtTime, nextPrayer, times, type PrayerKey } from '@/services/prayer';
 import { altitudeText, directionText, moonPhaseName, skyNow } from '@/services/sky';
 import { usePrayerPlace, type PlaceId } from '@/services/prayerPlace';
+import { sceneKind } from '@/services/skyScene';
 import { usePrayerWidgetSync } from '@/services/widgetSync';
 import { Countdown, pct } from './HomePrayer';
 
@@ -98,7 +99,8 @@ export default function PrayerTimes({ back = false }: { back?: boolean }) {
       ]} />
 
       {/* Gökyüzü ve sonraki vakit */}
-      <SkyArc now={now} lat={loc.lat} lng={loc.lng} tz={loc.tz} method={method} nextKey={nx.key} nextAt={nx.at} names={names} lang={lg} height={184} />
+      <SkyScene now={now} lat={loc.lat} lng={loc.lng} kind={sceneKind(loc.lat, loc.lng)} height={196} style={{ borderRadius: 24 }}
+        label={`${altitudeText(sky.sun.alt, lg)}, ${directionText(sky.sun.az, lg)}. ${moonPhaseName(sky.moon.phase, lg)}`} />
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 12, paddingHorizontal: 16, borderRadius: 18, backgroundColor: C.accentSoft, borderWidth: 1, borderColor: C.accentTint }}>
         <View style={{ flex: 1, gap: 2 }}>
           <Text style={{ fontSize: fs(11.5), fontWeight: '700', color: C.accent, textTransform: 'uppercase', letterSpacing: 0.7 }}>{t('times.next')}</Text>
