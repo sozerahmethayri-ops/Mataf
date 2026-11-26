@@ -61,7 +61,8 @@
 | Güneş ve ayın konumu, ay evresi | Resimli gökyüzü sahnesi, Vakitler ayrıntısı | suncalc 2 (V. Agafonkin, BSD-2), telefonda hesap |
 | Haremeyn treni (`src/data/train.ts`) | İstasyon yerleri; yaklaşık süreler | © OpenStreetMap katkıcıları, ODbL (26 Kasım 2026); süreler Suudi Basın Ajansı haberleri (Mayıs 2026); bilet ve sefer: sar.hhr.sa |
 | İstanbul raylı sistem (`src/data/istanbulRail.json`) | M1A–M11, T1–T6, Marmaray (B1), B2, füniküler hatları ve istasyonları; çevrimdışı tarif | © OpenStreetMap katkıcıları, ODbL (26 Kasım 2026; `scripts/ist_rail.py`). Sefer saati yok: süreler ortalama hız ve bekleme süresinden yaklaşık |
-| Otobüs ve diğer şehirlerin toplu taşıması | Ulaşım → Toplu taşıma | Transitous (MOTIS, açık GTFS); koşul: açık kaynak (MIT) ve ticari olmayan kullanım, User-Agent'ta depo adresi, kaynak listesine bağlantı. Türkiye: İETT otobüsleri, Ankara, İzmir, Konya ve başka şehirler, TCDD; Suudi Arabistan için veri yok |
+| Mekke otobüsleri (`src/data/makkahBus.json`) | Makkah Bus (حافلات مكة) 12 hat (1–12, 7A), 392 durak, Arapça ve İngilizce adlar; çevrimdışı tarif | © OpenStreetMap katkıcıları, ODbL (26 Kasım 2026; `scripts/makkah_bus.py`). Sefer saati yok: durakta bekleme 5–7 dk (Saudipedia), ortalama 20 km/sa varsayılır. Canlı varış saatleri Makkah Bus uygulamasında |
+| Otobüs ve diğer şehirlerin toplu taşıması | Ulaşım → Toplu taşıma | Transitous (MOTIS, açık GTFS); koşul: açık kaynak (MIT) ve ticari olmayan kullanım, User-Agent'ta depo adresi, kaynak listesine bağlantı. Türkiye: İETT otobüsleri, Ankara, İzmir, Konya ve başka şehirler, TCDD; Suudi Arabistan için veri yok (Mekke ve Medine çevresinde istek gönderilmez) |
 | Hac günlerinin tarihi | Ümmü’l-Kurâ takvimi (cihazda, Intl) | Suudi Arabistan’ın ilanıyla bir gün kayabilir |
 | Supabase (isteğe bağlı) | Canlı kapı bildirimleri ve aile/grup konumu | Kendi projeniz (`docs/SUPABASE.md`); konum geçmişi tutulmaz |
 

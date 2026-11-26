@@ -1,11 +1,13 @@
-// Çevrimdışı raylı sistem tarifi (şimdilik İstanbul): metro, tramvay, Marmaray ve füniküler.
-// Veri: src/data/istanbulRail.json (OpenStreetMap, scripts/ist_rail.py). Sefer saati yok; süreler ortalama
+// Çevrimdışı toplu taşıma tarifi: İstanbul raylı sistem (metro, tramvay, Marmaray, füniküler) ve Mekke
+// otobüsleri (Makkah Bus). Veri: src/data/istanbulRail.json, src/data/makkahBus.json (OpenStreetMap,
+// scripts/ist_rail.py, scripts/makkah_bus.py). Sefer saati yok; süreler ortalama
 // hız ve bekleme süresinden yaklaşık hesaplanır. Yöntem RAPTOR benzeri tur taraması: her turda bir binişe
 // daha izin verilir, istasyonlar arası yürüyerek aktarma yapılabilir. Saf TypeScript, testlerde de çalışır.
 import type { Itinerary, LatLng, LegKind, TransitLeg } from './transport';
 
-type Mode = 'metro' | 'tram' | 'train' | 'funicular';
-export type RailData = { v: number; src: string; s: [string, number, number][]; l: { r: string; m: Mode; c: string; p: number[][] }[] };
+type Mode = 'metro' | 'tram' | 'train' | 'funicular' | 'bus';
+/** s: durak [ad, enlem, boylam, İngilizce ad?]; l: hat [ad, tür, renk, desenler (durak sıraları)] */
+export type RailData = { v: number; src: string; s: [string, number, number, string?][]; l: { r: string; m: Mode; c: string; p: number[][] }[] };
 
 // Ortalama hız (km/sa, duraklar dahil değil), ortalama bekleme (dk; sefer aralığının yarısı)
 const MODE: Record<Mode, { kmh: number; wait: number; kind: LegKind }> = {
@@ -13,6 +15,8 @@ const MODE: Record<Mode, { kmh: number; wait: number; kind: LegKind }> = {
   tram: { kmh: 18, wait: 3.5, kind: 'tram' },
   train: { kmh: 48, wait: 5, kind: 'train' },
   funicular: { kmh: 12, wait: 2.5, kind: 'tram' },
+  // Mekke otobüsleri: durakta bekleme 5–7 dk (Saudipedia), şehir içi trafikte ortalama hız
+  bus: { kmh: 20, wait: 6, kind: 'bus' },
 };
 // Hatta özel ortalama hız (km/sa): M11 hızlı metro, Marmaray banliyö treni
 const LINE_KMH: Record<string, number> = { M11: 68, B1: 52, B2: 45, M1A: 34, M1B: 34, T6: 35, F1: 10, F4: 10, F3: 20 };
@@ -20,6 +24,7 @@ const DWELL = 0.5; // durak başına dk
 const WALK_M_PER_MIN = 72; // 1,2 m/sn
 const DETOUR = 1.3; // kuş uçuşu → yürüme yolu
 const ACCESS_M = 2200;
+const LINE_ACCESS_M = 1200; // her desenin en yakın durağı da erişime girer (sık duraklı otobüs ağları)
 const TRANSFER_M = 650;
 const TRANSFER_PENALTY = 2;
 const MAX_RIDES = 4;
@@ -75,17 +80,49 @@ export function nearestStation(net: RailNet, p: LatLng) {
   return { index: best, meters: bd };
 }
 
+const boxes = new WeakMap<RailData, [number, number, number, number]>();
+/** Nokta ağın kapsadığı alanda mı (durakların sınır kutusu, her yönde ~2 km pay)? */
+export function covers(data: RailData, p: LatLng) {
+  let b = boxes.get(data);
+  if (!b) {
+    b = [90, 180, -90, -180];
+    for (const [, lat, lng] of data.s) { b[0] = Math.min(b[0], lat); b[1] = Math.min(b[1], lng); b[2] = Math.max(b[2], lat); b[3] = Math.max(b[3], lng); }
+    boxes.set(data, b);
+  }
+  const pad = 0.02;
+  return p.lat > b[0] - pad && p.lat < b[2] + pad && p.lng > b[1] - pad && p.lng < b[3] + pad;
+}
+
+/** Durak adı dile göre: Arapça dışında İngilizce adı varsa o (Mekke durakları iki dilli). */
+const stopName = (net: RailNet, i: number, lang: string) => {
+  const s = net.data.s[i];
+  return lang !== 'ar' && s[3] ? s[3] : s[0];
+};
+
+/** Erişim/varış durakları: en yakın 12 durak ve her desenin (hat yönünün) en yakın durağı. */
+function nearStops(net: RailNet, p: LatLng) {
+  const d = net.pos.map((q) => meters(p, q));
+  const pick = new Map<number, number>();
+  d.map((m, i) => ({ i, m })).filter((x) => x.m <= ACCESS_M).sort((a, b) => a.m - b.m).slice(0, 12).forEach((x) => pick.set(x.i, x.m));
+  for (const pat of net.patterns) {
+    let bi = -1, bm = Infinity;
+    for (const s of pat.stops) if (d[s] < bm) { bm = d[s]; bi = s; }
+    if (bi >= 0 && bm <= LINE_ACCESS_M) pick.set(bi, bm);
+  }
+  return [...pick].map(([i, m]) => ({ i, d: m }));
+}
+
 type Ride = { pat: number; from: number; to: number };
 type Foot = { from: number };
 
 export type RailResult = { itineraries: Itinerary[]; walkOnly: number };
 
 /** İki nokta arası raylı sistem tarifleri (en çok 3, en hızlıdan). walkOnly: doğrudan yürüme süresi (dk). */
-export function planRail(net: RailNet, from: LatLng, to: LatLng, now = new Date()): RailResult {
+export function planRail(net: RailNet, from: LatLng, to: LatLng, now = new Date(), lang = 'tr'): RailResult {
   const n = net.pos.length;
   const direct = walkMinutes(meters(from, to));
-  const access = net.pos.map((p, i) => ({ i, d: meters(from, p) })).filter((x) => x.d <= ACCESS_M).sort((a, b) => a.d - b.d).slice(0, 12);
-  const egress = net.pos.map((p, i) => ({ i, d: meters(p, to) })).filter((x) => x.d <= ACCESS_M).sort((a, b) => a.d - b.d).slice(0, 12);
+  const access = nearStops(net, from);
+  const egress = nearStops(net, to);
   if (!access.length || !egress.length) return { itineraries: [], walkOnly: direct };
 
   const arr: number[][] = [new Array(n).fill(Infinity)];
@@ -143,7 +180,7 @@ export function planRail(net: RailNet, from: LatLng, to: LatLng, now = new Date(
   }
   const itins = chosen
     .filter((c) => c.total < direct - 5) // toplu taşıma en az 5 dk kazandırmıyorsa yürümek önerilir
-    .map((c) => build(net, c.k, c.e, from, to, arr, rideP, footP, now))
+    .map((c) => build(net, c.k, c.e, from, to, arr, rideP, footP, now, lang))
     .filter((x): x is Itinerary => !!x)
     .sort((a, b) => a.minutes - b.minutes);
   // En iyisinden çok uzun süren seçenekleri gösterme (aktarmasız ama 40 dk yürümeli gibi)
@@ -152,7 +189,7 @@ export function planRail(net: RailNet, from: LatLng, to: LatLng, now = new Date(
 }
 
 function build(net: RailNet, k: number, e: number, from: LatLng, to: LatLng, arr: number[][],
-  rideP: (Ride | undefined)[][], footP: (Foot | undefined)[][], now: Date): Itinerary | null {
+  rideP: (Ride | undefined)[][], footP: (Foot | undefined)[][], now: Date, lang: string): Itinerary | null {
   type Seg = { kind: 'walk'; a: number | 'from'; b: number | 'to' } | { kind: 'ride'; pat: number; from: number; to: number };
   const segs: Seg[] = [{ kind: 'walk', a: e, b: 'to' }];
   let cur = e;
@@ -173,9 +210,8 @@ function build(net: RailNet, k: number, e: number, from: LatLng, to: LatLng, arr
   }
   segs.unshift({ kind: 'walk', a: 'from', b: cur });
 
-  const names = net.data.s;
   const pt = (x: number | 'from' | 'to') => (x === 'from' ? from : x === 'to' ? to : net.pos[x]);
-  const nm = (x: number | 'from' | 'to') => (x === 'from' || x === 'to' ? '' : names[x][0]);
+  const nm = (x: number | 'from' | 'to') => (x === 'from' || x === 'to' ? '' : stopName(net, x, lang));
   let t = 0;
   const iso = (min: number) => new Date(now.getTime() + min * 60e3).toISOString();
   const legs: TransitLeg[] = [];
@@ -206,8 +242,8 @@ function build(net: RailNet, k: number, e: number, from: LatLng, to: LatLng, arr
       const ride = p.cum[sg.to] - p.cum[sg.from];
       const stops = p.stops.slice(sg.from, sg.to + 1);
       legs.push({
-        kind: md.kind, mode: ln.m.toUpperCase(), line: ln.r, headsign: names[p.stops[p.stops.length - 1]][0],
-        from: { name: names[stops[0]][0], time: iso(t) }, to: { name: names[stops[stops.length - 1]][0], time: iso(t + ride) },
+        kind: md.kind, mode: ln.m.toUpperCase(), line: ln.r, headsign: stopName(net, p.stops[p.stops.length - 1], lang),
+        from: { name: stopName(net, stops[0], lang), time: iso(t) }, to: { name: stopName(net, stops[stops.length - 1], lang), time: iso(t + ride) },
         minutes: Math.max(1, Math.round(ride)), stops: stops.length - 2, color: ln.c, textColor: textOn(ln.c),
         coords: stops.map((s) => net.pos[s]),
       });

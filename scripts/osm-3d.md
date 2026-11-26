@@ -91,3 +91,15 @@ B1 Marmaray, B2 ve T6), durak rolündeki düğümleri sırasıyla istasyona çev
 istasyon olur. Vapur ilişkilerinde durak üyeleri eksik olduğu için vapurlar şimdilik yok. Yeni hat açılınca sorguyu
 yeniden çalıştırın.
 
+## Mekke otobüsleri (src/data/makkahBus.json)
+
+Makkah Bus (حافلات مكة) hatları. Sorgu (osm-fetch iş akışı):
+
+```
+[out:json][timeout:180];relation["type"="route"]["route"="bus"](21.20,39.60,21.60,40.10)->.r;.r out body;node(r.r);out;
+```
+
+Sonra `python3 scripts/makkah_bus.py out.json src/data/makkahBus.json`. Durak (stop) ve bekleme yeri (platform) düğümleri
+aynı adla ve 150 m'den yakınsa tek durak olur; adlar `[Arapça, enlem, boylam, İngilizce]`. Renk yazılmamış hatta aynı
+numaralı öbür yönün rengi kullanılır. Kasım 2026'da OSM'de 7 numaralı hat yoktu (7A var); Medine'de otobüs hattı yok.
+

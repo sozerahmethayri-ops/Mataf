@@ -35,7 +35,8 @@ import { HHR_STATIONS } from '../src/data/train';
 import { nextPrayer, shownDay, times as prayerTimes } from '../src/services/prayer';
 import { bodyPos, horizonGlow, sceneKind, scenePalette, textZone } from '../src/services/skyScene';
 import istanbulRail from '../src/data/istanbulRail.json';
-import { inIstanbul, planRail, railNetwork, textOn, type RailData } from '../src/services/railRouter';
+import makkahBus from '../src/data/makkahBus.json';
+import { covers, inIstanbul, planRail, railNetwork, textOn, type RailData } from '../src/services/railRouter';
 import { alightText, boardText, tidyName, walkText } from '../src/services/transitText';
 import { nextSpecial } from '../src/services/hijri';
 import { SKIP, parseBackup } from '../src/services/backupFormat';
@@ -832,6 +833,32 @@ ok(shareLink({ lat: 21.4225, lng: 39.8262 }) === 'https://maps.google.com/?q=21.
   ok(tidyName('GÜMÜŞSUYU PERON', 'tr') === 'Gümüşsuyu Peron' && tidyName('Bağcılar Meydan', 'tr') === 'Bağcılar Meydan', 'dil: büyük harfli durak adı');
   const marm = { ...m1b!, kind: 'train' as const, line: 'B1' };
   ok(boardText(marm, 'tr').head === 'Marmaray trenine binin', 'dil: Marmaray');
+}
+
+// ── Mekke otobüsleri (Makkah Bus, çevrimdışı) ──
+{
+  const data = makkahBus as unknown as RailData;
+  const refs = data.l.map((l) => l.r);
+  const withEn = data.s.filter((x) => !!x[3]).length;
+  ok(refs.length >= 12 && ['1', '2', '4', '5', '6', '7A', '10', '12'].every((r) => refs.includes(r)) && data.s.length > 300 && withEn / data.s.length > 0.97 && data.l.every((l) => l.m === 'bus'),
+    `otobüs ağı: ${refs.length} hat, ${data.s.length} durak, %${Math.round((withEn / data.s.length) * 100)} İngilizce adlı`);
+  const KAABA = { lat: 21.4225, lng: 39.8262 };
+  const TRAIN = { lat: 21.4164, lng: 39.7896 }; // Haremeyn treni Mekke istasyonu
+  const AISHA = { lat: 21.4676, lng: 39.8007 }; // Ten'im, Ayşe Camii (umre mîkatı)
+  ok(covers(data, KAABA) && covers(data, TRAIN) && !covers(data, { lat: 41.0369, lng: 28.985 }) && !covers(data, { lat: 21.5433, lng: 39.1728 }) && covers(istanbulRail as unknown as RailData, { lat: 41.0369, lng: 28.985 }),
+    'otobüs ağı: kapsama (Mekke içi evet; İstanbul ve Cidde hayır)');
+  const net = railNetwork(data);
+  const now = new Date('2026-11-26T10:00:00Z');
+  const t1 = planRail(net, TRAIN, KAABA, now, 'tr').itineraries[0];
+  const b1 = t1?.legs.filter((g) => g.kind !== 'walk') ?? [];
+  ok(!!t1 && b1.length === 1 && b1[0].line === '7A' && b1[0].kind === 'bus' && t1.minutes < 45 && boardText(b1[0], 'tr').head === '7A otobüsüne binin' && boardText(b1[0], 'tr').dir === 'Al-Shabeka 439 yönü',
+    `otobüs: tren istasyonu → Harem = 7A (${b1[0] ? boardText(b1[0], 'tr').dir : '-'}), ≈${t1?.minutes} dk`);
+  const a1 = planRail(net, TRAIN, KAABA, now, 'ar').itineraries[0]?.legs.find((g) => g.kind === 'bus');
+  ok(!!a1 && a1.headsign === 'الشبيكة 439' && alightText(a1, 'ar') === 'انزل في موقف الشبيكة 439', 'otobüs: Arapça arayüzde durak adları Arapça');
+  const t2 = planRail(net, KAABA, AISHA, now, 'en').itineraries[0];
+  const b2 = t2?.legs.filter((g) => g.kind !== 'walk') ?? [];
+  ok(!!t2 && b2.length === 1 && /Ayesha Mosque/.test(b2[0].to.name) && t2.minutes < 60 && planRail(net, KAABA, AISHA, now).walkOnly > t2.minutes,
+    `otobüs: Harem → Ten'im (Ayşe Camii) tek otobüs (${b2.map((g) => g.line).join(' → ')}, ${b2[0]?.to.name}), ≈${t2?.minutes} dk`);
 }
 
 // ── Küçük uygulama yenileme anları ──

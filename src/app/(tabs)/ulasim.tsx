@@ -14,15 +14,16 @@ import type { MapSeg } from '@/components/TransportMap.types';
 import { Btn, Card, IconBtn, Segmented, T } from '@/components/ui';
 import { C, R, fs } from '@/constants/theme';
 import istanbulRail from '@/data/istanbulRail.json';
+import makkahBus from '@/data/makkahBus.json';
 import { ANCHORS } from '@/data/sites';
 import { pick, useI18n } from '@/i18n';
-import { useLocation } from '@/services/location';
+import { kmTo, useLocation } from '@/services/location';
 import { uaHeaders } from '@/services/cache';
 import {
   fmtMinutes, mapsUrl, meters, osrmUrl, parseOsrm, parsePhoton, photonReverseUrl, photonUrl, placeLine, planTransit, roughRoute,
   shareText, uberUrl, type Itinerary, type LatLng, type LegKind, type Place, type StreetRoute, type Travel,
 } from '@/services/transport';
-import { inIstanbul, planRail, railNetwork, type RailData, type RailNet } from '@/services/railRouter';
+import { covers, planRail, railNetwork, type RailData, type RailNet } from '@/services/railRouter';
 import { alightText, boardText, lineName, minText, stopsText, tidyName, walkText } from '@/services/transitText';
 import { usePersisted } from '@/services/usePersisted';
 
@@ -69,6 +70,7 @@ const L = {
   direct: { tr: 'aktarmasız', en: 'direct', ar: 'مباشر' },
   stops: { tr: 'durak', en: 'stops', ar: 'محطات' },
   sources: { tr: 'Toplu taşıma verisi: Transitous ve açık veri kaynakları', en: 'Transit data: Transitous and open data sources', ar: 'بيانات النقل: Transitous ومصادر البيانات المفتوحة' },
+  busSrc: { tr: 'Mekke otobüs hatları (Makkah Bus): © OpenStreetMap katkıcıları. Süreler yaklaşıktır; canlı varış saatleri Makkah Bus uygulamasında. Bilet uygulamadan ya da duraktaki makineden alınır. Hac ve Ramazan’da güzergâhlar değişebilir.', en: 'Makkah Bus routes: © OpenStreetMap contributors. Times are estimates; live arrivals are in the Makkah Bus app. Buy tickets in the app or from the machine at the stop. Routes may change during Hajj and Ramadan.', ar: 'خطوط حافلات مكة: © مساهمو OpenStreetMap. المدد تقديرية، ومواعيد الوصول الحية في تطبيق حافلات مكة. التذاكر من التطبيق أو من الجهاز في الموقف. قد تتغير المسارات في الحج ورمضان.' },
   railSrc: { tr: 'Metro, tramvay ve Marmaray hatları: © OpenStreetMap katkıcıları. Süreler yaklaşıktır; sefer saati içermez.', en: 'Metro, tram and Marmaray lines: © OpenStreetMap contributors. Times are estimates, not timetables.', ar: 'خطوط المترو والترام ومرمراي: © مساهمو OpenStreetMap. المدد تقديرية دون جداول.' },
   approxTime: { tr: 'yaklaşık süre', en: 'estimated time', ar: 'مدة تقديرية' },
   busSearch: { tr: 'Otobüs seferleri aranıyor…', en: 'Looking for buses…', ar: 'جارٍ البحث عن الحافلات…' },
@@ -89,11 +91,20 @@ const KIND: Record<LegKind, { icon: IconName; color: string; ml: { tr: string; e
 };
 
 const CONTACT = process.env.EXPO_PUBLIC_TRANSITOUS_CONTACT ?? '';
-// İstanbul raylı sistem ağı (çevrimdışı; ilk kullanımda bir kez kurulur)
-let RAIL: RailNet | null = null;
-const railNet = () => (RAIL ??= railNetwork(istanbulRail as unknown as RailData));
+// Çevrimdışı ağlar: İstanbul raylı sistem ve Mekke otobüsleri (ilk kullanımda bir kez kurulur)
+type NetId = 'ist' | 'mkk';
+const NET_DATA: Record<NetId, RailData> = { ist: istanbulRail as unknown as RailData, mkk: makkahBus as unknown as RailData };
+const NETS: Partial<Record<NetId, RailNet>> = {};
+const netOf = (id: NetId) => (NETS[id] ??= railNetwork(NET_DATA[id]));
+/** Her iki nokta da aynı çevrimdışı ağın alanındaysa o ağ */
+const netFor = (a?: LatLng | null, b?: LatLng | null): NetId | null =>
+  (a && b ? (['ist', 'mkk'] as NetId[]).find((id) => covers(NET_DATA[id], a) && covers(NET_DATA[id], b)) : undefined) ?? null;
 // Transitous koşulu: istekler uygulamayı tanıtan User-Agent taşımalı — tarayıcı bunu ayarlayamadığı için web'de kapalı.
 const TRANSIT_ON = !!CONTACT && (Platform.OS !== 'web' || process.env.EXPO_PUBLIC_TRANSITOUS_WEB === '1');
+// Transitous'ta Suudi Arabistan verisi yok: Mekke ve Medine çevresinde istek gönderilmez (günlük sınır boşa gitmesin,
+// "aranıyor" yazısı boşuna dönmesin). Mekke'de otobüs tarifi çevrimdışı ağdan gelir.
+const remoteFor = (a?: LatLng | null, b?: LatLng | null) =>
+  TRANSIT_ON && !(a && b && (['makkah', 'madinah'] as const).some((c) => kmTo(c, a) < 90 && kmTo(c, b) < 90));
 const VERSION = Constants.expoConfig?.version ?? '0';
 const WEB_NO_OUTLINE = (Platform.OS === 'web' ? { outlineStyle: 'none' } : null) as TextStyle | null;
 
@@ -193,8 +204,8 @@ export default function TransportScreen() {
     setFrom(here);
     setSel(0);
     const d = here ? meters(here, p) : 0;
-    const railOk = !!here && inIstanbul(here) && inIstanbul(p);
-    setMode(d && d < 1500 ? 'walk' : TRANSIT_ON || railOk ? 'transit' : d > 4000 ? 'car' : 'walk');
+    const railOk = !!netFor(here, p);
+    setMode(d && d < 1500 ? 'walk' : (here && remoteFor(here, p)) || railOk ? 'transit' : d > 4000 ? 'car' : 'walk');
     if (remember) setRecent({ items: [p, ...recent.items.filter((x) => x.id !== p.id)].slice(0, 6) });
   };
   // Başlangıç: hedef seçildiği andaki konum; o an konum yoksa ~100 m'ye yuvarlanmış güncel konum
@@ -214,7 +225,7 @@ export default function TransportScreen() {
   }, [routeKey, mode]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
-    if (!dest || !from2 || mode !== 'transit' || !TRANSIT_ON || transit[routeKey]) return;
+    if (!dest || !from2 || mode !== 'transit' || !remoteFor(from2, dest) || transit[routeKey]) return;
     const k = routeKey;
     planTransit(from2, dest, { lang: lg, contact: CONTACT, version: VERSION })
       .then((r) => setTransit((s) => ({ ...s, [k]: r })))
@@ -223,10 +234,13 @@ export default function TransportScreen() {
 
   const itins = transit[routeKey]; // undefined = yükleniyor
   const cur = mode === 'transit' ? undefined : street[`${routeKey}|${mode === 'walk' ? 'foot' : 'car'}`];
-  // İstanbul içinde metro, tramvay, Marmaray tarifi telefonda hesaplanır; otobüsler Transitous'tan gelir
-  const railOn = !!dest && !!from2 && inIstanbul(from2) && inIstanbul(dest);
-  const rail = useMemo(() => (mode === 'transit' && railOn && dest && from2 ? planRail(railNet(), from2, dest) : null), [mode, railOn, dest, from2]);
-  const transitOn = TRANSIT_ON || railOn;
+  // İstanbul'da metro, tramvay, Marmaray; Mekke'de Makkah Bus tarifi telefonda hesaplanır.
+  // İstanbul otobüsleri ve başka şehirler Transitous'tan gelir.
+  const railId = netFor(from2, dest);
+  const railOn = !!railId;
+  const rail = useMemo(() => (mode === 'transit' && railId && dest && from2 ? planRail(netOf(railId), from2, dest, new Date(), lg) : null), [mode, railId, dest, from2, lg]);
+  const remote = remoteFor(from2, dest);
+  const transitOn = remote || railOn;
   const all = useMemo(() => [...(rail?.itineraries ?? []), ...(Array.isArray(itins) ? itins : [])].sort((a, b) => a.minutes - b.minutes).slice(0, 6), [rail, itins]);
   const itin = all[sel];
   const segments: MapSeg[] = useMemo(() => {
@@ -404,16 +418,16 @@ export default function TransportScreen() {
                       <ItinCard key={`${it.source}-${i}`} it={it} lang={lg} active={i === sel} onPress={() => setSel(i)} l={l}
                         names={{ START: l('here'), END: dest.name }} />
                     ))}
-                    {TRANSIT_ON && itins === undefined && (
+                    {remote && itins === undefined && (
                       <View style={{ flexDirection: 'row', gap: 8, alignItems: 'center' }}><ActivityIndicator color={C.muted} /><Text style={T.muted}>{l(rail ? 'busSearch' : 'routing')}</Text></View>
                     )}
-                    {TRANSIT_ON && itins === 'error' && !all.length && <Text style={T.muted}>{l('transitErr')}</Text>}
-                    {!all.length && (!TRANSIT_ON || Array.isArray(itins)) && !(rail && rail.walkOnly < 30) && <Text style={T.muted}>{l('transitNone')}</Text>}
+                    {remote && itins === 'error' && !all.length && <Text style={T.muted}>{l('transitErr')}</Text>}
+                    {!all.length && (!remote || Array.isArray(itins)) && !(rail && rail.walkOnly < 30) && <Text style={T.muted}>{l('transitNone')}</Text>}
                   </>
                 )}
                 <Btn title={l('openMaps')} kind={transitOn ? 'secondary' : 'primary'} icon="train" onPress={() => open('transit')} />
-                {rail && <Text style={T.small}>{l('railSrc')}</Text>}
-                {TRANSIT_ON && (
+                {rail && <Text style={T.small}>{l(railId === 'mkk' ? 'busSrc' : 'railSrc')}</Text>}
+                {remote && (
                   <Pressable onPress={() => Linking.openURL('https://transitous.org/sources/')} accessibilityRole="link">
                     <Text style={[T.small, { textDecorationLine: 'underline' }]}>{l('sources')} ↗</Text>
                   </Pressable>
