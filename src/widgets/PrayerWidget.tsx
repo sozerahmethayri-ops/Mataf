@@ -1,4 +1,5 @@
-// Ana ekran namaz vakti küçük uygulaması (Android, expo-widgets).
+// Ana ekran namaz vakti küçük uygulaması (Android, expo-widgets): orta boy (4×2), "Günün vakitleri".
+// Diğer boylar: NextPrayerWidget (2×2), PrayerListWidget (2×3), PrayerStripWidget (4×1); hepsi aynı veriyi alır.
 // Görünüm uygulamadan ayrı, küçük bir JS ortamında çizilir: aşağıdaki işlevin gövdesi derlemede dizeye
 // çevrilir ('widget' yönergesi), bu yüzden dosyadaki başka hiçbir değere, içe aktarmaya ya da yardımcıya
 // erişemez — her şey props'tan gelir. Bileşenler ve değiştiriciler (@expo/ui/jetpack-compose) o ortamda
@@ -35,6 +36,8 @@ export type PrayerWidgetProps = {
   next?: string;
   /** "yarın" */
   tomorrow?: string;
+  /** "Sonra" (küçük ve şerit küçük uygulamada bir sonraki vakit) */
+  after?: string;
   /** Veri bittiğinde: "Güncellemek için MATAF'ı açın" */
   stale?: string;
   /** Hiç veri yokken */
@@ -55,7 +58,7 @@ function prayerLayout(props: PrayerWidgetProps, env: { colorScheme?: 'light' | '
   }
   const days = props.days || [];
   const names = props.names && props.names.length === 6 ? props.names : ['İmsak', 'Güneş', 'Öğle', 'İkindi', 'Akşam', 'Yatsı'];
-  const root = [fillMaxSize(), background(c.bg), cornerRadius(18), padding(10, 8, 10, 8)];
+  const root = [fillMaxSize(), background(c.bg), cornerRadius(22), padding(12, 10, 12, 10)];
 
   // Sıradaki vakit: şimdiden sonraki ilk an (veri bittiyse "uygulamayı açın")
   const now = Date.now();
@@ -81,20 +84,22 @@ function prayerLayout(props: PrayerWidgetProps, env: { colorScheme?: 'light' | '
     );
   }
   const day = days[di];
+  const tomorrow = Number(day.s) > now;
   const head = (props.place ? props.place + ' · ' : '') + day.d;
-  let line = (props.next ? props.next + ' ' : '') + names[pi] + ' ' + day.t[pi];
-  if (Number(day.s) > now && props.tomorrow) line = line + ' (' + props.tomorrow + ')';
+  const when = day.t[pi] + (tomorrow && props.tomorrow ? ' · ' + props.tomorrow : '');
 
+  // Altı vakit: sıradaki vurgulu, geçenler soluk
   const cells = [];
   for (let k = 0; k < day.t.length && k < 6; k++) {
     const on = k === pi;
+    const past = !tomorrow && k < pi;
     cells.push(
       <Column
         key={'p' + k}
         horizontalAlignment="center"
-        modifiers={on ? [width(39), background(c.tint), cornerRadius(9), padding(0, 4, 0, 4)] : [width(39), padding(0, 4, 0, 4)]}>
-        <Text color={on ? c.accent : c.muted} maxLines={1} style={{ fontSize: 10.5 }}>{names[k]}</Text>
-        <Text color={on ? c.accent : c.ink} maxLines={1} style={{ fontSize: 13, fontWeight: 'bold' }}>{day.t[k]}</Text>
+        modifiers={on ? [width(41), background(c.tint), cornerRadius(10), padding(0, 5, 0, 5)] : [width(41), padding(0, 5, 0, 5)]}>
+        <Text color={on ? c.accent : c.muted} maxLines={1} style={{ fontSize: 11 }}>{names[k]}</Text>
+        <Text color={on ? c.accent : past ? c.muted : c.ink} maxLines={1} style={{ fontSize: 14, fontWeight: 'bold' }}>{day.t[k]}</Text>
       </Column>,
     );
   }
@@ -102,8 +107,12 @@ function prayerLayout(props: PrayerWidgetProps, env: { colorScheme?: 'light' | '
   return (
     <Column modifiers={root} verticalAlignment="center">
       <Text color={c.muted} maxLines={1} style={{ fontSize: 12 }}>{head}</Text>
-      <Text color={c.accent} maxLines={1} style={{ fontSize: 19, fontWeight: 'bold' }}>{line}</Text>
-      <Spacer modifiers={[height(6)]} />
+      <Row verticalAlignment="center">
+        <Text color={c.accent} maxLines={1} style={{ fontSize: 22, fontWeight: 'bold' }}>{names[pi]}</Text>
+        <Spacer modifiers={[width(8)]} />
+        <Text color={c.ink} maxLines={1} style={{ fontSize: 22, fontWeight: 'bold' }}>{when}</Text>
+      </Row>
+      <Spacer modifiers={[height(8)]} />
       <Row modifiers={[fillMaxWidth()]} horizontalAlignment="center">{cells}</Row>
     </Column>
   );

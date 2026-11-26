@@ -75,3 +75,19 @@ kimlik değişirse betik hata verir, yeni kimlik elle bakılıp yazılır. Kapal
 Bilinen sınırlar: Arafat hattı sahadaki sınır işaretlerinden çizilmiştir ama yaklaşıktır; Nemire Mescidi'nin
 ön (kıble) kısmı Arafat dışındadır (Urene vadisi). Uygulama sınıra 75–100 m'den yakınken "içindesiniz" demez,
 tabelalara bakmayı söyler.
+
+## İstanbul raylı sistem (src/data/istanbulRail.json)
+
+Ulaşım ekranındaki çevrimdışı metro/tramvay/Marmaray tarifinin verisi. Sorgu (osm-fetch iş akışı):
+
+```
+[out:json][timeout:240];area["name"="İstanbul"]["admin_level"="4"]->.ist;
+rel["type"="route"]["route"~"^(subway|light_rail|tram|train|funicular|monorail|ferry|aerialway)$"](area.ist)->.r;
+.r out body;node(r.r);out body qt;
+```
+
+Sonra `python3 scripts/ist_rail.py out.json src/data/istanbulRail.json`. Betik `ref`'i olan hatları alır (trenlerden yalnız
+B1 Marmaray, B2 ve T6), durak rolündeki düğümleri sırasıyla istasyona çevirir; aynı adlı ve 450 m'den yakın duraklar tek
+istasyon olur. Vapur ilişkilerinde durak üyeleri eksik olduğu için vapurlar şimdilik yok. Yeni hat açılınca sorguyu
+yeniden çalıştırın.
+

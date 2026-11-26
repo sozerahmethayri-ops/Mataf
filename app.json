@@ -2,7 +2,7 @@
   "expo": {
     "name": "MATAF",
     "slug": "mataf",
-    "version": "0.11.1",
+    "version": "0.12.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "mataf",
@@ -36,7 +36,7 @@
       "blockedPermissions": [
         "android.permission.RECORD_AUDIO"
       ],
-      "versionCode": 15
+      "versionCode": 16
     },
     "web": {
       "output": "single",
@@ -92,8 +92,8 @@
           "widgets": [
             {
               "name": "PrayerWidget",
-              "displayName": "MATAF Namaz Vakitleri",
-              "description": "Bugünün vakitleri ve sıradaki namaz",
+              "displayName": "MATAF · Günün vakitleri",
+              "description": "Sıradaki namaz ve altı vakit yan yana (orta, 4×2)",
               "android": {
                 "minWidth": 250,
                 "minHeight": 110,
@@ -101,6 +101,48 @@
                 "targetCellHeight": 2,
                 "resizeMode": "both",
                 "initialLayout": "./src/widgets/PrayerWidget.tsx"
+              },
+              "ios": null
+            },
+            {
+              "name": "NextPrayerWidget",
+              "displayName": "MATAF · Sıradaki vakit",
+              "description": "Sıradaki namaz büyük yazıyla (küçük, 2×2)",
+              "android": {
+                "minWidth": 110,
+                "minHeight": 110,
+                "targetCellWidth": 2,
+                "targetCellHeight": 2,
+                "resizeMode": "both",
+                "initialLayout": "./src/widgets/NextPrayerWidget.tsx"
+              },
+              "ios": null
+            },
+            {
+              "name": "PrayerListWidget",
+              "displayName": "MATAF · Vakit listesi",
+              "description": "Altı vakit alt alta (liste, 2×3)",
+              "android": {
+                "minWidth": 120,
+                "minHeight": 180,
+                "targetCellWidth": 2,
+                "targetCellHeight": 3,
+                "resizeMode": "both",
+                "initialLayout": "./src/widgets/PrayerListWidget.tsx"
+              },
+              "ios": null
+            },
+            {
+              "name": "PrayerStripWidget",
+              "displayName": "MATAF · İnce şerit",
+              "description": "Sıradaki ve sonraki vakit tek satırda (4×1)",
+              "android": {
+                "minWidth": 250,
+                "minHeight": 40,
+                "targetCellWidth": 4,
+                "targetCellHeight": 1,
+                "resizeMode": "horizontal",
+                "initialLayout": "./src/widgets/PrayerStripWidget.tsx"
               },
               "ios": null
             }

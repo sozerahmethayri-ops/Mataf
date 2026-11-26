@@ -2,6 +2,7 @@
 
 Mekke ve Medine'deki ziyaretçiler için iOS ve Android uygulaması:
 
+- **Toplu taşıma tarifi ve dört boy küçük uygulama (0.12.0)** — Ulaşım → Toplu taşıma artık adım adım, gündelik dille anlatır: “Taksim istasyonuna yürüyün · M2 metrosuna binin (Yenikapı yönü) · Yenikapı istasyonunda inin · M1B metrosuna binin (Kirazlı yönü) · 11 durak · Bağcılar Meydan istasyonunda inin”. İstanbul’da metro, tramvay, Marmaray ve füniküler tarifi OpenStreetMap verisiyle telefonda, internetsiz hesaplanır (süreler yaklaşık); otobüsler (İETT) ve başka şehirler (Ankara, İzmir, Konya, yurt dışı) Transitous’tan gelir. Depo MIT lisanslı oldu. Ana ekrana dört boy vakit kutusu: küçük (sıradaki vakit büyük yazıyla), orta (günün vakitleri), liste (alt alta) ve ince şerit; hepsi sade ve büyük yazılı, vakit girdiği anda kendini yeniler.
 - **Sıcak arayüz ve resimli gökyüzü (0.11.0)** — Uygulamanın renkleri sıcak tonlara geçti: krem zemin, kum rengi yüzeyler, kahveye çalan yazı, kiremit vurgu rengi; koyu tema da kahve tonlarında. Ana sayfanın üstünde resimli, hareketli bir gökyüzü sahnesi var: gökyüzünün rengi güneşin gerçek yüksekliğine göre değişir (gece, şafak, gün doğumu, öğle, gün batımı; sabah ve akşam tonları ayrı), güneş ve ay (evresiyle) gerçek yerlerinde durur. Mekke’de Kâbe, Saat Kulesi ve Harem’in kemerleri, Kâbe’nin çevresinde tavaf eden kalabalık; Medine’de Yeşil Kubbe, minareler, hurmalar ve gündüz açılıp gece kapanan şemsiyeler; başka yerlerde kurşun kubbeli bir cami, serviler ve kiremit çatılı evler. Gece pencereler, kemerler ve şerefeler yanar. Hareketler: güneş ışınları döner ve parıldar, bulutlar süzülür, gündüz kuşlar geçer, gece yıldızlar göz kırpar, tavaf akar; “Hareketleri azalt” açıkken ve ekran görünmezken durur. Sahnenin üstünde yer seçimi ve hicrî/miladî tarih (koyu, yarı saydam çiplerde; sığmazsa tarih alt satıra iner); altında sahneye binen vakit kartı (sonraki vakte geri sayım ve günün altı vakti). Eski gökyüzü yayı kaldırıldı.
 - **Hatırlatmalar (0.10.3)** — Kurban Bayramı’nda (Arefe sabahından bayramın 4. günü ikindisine, 23 vakit) ana sayfada ve vakitlerde teşrik tekbiri kartı; o günlerin ezan bildirimlerine “farzdan sonra teşrik tekbiri” notu. İsteğe bağlı mübarek gün hatırlatması: Üç Aylar, kandiller, Ramazan, Arefe ve bayramlardan bir önceki akşam (Regaib, Recep’in ilk cumasına göre). Hac rehberinde “Hac günleri hatırlatmaları”: Terviye sabahı, Arafat vakfesinin başlaması (Arafat’ta öğle), Müzdelife’ye hareket (Arafat’ta akşam), Akabe taşlaması ve 11–13 Zilhicce taşlama vakitleri (Mina’da öğle), nefr-i evvel uyarısı; bildirime dokununca ilgili ekran açılır. Yaşlı ve engelli ziyaretçiler için “Tekerlekli sandalye ve araba” sayfası (Harem’de ücretsiz sandalye noktaları, golf arabası ve itici ile sandalye rezervasyonu, engellilere ücretsiz golf arabası, otelden alma; Ulaşım, Menü araması ve umre rehberinden açılır). Cami ekranında eksik camiyi OpenStreetMap’e bildirme bağlantısı; web sürümünde ilk açılışta iPhone için “Ana Ekrana Ekle” ve Android için uygulama indirme yönlendirmesi.
 - **Haremeyn treni (0.10.2)** — Mekke, Cidde (Süleymaniye), Cidde Havalimanı, Kral Abdullah Ekonomik Şehri ve Medine istasyonları haritada ve listede (size uzaklığı, yol tarifi), yaklaşık süreler, bilet ve bagaj bilgisi; sefer saatleri ve bilet için resmî siteye bağlantı. Ulaşım ekranından açılır.
@@ -46,7 +47,7 @@ Mekke ve Medine'deki ziyaretçiler için iOS ve Android uygulaması:
 - **Ravza rehberi** — ziyaret saatleri, Nusuk izni, resmî 360° sanal tur bağlantısı.
 - **Türkçe, İngilizce, Arapça** (Arapça sağdan sola).
 
-> Durum: **0.11.1 — geliştirme sürümü.** Bina biçimleri ve kapı yerleri OpenStreetMap'ten gelir (doğruluğu bu veri kadardır); mescit içi hizmet noktaları örnektir. Ayrıntı: [docs/VERI-KAYNAKLARI.md](docs/VERI-KAYNAKLARI.md), [scripts/osm-3d.md](scripts/osm-3d.md).
+> Durum: **0.12.0 — geliştirme sürümü.** Bina biçimleri ve kapı yerleri OpenStreetMap'ten gelir (doğruluğu bu veri kadardır); mescit içi hizmet noktaları örnektir. Ayrıntı: [docs/VERI-KAYNAKLARI.md](docs/VERI-KAYNAKLARI.md), [scripts/osm-3d.md](scripts/osm-3d.md).
 
 ## Hızlı başlangıç
 
@@ -108,15 +109,16 @@ EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY=sb_publishable_...
 |---|---|---|
 | Yer arama, adres | [Photon](https://photon.komoot.io) (OpenStreetMap) | Makul kullanım; yoğun kullanımda kendi Photon sunucunuz |
 | Yürüme / araç rotası | [FOSSGIS OSRM](https://routing.openstreetmap.de) | Makul kullanım; ulaşılamazsa kaba tahmin gösterilir |
-| Toplu taşıma | [Transitous](https://transitous.org) (MOTIS 2, dünya geneli açık GTFS verisi) | **Yalnız açık kaynak + ticari olmayan projeler**, günde ~720 istek altı, uygulamayı tanıtan User-Agent, [kaynak listesine](https://transitous.org/sources/) bağlantı |
+| Toplu taşıma (otobüs, metro, tren) | [Transitous](https://transitous.org) (MOTIS 2, dünya geneli açık GTFS verisi) | **Yalnız açık kaynak + ticari olmayan projeler**, günde ~720 istek altı, uygulamayı tanıtan User-Agent, [kaynak listesine](https://transitous.org/sources/) bağlantı |
+| İstanbul metro, tramvay, Marmaray, füniküler | OpenStreetMap hat ilişkileri → `src/data/istanbulRail.json` (`scripts/ist_rail.py`) | ODbL atfı; tarif telefonda, internetsiz hesaplanır (süreler yaklaşık) |
 
-Transitous varsayılan olarak **kapalıdır**; kapalıyken metro/otobüs tarifi telefonun harita uygulamasında (Google Haritalar / Apple Haritalar, güncel sefer saatleriyle) açılır. Açmak için depoyu açık kaynak lisansla yayımlayın ve `.env` içine bir iletişim adresi yazın:
+Depo MIT lisanslıdır; Transitous GitHub derlemelerinde açıktır (`EXPO_PUBLIC_TRANSITOUS_CONTACT` iş akışlarında depo adresi). Yerelde açmak için `.env` içine yazın:
 
 ```
-EXPO_PUBLIC_TRANSITOUS_CONTACT=ad@ornek.org
+EXPO_PUBLIC_TRANSITOUS_CONTACT=https://github.com/sozerahmethayri-ops/Mataf
 ```
 
-Uygulama her isteğe `User-Agent: MATAF/<sürüm> (<iletişim>)` ekler. Ticari yayında kendi [MOTIS](https://github.com/motis-project/motis) sunucunuzu kurun ya da ticari bir tarif servisi kullanın. Mekke–Medine arası Haremeyn treni ve şehir otobüsleri, ilgili açık veri yayımlandığı ölçüde görünür.
+Uygulama her isteğe `User-Agent: MATAF/<sürüm> (<iletişim>)` ekler. Transitous'ta İstanbul için yalnız İETT otobüsleri var (metro/tramvay yok); bu yüzden İstanbul'da raylı sistem tarifi OpenStreetMap verisiyle uygulamanın içinde yapılır ("M1B metrosuna binin, Kirazlı yönü · Bağcılar Meydan istasyonunda inin") ve otobüs seçenekleriyle birlikte gösterilir. Suudi Arabistan için Transitous'ta veri yok; orada harita uygulaması açılır. Kullanıcı sayısı artınca günlük istek sınırı için Transitous ile görüşülmeli. Ticari yayında kendi [MOTIS](https://github.com/motis-project/motis) sunucunuzu kurun ya da ticari bir tarif servisi kullanın. Mekke–Medine arası Haremeyn treni ve şehir otobüsleri, ilgili açık veri yayımlandığı ölçüde görünür.
 
 ## Ezan bildirimleri
 
@@ -167,15 +169,15 @@ npm run lint
 ## Veri ve lisans notları
 
 - Harita ve 3D binalar (Mescid-i Haram, Mescid-i Nebevî, Saat Kulesi, çevre): © OpenStreetMap katkıcıları (ODbL) — haritada ve Ayarlar'da atıf gösterilir; veri `src/data/osm/` altında, güncelleme adımları `scripts/osm-3d.md`. Yaya/araç rotası: FOSSGIS OSRM. Yer arama: Photon.
-- Toplu taşıma (açıksa): Transitous ve [veri kaynakları](https://transitous.org/sources/) — uygulamada bağlantı gösterilir.
+- Toplu taşıma: Transitous ve [veri kaynakları](https://transitous.org/sources/) — uygulamada bağlantı gösterilir. İstanbul raylı sistem hatları: © OpenStreetMap katkıcıları (ODbL).
 - Bildirim sesleri: bu projede sentezlendi (`scripts/make-sounds.py`).
 - Kur'an metni ve meal: alquran.cloud (Tanzil). Meal hakları sahiplerine aittir; mağazaya yüklemeden önce kullanılan mealin lisansını kontrol edin.
 - Hadis: fawazahmed0/hadith-api (açık veri). Çevirileri yayından önce bir ilahiyatçıya kontrol ettirin.
 - Resmî kapı/kapanma verisi için İki Kutsal Mescid İşleri Genel Kurumu ile veri anlaşması gerekir (docs/VERI-KAYNAKLARI.md).
-- Bu depo için henüz bir yazılım lisansı seçilmedi. Açık kaynak yapmak isterseniz `LICENSE` dosyası ekleyin (ör. MIT).
+- Yazılım lisansı: [MIT](LICENSE). Uygulamadaki ve uygulamanın çektiği veriler kendi lisanslarını korur (OpenStreetMap: ODbL).
 
 ---
 
 ### English summary
 
-MATAF is an Expo (React Native) app for visitors to Masjid al-Haram and the Prophet's Mosque: true-scale 3D maps built from OpenStreetMap's 3D building data (real outlines, minarets, domes, Clock Tower; pinch to zoom, two-finger rotate), crowd-sourced gate closures with automatic rerouting, turn-by-turn walking guidance, a worldwide transport tab (walk, transit via Transitous when enabled, car/taxi, "show the driver" card), nearest mosque anywhere, on-device prayer times, Qibla and adhan notifications (custom sounds, your own adhan recording), light/dark themes with 5 palettes, Quran with audio/translations/tafsir, Sahih al-Bukhari, duas, a 3D tawaf assistant and a Rawdah guide. Run with `npm install && npx expo start` and open in Expo Go. Optional live backend: Supabase (`supabase/schema.sql`, `.env`).
+MATAF is an Expo (React Native) app for visitors to Masjid al-Haram and the Prophet's Mosque: true-scale 3D maps built from OpenStreetMap's 3D building data (real outlines, minarets, domes, Clock Tower; pinch to zoom, two-finger rotate), crowd-sourced gate closures with automatic rerouting, turn-by-turn walking guidance, a worldwide transport tab (walk, transit via Transitous plus offline Istanbul metro/tram/Marmaray directions, car/taxi, "show the driver" card), nearest mosque anywhere, on-device prayer times, Qibla and adhan notifications (custom sounds, your own adhan recording), light/dark themes with 5 palettes, Quran with audio/translations/tafsir, Sahih al-Bukhari, duas, a 3D tawaf assistant and a Rawdah guide. Run with `npm install && npx expo start` and open in Expo Go. Optional live backend: Supabase (`supabase/schema.sql`, `.env`). Licence: MIT.

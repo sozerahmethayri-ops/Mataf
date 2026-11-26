@@ -10,7 +10,7 @@ import { DUA_LIB, isQuranRef } from '../src/data/duas';
 import { TAWAF_DHIKR, type DuaText } from '../src/data/tawaf';
 import { OVERPASS_ENDPOINTS, bearingDeg, distanceM, findMosques, parseOverpass, parsePhotonMosques, pickMosques, type El, type Fetcher } from '../src/services/mosques';
 import { PALETTES, colorsFor, contrast, type PaletteId } from '../src/constants/theme';
-import { WIDGET_DAYS, buildWidgetProps, widgetNext, widgetPlace } from '../src/services/widgetProps';
+import { WIDGET_DAYS, buildWidgetProps, widgetNext, widgetPlace, widgetTicks } from '../src/services/widgetProps';
 import { ARAFAT_AREA, HAC_PLACES, NAMIRA_MOSQUE } from '../src/data/osm/hacSites';
 import { MEMBER_COLORS, colorFor, freshness, inviteText, isValidCode, makeCode, normalizeCode, shouldSend, sortMembers, type GroupMember } from '../src/services/groupLogic';
 import { AREFE_DUA, CEMRE_TEKBIR, HAC_STEPS, MESAR_AYAH, TESRIK_TEKBIR } from '../src/data/hac';
@@ -34,6 +34,9 @@ import { guessKind, shareLink } from '../src/services/myPlaces';
 import { HHR_STATIONS } from '../src/data/train';
 import { nextPrayer, times as prayerTimes } from '../src/services/prayer';
 import { bodyPos, horizonGlow, sceneKind, scenePalette, textZone } from '../src/services/skyScene';
+import istanbulRail from '../src/data/istanbulRail.json';
+import { inIstanbul, planRail, railNetwork, textOn, type RailData } from '../src/services/railRouter';
+import { alightText, boardText, tidyName, walkText } from '../src/services/transitText';
 import { nextSpecial } from '../src/services/hijri';
 import { SKIP, parseBackup } from '../src/services/backupFormat';
 import { AREAS, GLYPH_RANGES, fontStacks, lat2tile, lon2tile, resolveMataf, rewriteStyle, spriteRoot, tilesFor } from '../src/services/offlineMath';
@@ -675,7 +678,7 @@ async function transitChecks() {
   };
   const r1 = await planTransit({ lat: 41, lng: 29 }, { lat: 41.02, lng: 28.94 }, { lang: 'tr', contact: 'a@b.c', version: '0.4.0', fetcher: f, time: new Date('2026-11-24T10:00:00Z') });
   const s1 = seen as { url: string; ua?: string } | null;
-  ok(r1.length === 0 && !!s1 && s1.url.includes('/api/v6/plan?fromPlace=41.000000,29.000000') && s1.url.includes('time=2026-11-24T10%3A00%3A00.000Z') && s1.ua === 'MATAF/0.4.0 (a@b.c)', 'Transitous isteği: uç nokta, zaman, User-Agent');
+  ok(r1.length === 0 && !!s1 && s1.url.includes('/api/v5/plan?fromPlace=41.000000,29.000000') && s1.url.includes('time=2026-11-24T10%3A00%3A00.000Z') && s1.ua === 'MATAF/0.4.0 (a@b.c)', 'Transitous isteği: uç nokta, zaman, User-Agent');
   let threw = false;
   try { await planTransit({ lat: 0, lng: 0 }, { lat: 1, lng: 1 }, { lang: 'en', contact: 'x', version: '1', fetcher: async () => ({ ok: false, status: 429, json: async () => ({}) }) }); } catch { threw = true; }
   ok(threw, 'Transitous hata kodu (429) yakalanır');
@@ -787,6 +790,50 @@ ok(shareLink({ lat: 21.4225, lng: 39.8262 }) === 'https://maps.google.com/?q=21.
   ok(e.x < 0.1 && w.x > 0.9 && Math.abs(s.x - 0.5) < 1e-9 && Math.abs(z.x - 0.5) < 1e-6 && Math.abs(z.h - 1) < 1e-9 && Math.abs(e.h) < 1e-9, 'sahne: doğu solda, batı sağda, güney ortada, tepe noktası en üstte');
   ok(horizonGlow(0) > 0.95 && horizonGlow(30) < 0.01 && horizonGlow(-25) < 0.01, 'sahne: ufuk kızıllığı yalnız güneş ufka yakınken');
   ok(sceneKind(21.4225, 39.8262) === 'makkah' && sceneKind(21.39, 39.86) === 'makkah' && sceneKind(21.54, 39.17) === 'mosque' && sceneKind(24.4672, 39.6111) === 'madinah' && sceneKind(41.0369, 28.985) === 'mosque', 'sahne: Mekke, Medine ve başka yer ayrımı');
+}
+
+// ── İstanbul raylı sistem tarifi (çevrimdışı) ve gündelik dille adımlar ──
+{
+  const data = istanbulRail as unknown as RailData;
+  const refs = data.l.map((l) => l.r);
+  ok(['M1A', 'M1B', 'M2', 'M4', 'M5', 'M11', 'T1', 'B1'].every((r) => refs.includes(r)), `raylı ağ: ana hatlar var (${refs.join(' ')})`);
+  const net = railNetwork(data);
+  const r1 = planRail(net, { lat: 41.0045, lng: 28.952 }, { lat: 41.0397, lng: 28.8567 }, new Date(2026, 10, 27, 9));
+  const best = r1.itineraries[0];
+  const ride = best?.legs.filter((g) => g.kind !== 'walk') ?? [];
+  ok(!!best && ride.length === 1 && ride[0].line === 'M1B' && ride[0].headsign === 'Kirazlı' && ride[0].to.name === 'Bağcılar Meydan', `tarif: Yenikapı → Bağcılar Meydan = M1B (Kirazlı yönü), ${best?.minutes} dk`);
+  ok(!!best && best.minutes > 20 && best.minutes < 60 && best.approx === true, 'tarif: süre makul ve "yaklaşık" işaretli');
+  const r2 = planRail(net, { lat: 41.0369, lng: 28.985 }, { lat: 40.991, lng: 29.026 });
+  const lines2 = r2.itineraries[0]?.legs.filter((g) => g.kind !== 'walk').map((g) => g.line) ?? [];
+  ok(lines2.includes('B1') || lines2.includes('M4') || lines2.includes('M5'), `tarif: Taksim → Kadıköy kıta geçişi raylı (${lines2.join(' → ')})`);
+  const r3 = planRail(net, { lat: 41.0054, lng: 28.9768 }, { lat: 41.0078, lng: 28.9800 });
+  ok(r3.itineraries.length === 0 && r3.walkOnly < 10, 'tarif: kısa mesafede yürümek önerilir (toplu taşıma yok)');
+  ok(!inIstanbul({ lat: 21.4225, lng: 39.8262 }) && inIstanbul({ lat: 41.0369, lng: 28.985 }), 'tarif: İstanbul sınırı (Mekke dışarıda)');
+  ok(textOn('#f0e514') === '#1D1D1F' && textOn('#004f7d') === '#FFFFFF', 'hat rozeti: açık renkte koyu, koyu renkte beyaz yazı');
+  const m1b = ride[0];
+  if (m1b) {
+    const b = boardText(m1b, 'tr');
+    ok(b.head === 'M1B metrosuna binin' && b.dir === 'Kirazlı yönü' && alightText(m1b, 'tr') === 'Bağcılar Meydan istasyonunda inin', `dil: "${b.head} (${b.dir}) · ${alightText(m1b, 'tr')}"`);
+    ok(boardText(m1b, 'en').head === 'Take metro M1B' && alightText(m1b, 'en') === 'Get off at Bağcılar Meydan', 'dil: İngilizce adımlar');
+    ok(walkText(m1b, 'Yenikapı', 'tr') === 'Yenikapı istasyonuna yürüyün' && walkText(undefined, '', 'tr') === 'Varış noktasına yürüyün', 'dil: yürüme adımları');
+  }
+  const bus = { ...m1b!, kind: 'bus' as const, line: '129T', headsign: 'BOSTANCI PERONLAR', to: { name: 'KISIKLI', time: '' } };
+  ok(boardText(bus, 'tr').head === '129T otobüsüne binin' && boardText(bus, 'tr').dir === 'Bostancı Peronlar yönü' && alightText(bus, 'tr') === 'Kısıklı durağında inin', 'dil: otobüs (büyük harfli İETT adları düzeltilir)');
+  ok(tidyName('GÜMÜŞSUYU PERON', 'tr') === 'Gümüşsuyu Peron' && tidyName('Bağcılar Meydan', 'tr') === 'Bağcılar Meydan', 'dil: büyük harfli durak adı');
+  const marm = { ...m1b!, kind: 'train' as const, line: 'B1' };
+  ok(boardText(marm, 'tr').head === 'Marmaray trenine binin', 'dil: Marmaray');
+}
+
+// ── Küçük uygulama yenileme anları ──
+{
+  const props = buildWidgetProps({
+    start: new Date(2026, 10, 26), timesFor: (d) => prayerTimes(41.0369, 28.985, 'Turkey', d), fmt: (d) => `${d.getHours()}:${d.getMinutes()}`,
+    dayLabel: (d) => String(d.getDate()), place: 'İstanbul', names: ['İmsak', 'Güneş', 'Öğle', 'İkindi', 'Akşam', 'Yatsı'], lang: 'tr', palette: 'kabe', mode: 'system', days: 5,
+  });
+  const now = new Date(2026, 10, 26, 13, 0).getTime();
+  const ticks = widgetTicks(props, now);
+  ok(ticks.length === 24 && ticks.every((t, i) => t > now && (i === 0 || t > ticks[i - 1])), `küçük uygulama: 24 yenileme anı, ileri ve sıralı (ilki ${new Date(ticks[0]).toTimeString().slice(0, 5)})`);
+  ok(props.after === 'Sonra', 'küçük uygulama: "Sonra" etiketi');
 }
 
 mosqueChecks().then(transitChecks).then(() => process.exit(fails ? 1 : 0));

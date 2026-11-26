@@ -11,6 +11,7 @@ export type WidgetKey = (typeof WIDGET_KEYS)[number];
 const L = {
   next: { tr: 'Sıradaki:', en: 'Next:', ar: 'التالية:' },
   tomorrow: { tr: 'yarın', en: 'tomorrow', ar: 'غدًا' },
+  after: { tr: 'Sonra', en: 'Then', ar: 'ثم' },
   stale: { tr: 'Güncellemek için MATAF’ı açın', en: 'Open MATAF to refresh', ar: 'افتح MATAF للتحديث' },
   empty: { tr: 'Vakitler için MATAF’ı bir kez açın', en: 'Open MATAF once to load prayer times', ar: 'افتح MATAF مرة لتحميل المواقيت' },
   makkah: { tr: 'Mekke', en: 'Makkah', ar: 'مكة' },
@@ -64,12 +65,23 @@ export function buildWidgetProps(o: WidgetPropsInput): PrayerWidgetProps {
     days,
     next: L.next[o.lang],
     tomorrow: L.tomorrow[o.lang],
+    after: L.after[o.lang],
     stale: L.stale[o.lang],
     empty: L.empty[o.lang],
     mode: o.mode,
     light: pickColors(colorsFor(false, o.palette)),
     dark: pickColors(colorsFor(true, o.palette)),
   };
+}
+
+/** Küçük uygulamaların yenilenmesi gereken anlar: önümüzdeki vakitler ve gün başları (en çok n tane). */
+export function widgetTicks(p: PrayerWidgetProps, now: number, n = 24) {
+  const out: number[] = [];
+  for (const d of p.days ?? []) {
+    out.push(Number(d.s));
+    for (const a of d.a) out.push(Number(a));
+  }
+  return out.filter((t) => t > now).sort((a, b) => a - b).slice(0, n);
 }
 
 /** Küçük uygulamadaki çizimin mantığı (testler için aynı kural): şimdiden sonraki ilk vakit. */

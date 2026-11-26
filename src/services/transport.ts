@@ -4,7 +4,7 @@
 // Kaynaklar ve koşullar:
 //  • Yer arama: Photon (photon.komoot.io, OpenStreetMap) — makul kullanım; yoğun kullanımda kendi sunucunuz.
 //  • Yürüme / araç: FOSSGIS OSRM (routing.openstreetmap.de) — OpenStreetMap, ODbL.
-//  • Toplu taşıma: Transitous (api.transitous.org, MOTIS 2). Koşullar: açık kaynak + ticari olmayan proje,
+//  • Toplu taşıma: Transitous (api.transitous.org, MOTIS 2; /api/v5). Koşullar: açık kaynak (MATAF: MIT) + ticari olmayan proje,
 //    her istekte uygulama adı/sürümü/iletişim içeren User-Agent, transitous.org/sources bağlantısı,
 //    günde ~720 /plan isteğini aşmamak. Bu yüzden yalnız EXPO_PUBLIC_TRANSITOUS_CONTACT tanımlıysa açılır;
 //    değilse metro/otobüs tarifi telefonun harita uygulamasında (Google/Apple) açılır.
@@ -73,7 +73,12 @@ export type TransitLeg = {
   from: { name: string; time: string }; to: { name: string; time: string };
   minutes: number; stops: number; meters?: number; color?: string; textColor?: string; coords: LatLng[];
 };
-export type Itinerary = { minutes: number; start: string; end: string; transfers: number; legs: TransitLeg[] };
+export type Itinerary = {
+  minutes: number; start: string; end: string; transfers: number; legs: TransitLeg[];
+  /** Sefer saati yok, süre yaklaşık (çevrimdışı raylı sistem tarifi) */
+  approx?: boolean;
+  source?: 'osm' | 'transitous';
+};
 
 export function legKind(mode: string): LegKind {
   const m = mode.toUpperCase();
@@ -135,7 +140,7 @@ export function parseMotis(json: { itineraries?: MotisItin[] }): Itinerary[] {
 export const TRANSITOUS = 'https://api.transitous.org';
 export function transitUrl(from: LatLng, to: LatLng, time: Date, lang: string) {
   const p = (x: LatLng) => `${x.lat.toFixed(6)},${x.lng.toFixed(6)}`;
-  return `${TRANSITOUS}/api/v6/plan?fromPlace=${p(from)}&toPlace=${p(to)}&time=${encodeURIComponent(time.toISOString())}&language=${lang}&detailedTransfers=false`;
+  return `${TRANSITOUS}/api/v5/plan?fromPlace=${p(from)}&toPlace=${p(to)}&time=${encodeURIComponent(time.toISOString())}&language=${lang}&detailedTransfers=false`;
 }
 export const transitUserAgent = (version: string, contact: string) => `MATAF/${version} (${contact})`;
 

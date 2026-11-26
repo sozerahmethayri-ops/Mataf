@@ -13,6 +13,7 @@ import { TransportMap } from '@/components/TransportMap';
 import type { MapSeg } from '@/components/TransportMap.types';
 import { Btn, Card, IconBtn, Segmented, T } from '@/components/ui';
 import { C, R, fs } from '@/constants/theme';
+import istanbulRail from '@/data/istanbulRail.json';
 import { ANCHORS } from '@/data/sites';
 import { pick, useI18n } from '@/i18n';
 import { useLocation } from '@/services/location';
@@ -21,6 +22,8 @@ import {
   fmtMinutes, mapsUrl, meters, osrmUrl, parseOsrm, parsePhoton, photonReverseUrl, photonUrl, placeLine, planTransit, roughRoute,
   shareText, uberUrl, type Itinerary, type LatLng, type LegKind, type Place, type StreetRoute, type Travel,
 } from '@/services/transport';
+import { inIstanbul, planRail, railNetwork, type RailData, type RailNet } from '@/services/railRouter';
+import { alightText, boardText, lineName, minText, stopsText, tidyName, walkText } from '@/services/transitText';
 import { usePersisted } from '@/services/usePersisted';
 
 type Lang = 'tr' | 'en' | 'ar';
@@ -66,6 +69,10 @@ const L = {
   direct: { tr: 'aktarmasız', en: 'direct', ar: 'مباشر' },
   stops: { tr: 'durak', en: 'stops', ar: 'محطات' },
   sources: { tr: 'Toplu taşıma verisi: Transitous ve açık veri kaynakları', en: 'Transit data: Transitous and open data sources', ar: 'بيانات النقل: Transitous ومصادر البيانات المفتوحة' },
+  railSrc: { tr: 'Metro, tramvay ve Marmaray hatları: © OpenStreetMap katkıcıları. Süreler yaklaşıktır; sefer saati içermez.', en: 'Metro, tram and Marmaray lines: © OpenStreetMap contributors. Times are estimates, not timetables.', ar: 'خطوط المترو والترام ومرمراي: © مساهمو OpenStreetMap. المدد تقديرية دون جداول.' },
+  approxTime: { tr: 'yaklaşık süre', en: 'estimated time', ar: 'مدة تقديرية' },
+  busSearch: { tr: 'Otobüs seferleri aranıyor…', en: 'Looking for buses…', ar: 'جارٍ البحث عن الحافلات…' },
+  walkBetter: { tr: 'Yürüyerek yaklaşık {n} dk; toplu taşıma gerekmiyor.', en: 'About {n} min on foot; no transit needed.', ar: 'نحو {n} دقيقة مشيًا؛ لا حاجة للنقل العام.' },
   takeMe: { tr: 'Lütfen beni buraya götürün', en: 'Please take me here', ar: 'من فضلك خذني إلى هنا' },
   close: { tr: 'Kapat', en: 'Close', ar: 'إغلاق' },
   osm: { tr: 'Harita ve rota verisi © OpenStreetMap katkıcıları', en: 'Map and routing data © OpenStreetMap contributors', ar: 'بيانات الخريطة والمسارات © مساهمو OpenStreetMap' },
@@ -82,6 +89,9 @@ const KIND: Record<LegKind, { icon: IconName; color: string; ml: { tr: string; e
 };
 
 const CONTACT = process.env.EXPO_PUBLIC_TRANSITOUS_CONTACT ?? '';
+// İstanbul raylı sistem ağı (çevrimdışı; ilk kullanımda bir kez kurulur)
+let RAIL: RailNet | null = null;
+const railNet = () => (RAIL ??= railNetwork(istanbulRail as unknown as RailData));
 // Transitous koşulu: istekler uygulamayı tanıtan User-Agent taşımalı — tarayıcı bunu ayarlayamadığı için web'de kapalı.
 const TRANSIT_ON = !!CONTACT && (Platform.OS !== 'web' || process.env.EXPO_PUBLIC_TRANSITOUS_WEB === '1');
 const VERSION = Constants.expoConfig?.version ?? '0';
@@ -183,7 +193,8 @@ export default function TransportScreen() {
     setFrom(here);
     setSel(0);
     const d = here ? meters(here, p) : 0;
-    setMode(d && d < 1500 ? 'walk' : TRANSIT_ON ? 'transit' : d > 4000 ? 'car' : 'walk');
+    const railOk = !!here && inIstanbul(here) && inIstanbul(p);
+    setMode(d && d < 1500 ? 'walk' : TRANSIT_ON || railOk ? 'transit' : d > 4000 ? 'car' : 'walk');
     if (remember) setRecent({ items: [p, ...recent.items.filter((x) => x.id !== p.id)].slice(0, 6) });
   };
   // Başlangıç: hedef seçildiği andaki konum; o an konum yoksa ~100 m'ye yuvarlanmış güncel konum
@@ -212,7 +223,12 @@ export default function TransportScreen() {
 
   const itins = transit[routeKey]; // undefined = yükleniyor
   const cur = mode === 'transit' ? undefined : street[`${routeKey}|${mode === 'walk' ? 'foot' : 'car'}`];
-  const itin = Array.isArray(itins) ? itins[sel] : undefined;
+  // İstanbul içinde metro, tramvay, Marmaray tarifi telefonda hesaplanır; otobüsler Transitous'tan gelir
+  const railOn = !!dest && !!from2 && inIstanbul(from2) && inIstanbul(dest);
+  const rail = useMemo(() => (mode === 'transit' && railOn && dest && from2 ? planRail(railNet(), from2, dest) : null), [mode, railOn, dest, from2]);
+  const transitOn = TRANSIT_ON || railOn;
+  const all = useMemo(() => [...(rail?.itineraries ?? []), ...(Array.isArray(itins) ? itins : [])].sort((a, b) => a.minutes - b.minutes).slice(0, 6), [rail, itins]);
+  const itin = all[sel];
   const segments: MapSeg[] = useMemo(() => {
     if (mode === 'transit') {
       return itin ? itin.legs.map((g) => ({ coords: g.coords, color: g.kind === 'walk' ? C.muted : g.color ?? KIND[g.kind].color, dashed: g.kind === 'walk' })) : [];
@@ -374,23 +390,29 @@ export default function TransportScreen() {
 
             {mode === 'transit' && (
               <>
-                {!TRANSIT_ON ? (
+                {!transitOn ? (
                   <Card style={{ gap: 6 }}>
                     <View style={{ flexDirection: 'row', gap: 6 }}>
                       {(['metro', 'bus', 'train'] as LegKind[]).map((k) => <Badge key={k} kind={k} label={pick(KIND[k].ml, lg)} />)}
                     </View>
                     <Text style={T.body}>{l('transitOff')}</Text>
                   </Card>
-                ) : !from2 ? <Text style={T.muted}>{l('noFrom')}</Text>
-                  : itins === undefined ? (
-                    <View style={{ flexDirection: 'row', gap: 8, alignItems: 'center' }}><ActivityIndicator color={C.muted} /><Text style={T.muted}>{l('routing')}</Text></View>
-                  ) : itins === 'error' ? <Text style={T.muted}>{l('transitErr')}</Text>
-                    : itins.length === 0 ? <Text style={T.muted}>{l('transitNone')}</Text>
-                      : itins.slice(0, 5).map((it, i) => (
-                        <ItinCard key={i} it={it} lang={lg} active={i === sel} onPress={() => setSel(i)} l={l}
-                          names={{ START: l('here'), END: dest.name }} />
-                      ))}
-                <Btn title={l('openMaps')} kind={TRANSIT_ON ? 'secondary' : 'primary'} icon="train" onPress={() => open('transit')} />
+                ) : !from2 ? <Text style={T.muted}>{l('noFrom')}</Text> : (
+                  <>
+                    {rail && !rail.itineraries.length && rail.walkOnly < 30 && <Text style={T.body}>{l('walkBetter').replace('{n}', String(Math.round(rail.walkOnly)))}</Text>}
+                    {all.map((it, i) => (
+                      <ItinCard key={`${it.source}-${i}`} it={it} lang={lg} active={i === sel} onPress={() => setSel(i)} l={l}
+                        names={{ START: l('here'), END: dest.name }} />
+                    ))}
+                    {TRANSIT_ON && itins === undefined && (
+                      <View style={{ flexDirection: 'row', gap: 8, alignItems: 'center' }}><ActivityIndicator color={C.muted} /><Text style={T.muted}>{l(rail ? 'busSearch' : 'routing')}</Text></View>
+                    )}
+                    {TRANSIT_ON && itins === 'error' && !all.length && <Text style={T.muted}>{l('transitErr')}</Text>}
+                    {!all.length && (!TRANSIT_ON || Array.isArray(itins)) && !(rail && rail.walkOnly < 30) && <Text style={T.muted}>{l('transitNone')}</Text>}
+                  </>
+                )}
+                <Btn title={l('openMaps')} kind={transitOn ? 'secondary' : 'primary'} icon="train" onPress={() => open('transit')} />
+                {rail && <Text style={T.small}>{l('railSrc')}</Text>}
                 {TRANSIT_ON && (
                   <Pressable onPress={() => Linking.openURL('https://transitous.org/sources/')} accessibilityRole="link">
                     <Text style={[T.small, { textDecorationLine: 'underline' }]}>{l('sources')} ↗</Text>
@@ -439,8 +461,8 @@ function ItinCard({ it, lang, active, onPress, l, names }: { it: Itinerary; lang
     <Pressable onPress={onPress} accessibilityRole="button" accessibilityState={{ selected: active }}
       style={{ borderWidth: active ? 2 : 1, borderColor: active ? C.accent : C.border, borderRadius: R.lg, padding: 12, gap: 10, backgroundColor: C.bg }}>
       <View style={{ flexDirection: 'row', alignItems: 'baseline', gap: 8 }}>
-        <Text style={{ fontSize: fs(20), fontWeight: '800', color: C.ink }}>{fmtMinutes(it.minutes, lang)}</Text>
-        <Text style={T.muted}>{hhmm(it.start, lang)} → {hhmm(it.end, lang)} · {it.transfers ? `${it.transfers} ${l('transfers')}` : l('direct')}</Text>
+        <Text style={{ fontSize: fs(20), fontWeight: '800', color: C.ink }}>{it.approx ? '≈ ' : ''}{fmtMinutes(it.minutes, lang)}</Text>
+        <Text style={[T.muted, { flexShrink: 1 }]}>{it.approx ? l('approxTime') : `${hhmm(it.start, lang)} → ${hhmm(it.end, lang)}`} · {it.transfers ? `${it.transfers} ${l('transfers')}` : l('direct')}</Text>
       </View>
       <View style={{ flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: 4 }}>
         {it.legs.map((g, i) => (
@@ -448,28 +470,37 @@ function ItinCard({ it, lang, active, onPress, l, names }: { it: Itinerary; lang
             {i > 0 && <Icon name="chevron" color={C.muted} size={12} />}
             {g.kind === 'walk'
               ? <View style={{ flexDirection: 'row', alignItems: 'center' }}><Icon name="walk" color={C.ink2} size={16} /><Text style={T.small}>{g.minutes}</Text></View>
-              : <Badge kind={g.kind} label={g.line} color={g.color} textColor={g.textColor} />}
+              : <Badge kind={g.kind} label={lineName(g)} color={g.color} textColor={g.textColor} />}
           </View>
         ))}
       </View>
       {active && (
         <View style={{ gap: 8, borderTopWidth: 1, borderColor: C.border, paddingTop: 8 }}>
-          {it.legs.map((g, i) => (
-            <View key={i} style={{ flexDirection: 'row', gap: 10 }}>
-              <Text style={[T.small, { width: 46 }]}>{hhmm(g.from.time, lang)}</Text>
-              <View style={{ width: 4, borderRadius: 2, backgroundColor: g.kind === 'walk' ? C.border : g.color ?? KIND[g.kind].color }} />
-              <View style={{ flex: 1, gap: 2 }}>
-                <Text style={[T.body, { fontWeight: '600' }]}>
-                  {g.kind === 'walk'
-                    ? `${pick(KIND.walk.ml, lang)} ${g.meters ? fmtDist(g.meters, lang) : ''} → ${nm(g.to.name)}`
-                    : `${pick(KIND[g.kind].ml, lang)} ${g.line}${g.headsign ? ` → ${g.headsign}` : ''}`}
-                </Text>
-                {g.kind !== 'walk' && (
-                  <Text style={T.small}>{nm(g.from.name)} → {nm(g.to.name)} · {g.stops + 1} {l('stops')} · {g.minutes} {lang === 'en' ? 'min' : lang === 'ar' ? 'د' : 'dk'}{g.agency ? ` · ${g.agency}` : ''}</Text>
-                )}
+          {it.legs.map((g, i) => {
+            const next = it.legs.slice(i + 1).find((x) => x.kind !== 'walk');
+            const isEnd = g.to.name === 'END' || !g.to.name;
+            const b = g.kind === 'walk' ? null : boardText(g, lang);
+            return (
+              <View key={i} style={{ flexDirection: 'row', gap: 10 }}>
+                {!it.approx && <Text style={[T.small, { width: 46 }]}>{hhmm(g.from.time, lang)}</Text>}
+                <View style={{ width: 4, borderRadius: 2, backgroundColor: g.kind === 'walk' ? C.border : g.color ?? KIND[g.kind].color }} />
+                <View style={{ flex: 1, gap: 2 }}>
+                  {g.kind === 'walk' ? (
+                    <>
+                      <Text style={[T.body, { fontWeight: '600' }]}>{walkText(isEnd ? undefined : next, nm(g.to.name), lang)}</Text>
+                      <Text style={T.small}>{minText(g.minutes, lang)}{g.meters ? ` · ${fmtDist(g.meters, lang)}` : ''}</Text>
+                    </>
+                  ) : (
+                    <>
+                      <Text style={[T.body, { fontWeight: '700' }]}>{b?.head}{b?.dir ? <Text style={{ fontWeight: '500', color: C.muted }}> ({b.dir})</Text> : null}</Text>
+                      <Text style={T.small}>{tidyName(nm(g.from.name), lang)} → {tidyName(nm(g.to.name), lang)} · {stopsText(g.stops + 1, lang)} · {it.approx ? '≈ ' : ''}{minText(g.minutes, lang)}{g.agency ? ` · ${g.agency}` : ''}</Text>
+                      <Text style={[T.small, { color: C.ink2, fontWeight: '600' }]}>{alightText(g, lang)}</Text>
+                    </>
+                  )}
+                </View>
               </View>
-            </View>
-          ))}
+            );
+          })}
         </View>
       )}
     </Pressable>

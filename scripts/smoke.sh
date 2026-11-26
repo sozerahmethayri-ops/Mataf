@@ -79,7 +79,7 @@ tapText() { # $1: metin (grep -E); bulursa ortasına dokunur
   set -- $b
   adb shell input tap $(( ($1 + $3) / 2 )) $(( ($2 + $4) / 2 ))
 }
-widgetAdded() { [ "$(adb shell dumpsys appwidget | grep -c PrayerWidgetProvider)" -ge 2 ]; }
+widgetAdded() { [ "$(adb shell dumpsys appwidget | grep -c '\.PrayerWidgetProvider')" -ge 2 ]; }
 # mataf://vakitler?widget=1 başlatıcının onay penceresini açar. RN ekranı sürekli güncellendiği için
 # uiautomator çoğu zaman "idle state" alamıyor; o zaman düğmeyi olası yerlerinde dener.
 open "vakitler?widget=1"; sleep 6; shot "40-widget-onay"
@@ -96,6 +96,21 @@ if [ $added = 0 ]; then
 fi
 echo "widget eklendi: $added" >> smoke/status.txt
 sleep 3
+# Diğer boylar: küçük (2×2) ve liste (2×3) de eklenip çiziliyor mu?
+for wname in NextPrayerWidget PrayerListWidget; do
+  open "vakitler?widget=$wname"; sleep 6
+  ok2=0
+  if tapText "Add to home screen|ADD TO HOME SCREEN|Add automatically|ADD AUTOMATICALLY|Add|ADD|Ekle|EKLE|Ana ekrana ekle"; then sleep 4; fi
+  [ "$(adb shell dumpsys appwidget | grep -c "\.${wname}Provider")" -ge 2 ] && ok2=1
+  if [ $ok2 = 0 ]; then
+    for p in "700 950" "850 930" "750 930" "850 960" "650 950"; do
+      tap $p; sleep 4
+      if [ "$(adb shell dumpsys appwidget | grep -c "\.${wname}Provider")" -ge 2 ]; then ok2="dokunma $p"; break; fi
+    done
+  fi
+  echo "$wname eklendi: $ok2" >> smoke/status.txt
+  sleep 2
+done
 adb shell input keyevent KEYCODE_HOME; sleep 6; shot "41-widget-ana-ekran"
 # Başlatıcı yer yoksa küçük uygulamayı sonraki sayfaya koyar: iki sayfa sağa bak
 adb shell input swipe $(( W * 85 / 100 )) $(( H * 45 / 100 )) $(( W * 15 / 100 )) $(( H * 45 / 100 )) 300; sleep 4; shot "42-widget-sayfa2"

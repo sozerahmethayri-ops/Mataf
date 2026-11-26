@@ -19,6 +19,9 @@ jobs:
     env:
       EXPO_PUBLIC_SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
       EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.SUPABASE_PUBLISHABLE_KEY }}
+      # Toplu taşıma (Transitous): User-Agent'taki iletişim adresi; kod MIT lisanslı, ticari değil
+      EXPO_PUBLIC_TRANSITOUS_CONTACT: https://github.com/sozerahmethayri-ops/Mataf
+      EXPO_PUBLIC_TRANSITOUS_WEB: '1'
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4

@@ -23,8 +23,97 @@ index 3df9e4a..1fe650c 100644
    }
  }
  
+diff --git a/node_modules/expo-widgets/android/src/main/java/expo/modules/widgets/ExpoWidgetsAppWidgetProvider.kt b/node_modules/expo-widgets/android/src/main/java/expo/modules/widgets/ExpoWidgetsAppWidgetProvider.kt
+index 84c025f..8707827 100644
+--- a/node_modules/expo-widgets/android/src/main/java/expo/modules/widgets/ExpoWidgetsAppWidgetProvider.kt
++++ b/node_modules/expo-widgets/android/src/main/java/expo/modules/widgets/ExpoWidgetsAppWidgetProvider.kt
+@@ -11,6 +11,11 @@ open class ExpoWidgetsAppWidgetProvider(
+   override val glanceAppWidget: PeekEmittableAppWidget = ExpoWidgetsPeekWidget(widgetName)
+ 
+   override fun onReceive(context: Context, intent: Intent) {
++    // MATAF: vakit anı alarmı → bütün boyları yenile
++    if (intent.action == WIDGET_TICK_ACTION) {
++      WidgetTicks.fire(context)
++      return
++    }
+     if (intent.action == WIDGET_INTERACTION_ACTION) {
+       val source = intent.getStringExtra(WIDGET_INTERACTION_SOURCE_EXTRA) ?: return
+       val target = intent.getStringExtra(WIDGET_INTERACTION_TARGET_EXTRA) ?: return
+diff --git a/node_modules/expo-widgets/android/src/main/java/expo/modules/widgets/WidgetTicks.kt b/node_modules/expo-widgets/android/src/main/java/expo/modules/widgets/WidgetTicks.kt
+new file mode 100644
+index 0000000..1edb5cc
+--- /dev/null
++++ b/node_modules/expo-widgets/android/src/main/java/expo/modules/widgets/WidgetTicks.kt
+@@ -0,0 +1,67 @@
++package expo.modules.widgets
++
++import android.app.AlarmManager
++import android.app.PendingIntent
++import android.appwidget.AppWidgetManager
++import android.content.Context
++import android.content.Intent
++import android.os.Build
++
++// MATAF: vakit girdiği anda küçük uygulamaları yenile. Android en sık 30 dakikada bir yenilediği için,
++// sıradaki vakit geçtikten sonra yarım saat eski vakit görünmesin diye vakit anlarına alarm kurulur.
++// RTC (uyandırmayan) alarm: ekran kapalıysa telefon açılınca hemen çalışır, pili tüketmez.
++internal const val WIDGET_TICK_ACTION = "expo.modules.widgets.TICK"
++
++internal object WidgetTicks {
++  private const val MAX = 24
++  private const val BASE_REQUEST = 7340
++
++  fun schedule(context: Context, times: List<Double>) {
++    val app = context.applicationContext
++    val alarms = app.getSystemService(Context.ALARM_SERVICE) as? AlarmManager ?: return
++    val names = app.resources.getStringArray(R.array.expo_widgets_names)
++    if (names.isEmpty()) return
++    val target = widgetProviderComponentName(app, names[0])
++    for (i in 0 until MAX) {
++      val old = PendingIntent.getBroadcast(
++        app, BASE_REQUEST + i, Intent(WIDGET_TICK_ACTION).setComponent(target),
++        PendingIntent.FLAG_NO_CREATE or PendingIntent.FLAG_IMMUTABLE
++      )
++      if (old != null) {
++        alarms.cancel(old)
++        old.cancel()
++      }
++    }
++    val now = System.currentTimeMillis()
++    val exact = Build.VERSION.SDK_INT < Build.VERSION_CODES.S || alarms.canScheduleExactAlarms()
++    times.map { it.toLong() }.filter { it > now }.sorted().take(MAX).forEachIndexed { i, at ->
++      val pending = PendingIntent.getBroadcast(
++        app, BASE_REQUEST + i, Intent(WIDGET_TICK_ACTION).setComponent(target),
++        PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
++      )
++      val fire = at + 1500
++      try {
++        if (exact) alarms.setExact(AlarmManager.RTC, fire, pending) else alarms.setWindow(AlarmManager.RTC, fire, 120_000, pending)
++      } catch (e: SecurityException) {
++        alarms.setWindow(AlarmManager.RTC, fire, 120_000, pending)
++      }
++    }
++  }
++
++  /** Alarm gelince her boyun sağlayıcısına standart "güncelle" yayını gönder (Glance kendi işini yapar). */
++  fun fire(context: Context) {
++    val app = context.applicationContext
++    val manager = AppWidgetManager.getInstance(app)
++    app.resources.getStringArray(R.array.expo_widgets_names).forEach { name ->
++      val component = widgetProviderComponentName(app, name)
++      val ids = manager.getAppWidgetIds(component)
++      if (ids.isNotEmpty()) {
++        app.sendBroadcast(
++          Intent(AppWidgetManager.ACTION_APPWIDGET_UPDATE)
++            .setComponent(component)
++            .putExtra(AppWidgetManager.EXTRA_APPWIDGET_IDS, ids)
++        )
++      }
++    }
++  }
++}
 diff --git a/node_modules/expo-widgets/android/src/main/java/expo/modules/widgets/WidgetsModule.kt b/node_modules/expo-widgets/android/src/main/java/expo/modules/widgets/WidgetsModule.kt
-index 05d6a9c..2196a2e 100644
+index 05d6a9c..4b919f2 100644
 --- a/node_modules/expo-widgets/android/src/main/java/expo/modules/widgets/WidgetsModule.kt
 +++ b/node_modules/expo-widgets/android/src/main/java/expo/modules/widgets/WidgetsModule.kt
 @@ -1,6 +1,8 @@
@@ -36,7 +125,7 @@ index 05d6a9c..2196a2e 100644
  import expo.modules.kotlin.exception.Exceptions
  import expo.modules.kotlin.functions.Coroutine
  import expo.modules.kotlin.modules.Module
-@@ -48,6 +50,24 @@ class WidgetsModule : Module() {
+@@ -48,6 +50,29 @@ class WidgetsModule : Module() {
        WidgetsUpdater.reloadAll(context)
      }
  
@@ -52,6 +141,11 @@ index 05d6a9c..2196a2e 100644
 +      } else {
 +        manager.requestPinAppWidget(widgetProviderComponentName(context, name), null, null)
 +      }
++    }
++
++    // MATAF: vakit girdiği anlarda küçük uygulamaları yenilemek için alarm kur (ms cinsinden anlar)
++    Function("scheduleWidgetTicks") { times: List<Double> ->
++      WidgetTicks.schedule(context, times)
 +    }
 +
 +    Function("installedWidgetCount") { name: String ->

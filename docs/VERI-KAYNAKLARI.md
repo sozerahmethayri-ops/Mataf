@@ -58,8 +58,10 @@
 | Ana ekran küçük uygulaması (expo-widgets, Android) | Vakitler telefonda hesaplanıp küçük uygulamaya yazılır | Ağ kullanmaz |
 | Hac rehberi ve şeytan taşlama | Fıkhî bilgiler ve vakitler | Diyanet İşleri Başkanlığı, Hac İlmihali (Hanefî); Diyanet Fetva Kurulu (Akabe cemresi, izdiham); TDV İslâm Ansiklopedisi “Cemre”, “Vakfe”; Buhârî 1549, 1751; Tirmizî 3585 |
 | Hac yerleri (`src/data/osm/hacSites.ts`) | Arafat ve Mina alanı, Harem sınırı, cemreler, mescitler, istasyonlar, hastaneler | © OpenStreetMap katkıcıları, ODbL 1.0 (26 Kasım 2026, `scripts/hac_sites.py`); Harem sınırı ilişkisinin kaynağı: Hadrân es-Sübeytî ve Suûd es-Sübeytî, A‘lâm ve hudûdü’l-Harem (2012). Sınırlar yaklaşıktır |
-| Güneş ve ayın konumu, ay evresi | Gökyüzü yayı, Vakitler ayrıntısı | suncalc 2 (V. Agafonkin, BSD-2), telefonda hesap |
+| Güneş ve ayın konumu, ay evresi | Resimli gökyüzü sahnesi, Vakitler ayrıntısı | suncalc 2 (V. Agafonkin, BSD-2), telefonda hesap |
 | Haremeyn treni (`src/data/train.ts`) | İstasyon yerleri; yaklaşık süreler | © OpenStreetMap katkıcıları, ODbL (26 Kasım 2026); süreler Suudi Basın Ajansı haberleri (Mayıs 2026); bilet ve sefer: sar.hhr.sa |
+| İstanbul raylı sistem (`src/data/istanbulRail.json`) | M1A–M11, T1–T6, Marmaray (B1), B2, füniküler hatları ve istasyonları; çevrimdışı tarif | © OpenStreetMap katkıcıları, ODbL (26 Kasım 2026; `scripts/ist_rail.py`). Sefer saati yok: süreler ortalama hız ve bekleme süresinden yaklaşık |
+| Otobüs ve diğer şehirlerin toplu taşıması | Ulaşım → Toplu taşıma | Transitous (MOTIS, açık GTFS); koşul: açık kaynak (MIT) ve ticari olmayan kullanım, User-Agent'ta depo adresi, kaynak listesine bağlantı. Türkiye: İETT otobüsleri, Ankara, İzmir, Konya ve başka şehirler, TCDD; Suudi Arabistan için veri yok |
 | Hac günlerinin tarihi | Ümmü’l-Kurâ takvimi (cihazda, Intl) | Suudi Arabistan’ın ilanıyla bir gün kayabilir |
 | Supabase (isteğe bağlı) | Canlı kapı bildirimleri ve aile/grup konumu | Kendi projeniz (`docs/SUPABASE.md`); konum geçmişi tutulmaz |
 
