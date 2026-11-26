@@ -1,6 +1,8 @@
 # OSM verisi çekme (elle): Overpass sorgusunu GitHub üzerinde çalıştırır, sonucu "osm" eseri olarak yükler.
-# Kullanım: gh workflow run osm-fetch.yml -f query='[out:json];node(1);out;'  →  gh run download <id> -n osm
+# Kullanım: gh workflow run osm-fetch.yml -f query='[out:json];node(1);out;'  →  "osm-data" sürümündeki out.json
 name: OSM verisi
+permissions:
+  contents: write
 on:
   workflow_dispatch:
     inputs:
@@ -25,7 +27,9 @@ jobs:
           done
           [ $ok = 1 ]
           ls -la out.json
-      - uses: actions/upload-artifact@v4
+      - uses: softprops/action-gh-release@v2
         with:
-          name: osm
-          path: out.json
+          tag_name: osm-data
+          name: OSM verisi (son sorgu)
+          prerelease: true
+          files: out.json
