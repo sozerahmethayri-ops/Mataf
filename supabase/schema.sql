@@ -173,3 +173,22 @@ alter publication supabase_realtime add table public.group_members;
 
 -- İsteğe bağlı temizlik (pg_cron açıksa): 24 saatten eski konumları sil
 -- select cron.schedule('group-clean', '17 * * * *', $$update public.group_members set lat = null, lng = null, accuracy = null where updated_at < now() - interval '24 hours'$$);
+
+-- ════════════════════════════════════════════════════════════════════════════
+-- Uygulama hata kaydı (0.10.0): beklenmeyen hatalar adsız gelir (sürüm, platform, ekran, hata metni).
+-- Kişisel bilgi yok. Yalnız ekleme açık; okuma panelden (Table Editor) yapılır.
+-- ════════════════════════════════════════════════════════════════════════════
+create table if not exists public.client_errors (
+  id        uuid primary key default gen_random_uuid(),
+  at        timestamptz not null default now(),
+  version   text check (char_length(version) <= 20),
+  platform  text check (char_length(platform) <= 20),
+  place     text check (char_length(place) <= 80),
+  message   text not null check (char_length(message) <= 500),
+  stack     text check (char_length(stack) <= 2000)
+);
+alter table public.client_errors enable row level security;
+drop policy if exists "errors insert" on public.client_errors;
+create policy "errors insert" on public.client_errors for insert to anon, authenticated with check (true);
+grant insert on public.client_errors to anon, authenticated;
+-- İsteğe bağlı temizlik (pg_cron açıksa): select cron.schedule('hata-temizle', '0 3 * * *', $$delete from public.client_errors where at < now() - interval '30 days'$$);

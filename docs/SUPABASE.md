@@ -36,6 +36,11 @@ Ayarlar'da "Canlı sunucu (Supabase)" yazar. Yerelde denemek için `.env` dosyas
   artırılabilir). Her telefon yalnız ilk açılışta bir kez giriş yapar; kalabalık bir grup aynı Wi-Fi'den aynı anda ilk
   kez açarsa sınıra takılabilir.
 
+## Hata kaydı
+Beklenmeyen hatalar `client_errors` tablosuna adsız gelir (sürüm, platform, ekran adı, hata metni; kişisel bilgi yok).
+Uygulama yalnız ekleyebilir, okuyamaz; kayıtlar Table Editor'da görünür. Sunucu yoksa kayıt yalnız telefonda kalır
+ve Ayarlar → Hata kaydı'ndan paylaşılabilir.
+
 ## Güvenlik özeti (aile/grup konumu)
 - Grup yalnız 6 harfli davet koduyla kurulur/katılınır (`create_group`, `join_group` işlevleri); tabloya doğrudan ekleme yok.
 - Bir üyenin konumunu yalnız aynı gruptakiler okur; herkes yalnız kendi satırını günceller, grubu ve sahibi değiştiremez.

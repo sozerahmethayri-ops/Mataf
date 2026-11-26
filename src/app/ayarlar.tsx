@@ -4,7 +4,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { Alert, Linking, Platform, Pressable, Text, View } from 'react-native';
 
 import { Icon } from '@/components/Icon';
-import { Card, Header, ListRow, Screen, SectionTitle, Segmented, T, Toggle } from '@/components/ui';
+import { Card, Header, ListRow, Screen, SectionTitle, Segmented, SelectRow, T, Toggle } from '@/components/ui';
 import { WidgetPinRow } from '@/components/WidgetPinRow';
 import { exportBackup, importBackup } from '@/services/backup';
 import { C, PALETTES, colorsFor, fs, fsAr, type PaletteId, type ThemeMode } from '@/constants/theme';
@@ -15,6 +15,8 @@ import { loadNotifPrefs } from '@/services/adhanNotify';
 import { METHODS, getMethod, setMethod, type MethodId } from '@/services/prayer';
 import { useReports } from '@/services/ReportsContext';
 import { useTheme, type HomeId } from '@/services/ThemeContext';
+import { checkUpdate } from '@/services/update';
+import { clearErrors, getErrors, shareErrors } from '@/services/errorLog';
 
 type Lang = 'tr' | 'en' | 'ar';
 const TEXT_STEPS: { v: number; l: { tr: string; en: string; ar: string } }[] = [
@@ -37,6 +39,18 @@ const HOMES: { id: HomeId; l: { tr: string; en: string; ar: string } }[] = [
 const L = {
   backendNote: { tr: 'Sunucu bağlı değil: kapı bildirimleri ve aile/grup konumu yalnız bu cihazda önizleme olarak çalışır.', en: 'No server connected: gate reports and family/group location run only as a preview on this device.', ar: 'لا يوجد خادم متصل: بلاغات الأبواب وموقع العائلة/المجموعة تعمل كمعاينة على هذا الجهاز فقط.' },
   look: { tr: 'Görünüm', en: 'Appearance', ar: 'المظهر' },
+  timesSec: { tr: 'Namaz vakitleri', en: 'Prayer times', ar: 'مواقيت الصلاة' },
+  homeScreen: { tr: 'Ortadaki düğme şunu açsın', en: 'The middle button opens', ar: 'الزر الأوسط يفتح' },
+  server: { tr: 'Kapı bildirimleri ve aile konumu', en: 'Gate reports and family location', ar: 'بلاغات الأبواب وموقع العائلة' },
+  upd: { tr: 'Güncellemeleri denetle', en: 'Check for updates', ar: 'التحقق من التحديثات' },
+  updNew: { tr: 'Yeni sürüm hazır: {v}', en: 'New version ready: {v}', ar: 'إصدار جديد جاهز: {v}' },
+  updNone: { tr: 'En yeni sürümü kullanıyorsunuz.', en: 'You have the latest version.', ar: 'لديك أحدث إصدار.' },
+  updFail: { tr: 'Denetlenemedi (internet?)', en: 'Could not check (internet?)', ar: 'تعذّر التحقق' },
+  download: { tr: 'İndir', en: 'Download', ar: 'تنزيل' },
+  errs: { tr: 'Hata kaydı ({n})', en: 'Error log ({n})', ar: 'سجل الأخطاء ({n})' },
+  errsSub: { tr: 'Paylaşırsanız sorunu bulmamız kolaylaşır', en: 'Sharing it helps us fix the problem', ar: 'مشاركته تساعدنا على الإصلاح' },
+  errsShare: { tr: 'Paylaş', en: 'Share', ar: 'مشاركة' },
+  errsDel: { tr: 'Sil', en: 'Delete', ar: 'حذف' },
   light: { tr: 'Açık', en: 'Light', ar: 'فاتح' },
   dark: { tr: 'Koyu', en: 'Dark', ar: 'داكن' },
   system: { tr: 'Sistem', en: 'System', ar: 'النظام' },
@@ -76,6 +90,9 @@ export default function Settings() {
   const { backend } = useReports();
   const [method, setM] = useState<MethodId>('UmmAlQura');
   const [rtlChanged, setRtlChanged] = useState(false);
+  const [updMsg, setUpdMsg] = useState<string | null>(null);
+  const [errCount, setErrCount] = useState(0);
+  useFocusEffect(useCallback(() => { getErrors().then((x) => setErrCount(x.length)); }, []));
   const { prefs: theme, dark, setTheme } = useTheme();
   const [notif, setNotif] = useState<NotifPrefs | null>(null);
   const lg = lang as Lang;
@@ -138,35 +155,31 @@ export default function Settings() {
         <Text style={T.body}>{l('sample')}</Text>
       </Card>
 
+      <SectionTitle>{t('settings.language')}</SectionTitle>
+      <Segmented<string> value={lang} onChange={(code) => {
+        const to = LANGS.find((x) => x.code === code);
+        if (!to) return;
+        if (to.rtl !== (LANGS.find((x) => x.code === lang)?.rtl ?? false)) setRtlChanged(true);
+        setLang(to.code);
+      }} options={LANGS.map((x) => ({ value: x.code, label: x.label }))} />
+      {rtlChanged && <Text style={[T.small, { color: C.limited }]}>{t('settings.rtlNote')}</Text>}
+
+      <SectionTitle>{l('timesSec')}</SectionTitle>
+      <SelectRow<MethodId> title={t('settings.method')} value={method} options={METHODS.map((m) => ({ value: m.id, label: m.label }))}
+        onChange={(id) => { setM(id); setMethod(id); }} left={<Icon name="clock" color={C.accent} />} />
+      <ListRow title={l('notif')} subtitle={notifSub} onPress={() => router.push('/bildirimler')}
+        left={<Icon name="bell" color={notif?.enabled ? C.accent : C.muted} />} />
+      <WidgetPinRow />
+
       <SectionTitle>{l('home')}</SectionTitle>
-      {HOMES.map((h) => (
-        <ListRow key={h.id} title={pick(h.l, lg)} onPress={() => setTheme({ home: h.id })}
-          right={h.id === theme.home ? <Icon name="check" color={C.accent} /> : <></>} />
-      ))}
-      <Text style={T.small}>{l('homeNote')}</Text>
+      <SelectRow<HomeId> title={l('homeScreen')} value={theme.home} options={HOMES.map((h) => ({ value: h.id, label: pick(h.l, lg) }))}
+        onChange={(id) => setTheme({ home: id })} left={<Icon name="home" color={C.accent} />} />
 
       <SectionTitle>{l('behaviour')}</SectionTitle>
       <ToggleRow title={l('map3d')} sub={l('map3dSub')} value={theme.map3d} onChange={(v) => setTheme({ map3d: v })} />
       <ToggleRow title={l('swipe')} value={theme.swipeTabs} onChange={(v) => setTheme({ swipeTabs: v })} />
       <ToggleRow title={l('motion')} sub={l('motionSub')} value={theme.reduceMotion} onChange={(v) => setTheme({ reduceMotion: v })} />
       <ToggleRow title={l('haptics')} sub={l('hapticsSub')} value={theme.haptics} onChange={(v) => setTheme({ haptics: v })} />
-
-      <SectionTitle>{l('notif')}</SectionTitle>
-      <ListRow title={l('notif')} subtitle={notifSub} onPress={() => router.push('/bildirimler')}
-        left={<Icon name="bell" color={notif?.enabled ? C.accent : C.muted} />} />
-      <WidgetPinRow />
-      <SectionTitle>{t('settings.language')}</SectionTitle>
-      {LANGS.map((l) => (
-        <ListRow key={l.code} title={l.label} onPress={() => { if (l.rtl !== (LANGS.find((x) => x.code === lang)?.rtl ?? false)) setRtlChanged(true); setLang(l.code); }}
-          right={l.code === lang ? <Icon name="check" color={C.accent} /> : <></>} />
-      ))}
-      {rtlChanged && <Text style={[T.small, { color: C.limited }]}>{t('settings.rtlNote')}</Text>}
-
-      <SectionTitle>{t('settings.method')}</SectionTitle>
-      {METHODS.map((m) => (
-        <ListRow key={m.id} title={m.label} onPress={() => { setM(m.id); setMethod(m.id); }}
-          right={m.id === method ? <Icon name="check" color={C.accent} /> : <></>} />
-      ))}
 
       <SectionTitle>{l('data')}</SectionTitle>
       <ListRow title={l('offline')} subtitle={l('offlineSub')} onPress={() => router.push('/cevrimdisi')}
@@ -178,15 +191,28 @@ export default function Settings() {
       <ListRow title={t('data.title')} subtitle={t('data.sub')} onPress={() => router.push('/veriler')}
         left={<Icon name="data" color={C.accent} />} />
 
-      <SectionTitle>{t('settings.backend')}</SectionTitle>
-      <Card tint={C.surface}>
-        <Text style={T.body}>{backend === 'supabase' ? t('settings.backendRemote') : t('settings.backendLocal')}</Text>
-        {backend !== 'supabase' && <Text style={T.small}>{l('backendNote')}</Text>}
-      </Card>
-
       <SectionTitle>{t('settings.about')}</SectionTitle>
+      {Platform.OS === 'android' && (
+        <ListRow title={l('upd')} subtitle={updMsg ?? undefined} left={<Icon name="refresh" color={C.accent} />} onPress={() => {
+          setUpdMsg('…');
+          checkUpdate(true).then((u) => {
+            if (!u) { setUpdMsg(l('updNone')); return; }
+            setUpdMsg(l('updNew').replace('{v}', u.version));
+            Alert.alert(l('updNew').replace('{v}', u.version), '', [{ text: '✕', style: 'cancel' }, { text: l('download'), onPress: () => { Linking.openURL(u.apk); } }]);
+          }).catch(() => setUpdMsg(l('updFail')));
+        }} />
+      )}
+      {errCount > 0 && (
+        <ListRow title={l('errs').replace('{n}', String(errCount))} subtitle={l('errsSub')} left={<Icon name="alert" color={C.limited} />}
+          onPress={() => Alert.alert(l('errs').replace('{n}', String(errCount)), l('errsSub'), [
+            { text: '✕', style: 'cancel' },
+            { text: l('errsDel'), style: 'destructive', onPress: () => { clearErrors().then(() => setErrCount(0)); } },
+            { text: l('errsShare'), onPress: () => { shareErrors(); } },
+          ])} />
+      )}
       <Card tint={C.surface}>
         <Text style={T.body}>MATAF {Constants.expoConfig?.version ?? ''}</Text>
+        <Text style={T.small}>{backend === 'supabase' ? `${l('server')}: ${t('settings.backendRemote')}` : l('backendNote')}</Text>
         <Text style={T.small}>Mescid-i Haram ve Mescid-i Nebevî’nin 3D biçimi, kapı yerleri ve çevredeki binalar OpenStreetMap’in 3D bina verisinden (© OpenStreetMap katkıcıları, ODbL); doğruluğu bu veri kadardır. Kâbe ve Yeşil Kubbe ayrıntılı kendi modelimizdir.</Text>
         <Text style={[T.small, { color: C.accent, fontWeight: '700' }]} onPress={() => Linking.openURL('https://www.openstreetmap.org/copyright')}>OpenStreetMap lisansı ↗</Text>
       </Card>

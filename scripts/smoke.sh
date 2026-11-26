@@ -25,6 +25,8 @@ step() { # $1 ad, $2 bekleme
 }
 open() { adb shell "am start -W -a android.intent.action.VIEW -d 'mataf://$1' $PKG" >/dev/null 2>&1; }
 
+# İlk açılış ekranı ("Hoş geldiniz") görüntüsü 01'de; derin bağlantıyla kapat ki sekme dokunuşları ana sayfaya düşsün
+adb shell "am start -W -a android.intent.action.VIEW -d 'mataf://hosgeldin?bitti=1' $PKG" >/dev/null 2>&1; sleep 4
 SIZE=$(adb shell wm size | grep -oE '[0-9]+x[0-9]+' | tail -1)
 W=${SIZE%x*}; H=${SIZE#*x}
 Y=$(( H * 950 / 1000 ))

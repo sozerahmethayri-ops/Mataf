@@ -52,6 +52,9 @@ jobs:
           cp android/app/build/outputs/apk/release/app-release.apk "mataf-$V.apk"
           # Sabit adlı kopya: paylaşılan indirme bağlantısı her sürümde en yeni APK'yı verir
           cp android/app/build/outputs/apk/release/app-release.apk mataf.apk
+          # Uygulamadaki güncelleme uyarısı bu dosyaya bakar (APK'larla aynı adımda, en son yüklenir)
+          C=$(node -p "require('./app.json').expo.android.versionCode")
+          node -e "require('fs').writeFileSync('version.json', JSON.stringify({ version: process.argv[1], versionCode: Number(process.argv[2]), apk: 'https://github.com/sozerahmethayri-ops/Mataf/releases/download/apk-latest/mataf.apk', at: new Date().toISOString() }))" "$V" "$C"
           echo "file=mataf-$V.apk" >> "$GITHUB_OUTPUT"
           echo "version=$V" >> "$GITHUB_OUTPUT"
       - uses: actions/upload-artifact@v4
@@ -68,3 +71,4 @@ jobs:
           files: |
             ${{ steps.name.outputs.file }}
             mataf.apk
+            version.json

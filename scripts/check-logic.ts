@@ -28,6 +28,9 @@ import { buildMadinah } from '../src/scene/madinah';
 import { MASA_LENGTH, adjustSay, initialSay, nearMasa, pointOnMasa, project, startSayManual, stepSay, type SayState } from '../src/services/say';
 import { UMRE_STEPS, IHRAM_RULES } from '../src/data/umre';
 import { zikirStats } from '../src/services/zikirStats';
+import { altitudeText, directionText, moonLitPath, moonPhaseName, skyDay, skyNow, skyPhase } from '../src/services/sky';
+import { newer } from '../src/services/version';
+import { nextPrayer } from '../src/services/prayer';
 import { SKIP, parseBackup } from '../src/services/backupFormat';
 import { AREAS, GLYPH_RANGES, fontStacks, lat2tile, lon2tile, resolveMataf, rewriteStyle, spriteRoot, tilesFor } from '../src/services/offlineMath';
 import { daysToFinish, initialKaza, lastDays, markKaza, prayersLeft, remaining, setOwedDays, toDays } from '../src/services/kaza';
@@ -673,5 +676,41 @@ async function transitChecks() {
   try { await planTransit({ lat: 0, lng: 0 }, { lat: 1, lng: 1 }, { lang: 'en', contact: 'x', version: '1', fetcher: async () => ({ ok: false, status: 429, json: async () => ({}) }) }); } catch { threw = true; }
   ok(threw, 'Transitous hata kodu (429) yakalanır');
 }
+
+// ── Gökyüzü: güneş ve ayın yeri ──
+{
+  ok(moonPhaseName(0, 'tr') === 'Yeni ay' && moonPhaseName(0.5, 'tr') === 'Dolunay' && moonPhaseName(0.25, 'tr') === 'İlk dördün' && moonPhaseName(0.75, 'tr') === 'Son dördün', 'ay: dört ana evrenin adı');
+  ok(moonPhaseName(0.1, 'tr') === 'Hilal (büyüyen)' && moonPhaseName(0.9, 'tr') === 'Hilal (küçülen)' && moonPhaseName(0.99, 'en') === 'New moon', 'ay: hilal büyüyen/küçülen, sona yakın yeni ay');
+  ok(directionText(0, 'tr') === 'kuzeyde' && directionText(180, 'tr') === 'güneyde' && directionText(225, 'tr') === 'güneybatıda' && directionText(359, 'tr') === 'kuzeyde' && directionText(-90, 'tr') === 'batıda', 'yön: sekiz yön, 360 ve eksi açı');
+  ok(altitudeText(43.4, 'tr') === 'ufkun 43° üstünde' && altitudeText(-12.6, 'tr') === 'ufkun 13° altında', 'yükseklik yazısı');
+  ok(moonLitPath(0, 0, 10, 0.005, true) === '', 'ay: yeni ayda aydınlık kısım çizilmez');
+  ok(moonLitPath(0, 0, 10, 0.25, true).includes('A 10 10 0 0 1') && moonLitPath(0, 0, 10, 0.25, true).includes('A 5 10 0 0 0'), 'ay: büyüyen hilal sağda, uçbirleşim çizgisi sağa yakın');
+  ok(moonLitPath(0, 0, 10, 0.75, true).includes('A 5 10 0 0 1'), 'ay: büyüyen şişkin ay, uçbirleşim sola taşar');
+  ok(moonLitPath(0, 0, 10, 0.25, false).includes('A 10 10 0 0 0') && moonLitPath(0, 0, 10, 0.25, false).includes('A 5 10 0 0 1'), 'ay: küçülen hilal solda');
+  ok(skyPhase(20) === 'day' && skyPhase(-3) === 'twilight' && skyPhase(-20) === 'night', 'gökyüzü rengi: gündüz/alacakaranlık/gece');
+  // Mekke, 26 Kasım 2026 öğle: güneşin en yüksek açısı ≈ 90 − 21,42 − 21,1 ≈ 47,5°
+  const MK = { lat: 21.4225, lng: 39.8262 };
+  const noon = skyDay(new Date('2026-11-26T09:00:00Z'), MK.lat, MK.lng, 'UmmAlQura');
+  ok(Math.abs(noon.sunMax - 47.5) < 1.2, `güneş: Mekke'de kasım sonu öğle yüksekliği (${noon.sunMax.toFixed(1)}°)`);
+  ok(noon.sun.length === 145 && noon.end - noon.start === 24 * 3600e3, 'gökyüzü penceresi 24 saat, 10 dakikada bir örnek');
+  // Sıradaki vakit pencerede her zaman var (Mekke ve İstanbul, günün her iki saatinde)
+  let allIn = true;
+  for (const P of [MK, { lat: 41.0369, lng: 28.985 }]) {
+    for (let h = 0; h < 24; h += 2) {
+      const now = new Date(Date.UTC(2026, 10, 26, h, 7));
+      const d = skyDay(now, P.lat, P.lng, 'Turkey');
+      const nx = nextPrayer(P.lat, P.lng, 'Turkey', now);
+      const sorted = d.marks.every((m, i) => i === 0 || d.marks[i - 1].at.getTime() <= m.at.getTime());
+      if (!sorted || !d.marks.some((m) => m.key === nx.key && Math.abs(m.at.getTime() - nx.at.getTime()) < 60e3) || now.getTime() < d.start || now.getTime() > d.end) allIn = false;
+    }
+  }
+  ok(allIn, 'gökyüzü: şu an ve sıradaki vakit her saatte pencerenin içinde, işaretler sıralı');
+  // 24 Kasım 2026 dolunay, 9 Aralık 2026 yeni ay
+  ok(skyNow(new Date('2026-11-24T15:00:00Z'), MK.lat, MK.lng).moon.fraction > 0.98, 'ay: 24 Kasım 2026 dolunay');
+  ok(skyNow(new Date('2026-12-09T03:00:00Z'), MK.lat, MK.lng).moon.fraction < 0.03, 'ay: 9 Aralık 2026 yeni ay');
+}
+
+// ── Güncelleme uyarısı: sürüm karşılaştırma ──
+ok(newer('0.10.0', '0.9.0') && !newer('0.9.0', '0.9.0') && !newer('0.9.1', '0.10.0') && newer('1.0', '0.99.9'), 'güncelleme: sürüm karşılaştırma (0.10 > 0.9)');
 
 mosqueChecks().then(transitChecks).then(() => process.exit(fails ? 1 : 0));

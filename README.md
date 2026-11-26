@@ -2,6 +2,8 @@
 
 Mekke ve Medine'deki ziyaretçiler için iOS ve Android uygulaması:
 
+- **Gökyüzü yayı (0.10.0)** — ana sayfada ve Vakitler'de güneşin ve ayın şu an gökyüzünde nerede olduğu: güneşin yolu (8 saat öncesinden 16 saat sonrasına), vakitler bu yol üzerinde işaretli, sıradaki vakit yazılı; ayın evresi ve aydınlık yüzdesi; gündüz, alacakaranlık ve gece renkleri. Vakitler ekranında güneşin ve ayın yüksekliği, yönü, doğuş/batış saatleri ve konumun koordinatları. Hesap telefonda (suncalc), internet gerekmez.
+- **Sade arayüz (0.10.0)** — ilk açılışta tek sayfalık "Hoş geldiniz" (dil, konum izni, ezan bildirimi); ana sayfada tek dokunuşla yer seçimi; altışarlı gruplanmış ve aranabilir Menü; Ayarlar'da uzun listeler katlanır satırda; yeni sürüm çıkınca ana sayfada "İndir" şeridi (Android); beklenmeyen hatada sade hata sayfası ve paylaşılabilir hata kaydı.
 - **Hac modu (0.9.0)** — gün gün hac rehberi (Terviye, Arafat, Müzdelife, bayramın 1. günü, ziyaret tavafı, üç cemre, veda), hac türüne göre (temettu, kıran, ifrad) adımlar; her adımda yapılacaklar, dualar, sık hatalar, cezası ve dayanağı (Diyanet Hac İlmihali, Hanefî; diğer mezhepler yerinde belirtildi). Hac günlerinin tarihleri Ümmü’l-Kurâ takviminden; hac günlerinde ana sayfada o günün kartı.
 - **Şeytan taşlama sayacı (0.9.0)** — bayram günü seçimi, Mina için hesaplanan Hanefî atış vakti (1. gün imsaktan, 2.–3. gün öğleden; 4. gün Ebû Hanîfe’ye göre öğleden önce de), cemre cemre 7 taş, sıra uyarısı, küçük ve orta cemreden sonra dua hatırlatması, vekâlet için ayrı sayaç, toplam 49/70.
 - **Hac yerleri haritası (0.9.0)** — Arafat, Mina, Müzdelife, cemreler, Nemire Mescidi, Cebel-i Rahme, Meş’ar-i Harâm, Hayf Mescidi, Meşâir treni istasyonları, hastaneler ve Harem sınırı (OpenStreetMap). Konumla “Arafat / Mina / Harem sınırı içinde misiniz?” denetimi; sınıra yakınken kesin söylemez, tabelalara yönlendirir.
@@ -40,7 +42,7 @@ Mekke ve Medine'deki ziyaretçiler için iOS ve Android uygulaması:
 - **Ravza rehberi** — ziyaret saatleri, Nusuk izni, resmî 360° sanal tur bağlantısı.
 - **Türkçe, İngilizce, Arapça** (Arapça sağdan sola).
 
-> Durum: **0.9.0 — geliştirme sürümü.** Bina biçimleri ve kapı yerleri OpenStreetMap'ten gelir (doğruluğu bu veri kadardır); mescit içi hizmet noktaları örnektir. Ayrıntı: [docs/VERI-KAYNAKLARI.md](docs/VERI-KAYNAKLARI.md), [scripts/osm-3d.md](scripts/osm-3d.md).
+> Durum: **0.10.0 — geliştirme sürümü.** Bina biçimleri ve kapı yerleri OpenStreetMap'ten gelir (doğruluğu bu veri kadardır); mescit içi hizmet noktaları örnektir. Ayrıntı: [docs/VERI-KAYNAKLARI.md](docs/VERI-KAYNAKLARI.md), [scripts/osm-3d.md](scripts/osm-3d.md).
 
 ## Hızlı başlangıç
 

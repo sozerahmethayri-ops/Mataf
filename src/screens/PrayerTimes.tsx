@@ -1,19 +1,22 @@
-// Namaz vakitleri (tam ekran): miladî + hicrî tarih kartı, sonraki vakit geri sayımı, günün vakitleri,
-// 7 günlük çizelge, yaklaşan mübarek günler ve ilgili ayarlar.
+// Namaz vakitleri (tam ekran): gökyüzü yayı (güneş ve ayın yeri), sonraki vakit, günün vakitleri, güneş/ay/konum
+// ayrıntısı, 7 günlük çizelge, yaklaşan mübarek günler ve ilgili ayarlar.
 import { router } from 'expo-router';
 import { useEffect, useMemo, useState } from 'react';
 import { Text, View } from 'react-native';
+import { getTimes } from 'suncalc';
 
-import { Icon } from '@/components/Icon';
+import { Icon, type IconName } from '@/components/Icon';
+import { SkyArc } from '@/components/SkyArc';
 import { WidgetPinRow } from '@/components/WidgetPinRow';
 import { Header, ListRow, Screen, SectionTitle, Segmented, T } from '@/components/ui';
 import { C, fs } from '@/constants/theme';
 import { pick, useI18n } from '@/i18n';
 import { HIJRI_MONTHS, SPECIAL_DAYS, hijriText, toHijri } from '@/services/hijri';
-import { METHODS, PRAYERS, fmtTime, nextPrayer, times } from '@/services/prayer';
+import { METHODS, PRAYERS, fmtTime, nextPrayer, times, type PrayerKey } from '@/services/prayer';
+import { altitudeText, directionText, moonPhaseName, skyNow } from '@/services/sky';
 import { usePrayerPlace, type PlaceId } from '@/services/prayerPlace';
 import { usePrayerWidgetSync } from '@/services/widgetSync';
-import { Countdown } from './HomePrayer';
+import { Countdown, pct } from './HomePrayer';
 
 type Lang = 'tr' | 'en' | 'ar';
 const L = {
@@ -30,7 +33,23 @@ const L = {
   notifSub: { tr: 'Ezandan önce hatırlatma, ses, kendi ezan kaydınız', en: 'Reminder before adhan, sound, your own adhan', ar: 'تذكير قبل الأذان، الصوت' },
   imsak: { tr: 'İmsak', en: 'Fajr', ar: 'الفجر' },
   aksam: { tr: 'Akşam', en: 'Maghrib', ar: 'المغرب' },
+  skyTitle: { tr: 'Güneş, ay ve konum', en: 'Sun, moon and location', ar: 'الشمس والقمر والموقع' },
+  sun: { tr: 'Güneş', en: 'Sun', ar: 'الشمس' },
+  moon: { tr: 'Ay', en: 'Moon', ar: 'القمر' },
+  place: { tr: 'Konum', en: 'Location', ar: 'الموقع' },
+  rise: { tr: 'Doğuş', en: 'Rise', ar: 'الشروق' },
+  set: { tr: 'Batış', en: 'Set', ar: 'الغروب' },
+  lit: { tr: 'aydınlık', en: 'lit', ar: 'مضاء' },
+  dayLen: { tr: 'gün {h} sa {m} dk', en: 'day {h} h {m} min', ar: 'النهار {h} س {m} د' },
 };
+
+/** 21,4230° K · 39,8263° D */
+function coordText(lat: number, lng: number, lg: Lang) {
+  const n = (v: number) => Math.abs(v).toFixed(4).replace('.', lg === 'tr' ? ',' : '.');
+  const ns = lg === 'tr' ? (lat >= 0 ? 'K' : 'G') : lg === 'ar' ? (lat >= 0 ? 'ش' : 'ج') : lat >= 0 ? 'N' : 'S';
+  const ew = lg === 'tr' ? (lng >= 0 ? 'D' : 'B') : lg === 'ar' ? (lng >= 0 ? 'ق' : 'غ') : lng >= 0 ? 'E' : 'W';
+  return `${n(lat)}° ${ns} · ${n(lng)}° ${ew}`;
+}
 
 export default function PrayerTimes({ back = false }: { back?: boolean }) {
   const { t, lang } = useI18n();
@@ -42,8 +61,6 @@ export default function PrayerTimes({ back = false }: { back?: boolean }) {
 
   const tt = useMemo(() => times(loc.lat, loc.lng, method, now), [loc.lat, loc.lng, method, now]);
   const nx = nextPrayer(loc.lat, loc.lng, method, now);
-  const prog = Math.min(1, Math.max(0, (now.getTime() - nx.prev.getTime()) / (nx.at.getTime() - nx.prev.getTime())));
-  const h = toHijri(now);
   const dayKey = now.toDateString();
   const week = useMemo(() => {
     const base = new Date(dayKey);
@@ -65,6 +82,12 @@ export default function PrayerTimes({ back = false }: { back?: boolean }) {
     return out;
   }, [dayKey, lg]);
   const placeName = label === 'makkah' ? pick(L.makkah, lg) : label === 'madinah' ? pick(L.madinah, lg) : label;
+  const names = useMemo(() => Object.fromEntries(PRAYERS.map((p) => [p, t(`pray.${p}` as const).split(' · ')[0]])) as Record<PrayerKey, string>, [t]);
+  const minuteKey = Math.floor(now.getTime() / 60e3);
+  const sky = useMemo(() => skyNow(new Date(minuteKey * 60e3), loc.lat, loc.lng), [minuteKey, loc.lat, loc.lng]);
+  const sunT = useMemo(() => getTimes(new Date(dayKey), loc.lat, loc.lng), [dayKey, loc.lat, loc.lng]);
+  const dayMin = sunT.sunrise && sunT.sunset ? Math.round((sunT.sunset.getTime() - sunT.sunrise.getTime()) / 60e3) : 0;
+  const dayLen = dayMin > 0 ? pick(L.dayLen, lg).replace('{h}', String(Math.floor(dayMin / 60))).replace('{m}', String(dayMin % 60)) : '';
   const dayFmt = new Intl.DateTimeFormat(lang, { weekday: 'short', day: 'numeric', month: 'short' });
 
   return (
@@ -74,31 +97,14 @@ export default function PrayerTimes({ back = false }: { back?: boolean }) {
         { value: 'auto', label: pick(L.here, lg) }, { value: 'makkah', label: pick(L.makkah, lg) }, { value: 'madinah', label: pick(L.madinah, lg) },
       ]} />
 
-      {/* Tarih kartı */}
-      <View style={{ flexDirection: 'row', gap: 10 }}>
-        <View style={{ flex: 1, padding: 14, borderRadius: 18, backgroundColor: C.surface, gap: 2 }}>
-          <Text style={{ fontSize: fs(12), color: C.muted, fontWeight: '700' }}>{new Intl.DateTimeFormat(lang, { weekday: 'long' }).format(now)}</Text>
-          <Text style={{ fontSize: fs(30), color: C.ink, fontWeight: '700' }}>{now.getDate()}</Text>
-          <Text style={{ fontSize: fs(13), color: C.ink2 }}>{new Intl.DateTimeFormat(lang, { month: 'long', year: 'numeric' }).format(now)}</Text>
+      {/* Gökyüzü ve sonraki vakit */}
+      <SkyArc now={now} lat={loc.lat} lng={loc.lng} tz={loc.tz} method={method} nextKey={nx.key} nextAt={nx.at} names={names} lang={lg} height={184} />
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 12, paddingHorizontal: 16, borderRadius: 18, backgroundColor: C.accentSoft, borderWidth: 1, borderColor: C.accentTint }}>
+        <View style={{ flex: 1, gap: 2 }}>
+          <Text style={{ fontSize: fs(11.5), fontWeight: '700', color: C.accent, textTransform: 'uppercase', letterSpacing: 0.7 }}>{t('times.next')}</Text>
+          <Text style={{ fontSize: fs(22), fontWeight: '700', color: C.ink }} numberOfLines={1}>{names[nx.key]} <Text style={{ color: C.accent }}>{fmtTime(nx.at, loc.tz)}</Text></Text>
         </View>
-        <View style={{ flex: 1, padding: 14, borderRadius: 18, backgroundColor: C.greenTint, gap: 2 }}>
-          <Text style={{ fontSize: fs(12), color: C.green, fontWeight: '700' }}>{lg === 'ar' ? 'هجري' : lg === 'en' ? 'Hijri' : 'Hicrî'}</Text>
-          <Text style={{ fontSize: fs(30), color: C.ink, fontWeight: '700' }}>{h.d}</Text>
-          <Text style={{ fontSize: fs(13), color: C.ink2 }} numberOfLines={1}>{HIJRI_MONTHS[lg][h.m - 1]} {h.y}</Text>
-        </View>
-      </View>
-
-      {/* Sonraki vakit */}
-      <View style={{ padding: 18, borderRadius: 20, backgroundColor: C.accentSoft, borderWidth: 1, borderColor: C.accentTint, gap: 8 }}>
-        <Text style={{ fontSize: fs(12), fontWeight: '700', color: C.accent, textTransform: 'uppercase', letterSpacing: 0.7 }}>{t('times.next')}</Text>
-        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline' }}>
-          <Text style={{ fontSize: fs(28), fontWeight: '700', color: C.ink }}>{t(`pray.${nx.key}` as const).split(' · ')[0]}</Text>
-          <Text style={{ fontSize: fs(28), fontWeight: '700', color: C.accent }}>{fmtTime(nx.at, loc.tz)}</Text>
-        </View>
-        <View style={{ height: 6, borderRadius: 3, backgroundColor: C.accentTint, overflow: 'hidden' }}>
-          <View style={{ width: `${prog * 100}%`, height: 6, backgroundColor: C.route }} />
-        </View>
-        <View style={{ alignItems: 'flex-end' }}><Countdown to={nx.at} size={20} /></View>
+        <Countdown to={nx.at} size={20} />
       </View>
 
       {/* Günün vakitleri */}
@@ -114,7 +120,17 @@ export default function PrayerTimes({ back = false }: { back?: boolean }) {
           );
         })}
       </View>
-      <Text style={T.small}>{hijriText(now, lg)} · {t('times.method', { m: METHODS.find((x) => x.id === method)?.label ?? method })}</Text>
+      <Text style={T.small}>{new Intl.DateTimeFormat(lang, { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }).format(now)} · {hijriText(now, lg)} · {t('times.method', { m: METHODS.find((x) => x.id === method)?.label ?? method })}</Text>
+
+      {/* Güneş, ay ve konum */}
+      <SectionTitle>{pick(L.skyTitle, lg)}</SectionTitle>
+      <View style={{ borderWidth: 1, borderColor: C.border, borderRadius: 20, paddingHorizontal: 16 }}>
+        <SkyRow icon="sun" title={`${pick(L.sun, lg)} · ${altitudeText(sky.sun.alt, lg)}, ${directionText(sky.sun.az, lg)}`}
+          sub={[sunT.sunrise && `${pick(L.rise, lg)} ${fmtTime(sunT.sunrise, loc.tz)}`, sunT.sunset && `${pick(L.set, lg)} ${fmtTime(sunT.sunset, loc.tz)}`, dayLen].filter(Boolean).join(' · ')} />
+        <SkyRow icon="moon" title={`${pick(L.moon, lg)} · ${moonPhaseName(sky.moon.phase, lg)}, ${pct(sky.moon.fraction, lg)} ${pick(L.lit, lg)}`}
+          sub={[`${altitudeText(sky.moon.alt, lg)}, ${directionText(sky.moon.az, lg)}`, sky.moonRise && `${pick(L.rise, lg)} ${fmtTime(sky.moonRise, loc.tz)}`, sky.moonSet && `${pick(L.set, lg)} ${fmtTime(sky.moonSet, loc.tz)}`].filter(Boolean).join(' · ')} />
+        <SkyRow icon="pin" title={`${pick(L.place, lg)} · ${placeName || (lg === 'en' ? 'My location' : lg === 'ar' ? 'موقعي' : 'Konumum')}`} sub={coordText(loc.lat, loc.lng, lg)} last />
+      </View>
 
       {/* 7 gün */}
       <SectionTitle>{pick(L.week, lg)}</SectionTitle>
@@ -158,5 +174,17 @@ export default function PrayerTimes({ back = false }: { back?: boolean }) {
       <WidgetPinRow />
       <ListRow title={t('settings.method')} subtitle={METHODS.find((x) => x.id === method)?.label} onPress={() => router.push('/ayarlar')} left={<Icon name="settings" color={C.muted} />} />
     </Screen>
+  );
+}
+
+function SkyRow({ icon, title, sub, last }: { icon: IconName; title: string; sub: string; last?: boolean }) {
+  return (
+    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 12, borderBottomWidth: last ? 0 : 1, borderBottomColor: C.border }}>
+      <Icon name={icon} size={20} color={icon === 'sun' ? C.gold : icon === 'moon' ? C.user : C.accent} />
+      <View style={{ flex: 1, gap: 2 }}>
+        <Text style={{ fontSize: fs(14.5), fontWeight: '600', color: C.ink }}>{title}</Text>
+        {!!sub && <Text style={T.small}>{sub}</Text>}
+      </View>
+    </View>
   );
 }

@@ -1,6 +1,7 @@
 // Menü: uygulamadaki bütün ekranlar tek yerde, gruplu.
 import { router } from 'expo-router';
-import { Linking, Pressable, ScrollView, Text, View } from 'react-native';
+import { useState } from 'react';
+import { Linking, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Icon, type IconName } from '@/components/Icon';
@@ -10,63 +11,82 @@ import { pick, useI18n } from '@/i18n';
 
 type Lang = 'tr' | 'en' | 'ar';
 type Item = { icon: IconName; title: { tr: string; en: string; ar: string }; to?: string; url?: string; tint?: string };
+// Sade menü: her ekran bir kez, gruplar altışar; başka ekranlardan açılanlar (kapı bildir, Ravza 360°, okuma
+// ayarları, veri kaynakları, yol tarifi, ezan bildirimleri) yalnız aramada çıkar.
 const GROUPS: { title: { tr: string; en: string; ar: string }; items: Item[] }[] = [
   {
     title: { tr: 'İbadet', en: 'Worship', ar: 'العبادة' },
     items: [
       { icon: 'clock', title: { tr: 'Namaz vakitleri', en: 'Prayer times', ar: 'مواقيت الصلاة' }, to: '/vakitler' },
-      { icon: 'list', title: { tr: 'Umre rehberi', en: 'Umrah guide', ar: 'دليل العمرة' }, to: '/umre' },
-      { icon: 'sun', title: { tr: 'Hac rehberi', en: 'Hajj guide', ar: 'دليل الحج' }, to: '/hac' },
+      { icon: 'book', title: { tr: "Kur'an-ı Kerîm", en: 'The Quran', ar: 'القرآن الكريم' }, to: '/kuran' },
       { icon: 'compass', title: { tr: 'Kıble', en: 'Qibla', ar: 'القبلة' }, to: '/kible' },
       { icon: 'beads', title: { tr: 'Zikirmatik', en: 'Dhikr counter', ar: 'المسبحة' }, to: '/zikir' },
-      { icon: 'check', title: { tr: 'Kaza namazı ve oruç takibi', en: 'Missed prayers and fasts', ar: 'قضاء الصلوات والصيام' }, to: '/kaza' },
-      { icon: 'book', title: { tr: "Kur'an-ı Kerîm", en: 'The Quran', ar: 'القرآن الكريم' }, to: '/kuran' },
       { icon: 'moon', title: { tr: 'Hadis ve dualar', en: 'Hadith and du‘as', ar: 'الحديث والدعاء' }, to: '/hadis-dua' },
-      { icon: 'pin', title: { tr: 'En yakın cami', en: 'Nearest mosque', ar: 'أقرب مسجد' }, to: '/cami', tint: '#277F4C' },
-      { icon: 'bell', title: { tr: 'Ezan bildirimleri', en: 'Adhan notifications', ar: 'إشعارات الأذان' }, to: '/bildirimler' },
+      { icon: 'check', title: { tr: 'Kaza takibi', en: 'Missed prayers', ar: 'قضاء الصلوات' }, to: '/kaza' },
+    ],
+  },
+  {
+    title: { tr: 'Umre ve hac', en: 'Umrah and Hajj', ar: 'العمرة والحج' },
+    items: [
+      { icon: 'list', title: { tr: 'Umre rehberi', en: 'Umrah guide', ar: 'دليل العمرة' }, to: '/umre' },
+      { icon: 'sun', title: { tr: 'Hac rehberi', en: 'Hajj guide', ar: 'دليل الحج' }, to: '/hac' },
+      { icon: 'kaaba', title: { tr: 'Tavaf', en: 'Tawaf', ar: 'الطواف' }, to: '/tavaf' },
+      { icon: 'walk', title: { tr: 'Sa’y', en: 'Sa‘y', ar: 'السعي' }, to: '/say' },
+      { icon: 'flag', title: { tr: 'Şeytan taşlama', en: 'Jamarat', ar: 'رمي الجمرات' }, to: '/cemerat' },
+      { icon: 'map', title: { tr: 'Hac yerleri', en: 'Hajj sites', ar: 'المشاعر' }, to: '/hac-harita' },
     ],
   },
   {
     title: { tr: 'Mekke ve Medine', en: 'Makkah and Madinah', ar: 'مكة والمدينة' },
     items: [
-      { icon: 'map', title: { tr: 'Haram / Nebevî haritası', en: 'Haram / Nabawi map', ar: 'خريطة الحرم' }, to: '/harita' },
-      { icon: 'kaaba', title: { tr: 'Tavaf asistanı', en: 'Tawaf assistant', ar: 'مساعد الطواف' }, to: '/tavaf' },
-      { icon: 'walk', title: { tr: 'Sa’y sayacı', en: 'Sa‘y counter', ar: 'عدّاد السعي' }, to: '/say' },
-      { icon: 'flag', title: { tr: 'Şeytan taşlama sayacı', en: 'Jamarat counter', ar: 'عداد الجمرات' }, to: '/cemerat' },
-      { icon: 'map', title: { tr: 'Hac yerleri haritası', en: 'Hajj sites map', ar: 'خريطة المشاعر' }, to: '/hac-harita' },
-      { icon: 'hotel', title: { tr: 'Otelime dön', en: 'Back to my hotel', ar: 'العودة إلى فندقي' }, to: '/otel' },
-      { icon: 'users', title: { tr: 'Aile ve grup konumu', en: 'Family & group location', ar: 'موقع العائلة والمجموعة' }, to: '/grup' },
-      { icon: 'gate', title: { tr: 'Kapı durumu', en: 'Gate status', ar: 'حالة الأبواب' }, to: '/kapilar' },
-      { icon: 'alert', title: { tr: 'Kapı bildir', en: 'Report a gate', ar: 'الإبلاغ عن باب' }, to: '/bildir' },
-      { icon: 'nav', title: { tr: 'Yol tarifi (mescit içi)', en: 'Directions (in the mosque)', ar: 'الاتجاهات' }, to: '/navigasyon' },
-      { icon: 'search', title: { tr: 'Mescitte ara (tuvalet, su, asansör…)', en: 'Find in the mosque', ar: 'ابحث في المسجد' }, to: '/arama' },
-      { icon: 'star', title: { tr: 'Ravza rehberi', en: 'Rawdah guide', ar: 'دليل الروضة' }, to: '/ravza' },
-      { icon: 'tour', title: { tr: 'Ravza 360°', en: 'Rawdah 360°', ar: 'الروضة ٣٦٠°' }, url: RAWDAH.tourUrl },
+      { icon: 'map', title: { tr: 'Harem haritası', en: 'Haram map', ar: 'خريطة الحرم' }, to: '/harita' },
+      { icon: 'gate', title: { tr: 'Kapılar', en: 'Gates', ar: 'الأبواب' }, to: '/kapilar' },
+      { icon: 'search', title: { tr: 'Mescitte ara', en: 'Find in the mosque', ar: 'ابحث في المسجد' }, to: '/arama' },
+      { icon: 'star', title: { tr: 'Ravza', en: 'Rawdah', ar: 'الروضة' }, to: '/ravza' },
       { icon: 'list', title: { tr: 'Medine rehberi', en: 'Madinah guide', ar: 'دليل المدينة' }, to: '/medine-rehber' },
-      { icon: 'hotel', title: { tr: 'Şehir haritası (otel, eczane, hastane)', en: 'City map', ar: 'خريطة المدينة' }, to: '/sehir' },
+      { icon: 'hospital', title: { tr: 'Şehir haritası', en: 'City map', ar: 'خريطة المدينة' }, to: '/sehir' },
     ],
   },
   {
-    title: { tr: 'Ulaşım', en: 'Getting around', ar: 'التنقل' },
+    title: { tr: 'Yolculuk', en: 'On the way', ar: 'في الطريق' },
     items: [
-      { icon: 'bus', title: { tr: 'Ulaşım ve harita', en: 'Transport and map', ar: 'التنقل والخريطة' }, to: '/ulasim' },
-    ],
-  },
-  {
-    title: { tr: 'Uygulama', en: 'App', ar: 'التطبيق' },
-    items: [
+      { icon: 'pin', title: { tr: 'En yakın cami', en: 'Nearest mosque', ar: 'أقرب مسجد' }, to: '/cami', tint: '#277F4C' },
+      { icon: 'hotel', title: { tr: 'Otelime dön', en: 'Back to hotel', ar: 'العودة إلى الفندق' }, to: '/otel' },
+      { icon: 'users', title: { tr: 'Aile ve grup', en: 'Family & group', ar: 'العائلة والمجموعة' }, to: '/grup' },
+      { icon: 'bus', title: { tr: 'Ulaşım', en: 'Transport', ar: 'التنقل' }, to: '/ulasim' },
+      { icon: 'layers', title: { tr: 'İnternetsiz paket', en: 'Offline pack', ar: 'الحزمة دون اتصال' }, to: '/cevrimdisi' },
       { icon: 'settings', title: { tr: 'Ayarlar', en: 'Settings', ar: 'الإعدادات' }, to: '/ayarlar' },
-      { icon: 'text', title: { tr: "Kur'an okuma ayarları", en: 'Quran reading settings', ar: 'إعدادات القراءة' }, to: '/kuran-ayarlar' },
-      { icon: 'layers', title: { tr: 'Çevrimdışı paket', en: 'Offline pack', ar: 'الحزمة دون اتصال' }, to: '/cevrimdisi' },
-      { icon: 'data', title: { tr: 'Veri kaynakları', en: 'Data sources', ar: 'مصادر البيانات' }, to: '/veriler' },
     ],
   },
 ];
+
+// Yalnız aramada görünenler (ek anahtar sözcüklerle)
+const EXTRA: Item[] = [
+  { icon: 'bell', title: { tr: 'Ezan bildirimleri', en: 'Adhan notifications', ar: 'إشعارات الأذان' }, to: '/bildirimler' },
+  { icon: 'alert', title: { tr: 'Kapı bildir', en: 'Report a gate', ar: 'الإبلاغ عن باب' }, to: '/bildir' },
+  { icon: 'tour', title: { tr: 'Ravza 360°', en: 'Rawdah 360°', ar: 'الروضة ٣٦٠°' }, url: RAWDAH.tourUrl },
+  { icon: 'text', title: { tr: "Kur'an okuma ayarları", en: 'Quran reading settings', ar: 'إعدادات القراءة' }, to: '/kuran-ayarlar' },
+  { icon: 'data', title: { tr: 'Veri kaynakları', en: 'Data sources', ar: 'مصادر البيانات' }, to: '/veriler' },
+  { icon: 'nav', title: { tr: 'Yol tarifi (mescit içi)', en: 'Directions (in the mosque)', ar: 'الاتجاهات' }, to: '/navigasyon' },
+  { icon: 'sos', title: { tr: 'Acil durum', en: 'Emergency', ar: 'الطوارئ' }, to: '/acil', tint: '#B42318' },
+  { icon: 'palette', title: { tr: 'Tema, renk, yazı boyutu', en: 'Theme, colours, text size', ar: 'المظهر وحجم الخط' }, to: '/ayarlar' },
+];
+const ALL: Item[] = [...GROUPS.flatMap((g) => g.items), ...EXTRA];
+// Türkçe büyük/küçük harf ve şapkalardan bağımsız karşılaştırma
+function fold(x: string) {
+  let y = x.toLowerCase();
+  try { y = x.toLocaleLowerCase('tr').normalize('NFD'); } catch { /* eski motor: düz küçük harf */ }
+  return y.replace(/[\u0300-\u036f]/g, '').replace(/ı/g, 'i').replace(/[’'‘]/g, '');
+}
 
 export default function Menu() {
   const { lang } = useI18n();
   const lg = lang as Lang;
   const insets = useSafeAreaInsets();
+  const [q, setQ] = useState('');
+  const fq = fold(q.trim());
+  const found = fq ? ALL.filter((it) => [it.title.tr, it.title.en, it.title.ar].some((x) => fold(x).includes(fq))) : null;
+  const open = (it: Item) => (it.url ? Linking.openURL(it.url) : router.push(it.to as never));
   return (
     <ScrollView style={{ flex: 1, backgroundColor: C.bg }} contentContainerStyle={{ paddingTop: insets.top + 12, paddingHorizontal: 16, paddingBottom: 28, gap: 18 }}>
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
@@ -77,17 +97,35 @@ export default function Menu() {
           <Text style={{ fontSize: fs(14), fontWeight: '800', color: '#FFFFFF' }}>{lg === 'en' ? 'Emergency' : lg === 'ar' ? 'الطوارئ' : 'Acil durum'}</Text>
         </Pressable>
       </View>
-      {GROUPS.map((g) => (
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, height: 46, paddingHorizontal: 14, borderRadius: 23, backgroundColor: C.surface }}>
+        <Icon name="search" size={18} color={C.muted} />
+        <TextInput value={q} onChangeText={setQ} placeholder={lg === 'en' ? 'Search' : lg === 'ar' ? 'بحث' : 'Ara'} placeholderTextColor={C.muted}
+          style={{ flex: 1, fontSize: fs(15), color: C.ink }} returnKeyType="search" autoCorrect={false} accessibilityLabel={lg === 'en' ? 'Search the menu' : lg === 'ar' ? 'بحث في القائمة' : 'Menüde ara'} />
+        {!!q && <Pressable onPress={() => setQ('')} accessibilityRole="button" accessibilityLabel="✕" hitSlop={10}><Icon name="close" size={16} color={C.muted} /></Pressable>}
+      </View>
+      {found ? (
+        <View style={{ gap: 4 }}>
+          {found.length === 0 && <Text style={{ fontSize: fs(14), color: C.muted, paddingVertical: 8 }}>{lg === 'en' ? 'Nothing found' : lg === 'ar' ? 'لا نتائج' : 'Bulunamadı'}</Text>}
+          {found.map((it) => (
+            <Pressable key={it.title.tr} accessibilityRole="button" onPress={() => open(it)}
+              style={({ pressed }) => ({ flexDirection: 'row', alignItems: 'center', gap: 12, minHeight: 52, paddingHorizontal: 4, borderBottomWidth: 1, borderBottomColor: C.border, opacity: pressed ? 0.7 : 1 })}>
+              <Icon name={it.icon} size={20} color={it.tint ?? C.accent} />
+              <Text style={{ flex: 1, fontSize: fs(15), fontWeight: '600', color: C.ink }}>{pick(it.title, lg)}</Text>
+              <Icon name="chevron" size={16} color={C.muted} />
+            </Pressable>
+          ))}
+        </View>
+      ) : GROUPS.map((g) => (
         <View key={g.title.tr} style={{ gap: 8 }}>
           <Text style={{ fontSize: fs(12), fontWeight: '700', color: C.muted, textTransform: 'uppercase', letterSpacing: 0.7 }}>{pick(g.title, lg)}</Text>
           <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 10 }}>
             {g.items.map((it) => (
-              <Pressable key={it.title.tr} accessibilityRole="button" onPress={() => (it.url ? Linking.openURL(it.url) : router.push(it.to as never))}
-                style={({ pressed }) => ({ width: '31%', minHeight: 96, padding: 10, borderRadius: 16, backgroundColor: C.surface, gap: 8, justifyContent: 'space-between', opacity: pressed ? 0.75 : 1 })}>
+              <Pressable key={it.title.tr} accessibilityRole="button" onPress={() => open(it)}
+                style={({ pressed }) => ({ width: '31%', minHeight: 88, padding: 10, borderRadius: 16, backgroundColor: C.surface, gap: 8, justifyContent: 'space-between', opacity: pressed ? 0.75 : 1 })}>
                 <View style={{ width: 36, height: 36, borderRadius: 18, backgroundColor: C.bg, alignItems: 'center', justifyContent: 'center' }}>
                   <Icon name={it.icon} size={19} color={it.tint ?? C.accent} />
                 </View>
-                <Text style={{ fontSize: fs(12.5), fontWeight: '600', color: C.ink, lineHeight: fs(16) }} numberOfLines={3}>{pick(it.title, lg)}</Text>
+                <Text style={{ fontSize: fs(13), fontWeight: '600', color: C.ink, lineHeight: fs(16.5) }} numberOfLines={2}>{pick(it.title, lg)}</Text>
               </Pressable>
             ))}
           </View>

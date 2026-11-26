@@ -1,5 +1,5 @@
 import { router } from 'expo-router';
-import type { ReactNode } from 'react';
+import { useState, type ReactNode } from 'react';
 import { Platform, Pressable, ScrollView, Switch, Text, View, type StyleProp, type TextStyle, type ViewStyle } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -115,6 +115,42 @@ export function StatusPill({ status }: { status: GateStatus }) {
   return (
     <View style={{ paddingHorizontal: 10, paddingVertical: 5, borderRadius: 12, backgroundColor: tone.bg }}>
       <Text style={{ fontSize: fs(12), fontWeight: '700', color: tone.fg }}>{t(tone.key)}</Text>
+    </View>
+  );
+}
+
+/** Seçim satırı: başlık + seçili değer; dokununca seçenekler açılır, seçince kapanır (uzun listeleri gizler). */
+export function SelectRow<V extends string>({ title, value, options, onChange, left }: { title: string; value: V; options: { value: V; label: string; sub?: string }[]; onChange: (v: V) => void; left?: ReactNode }) {
+  const [open, setOpen] = useState(false);
+  const cur = options.find((o) => o.value === value);
+  return (
+    <View style={{ borderBottomWidth: 1, borderBottomColor: C.border }}>
+      <Pressable onPress={() => setOpen((v) => !v)} accessibilityRole="button" accessibilityState={{ expanded: open }} accessibilityLabel={`${title}: ${cur?.label ?? value}`}
+        style={({ pressed }) => ({ minHeight: 56, flexDirection: 'row', alignItems: 'center', gap: S.md, paddingVertical: S.sm, opacity: pressed ? 0.7 : 1 })}>
+        {left}
+        <View style={{ flex: 1, gap: 2 }}>
+          <Text style={{ fontSize: fs(15), fontWeight: '600', color: C.ink }}>{title}</Text>
+          <Text style={{ fontSize: fs(13), fontWeight: '600', color: C.accent }} numberOfLines={1}>{cur?.label ?? value}</Text>
+        </View>
+        <View style={{ transform: [{ rotate: open ? '-90deg' : '90deg' }] }}><Icon name="chevron" color={C.muted} size={16} /></View>
+      </Pressable>
+      {open && (
+        <View style={{ marginBottom: S.sm, borderRadius: R.md, backgroundColor: C.surface, overflow: 'hidden' }}>
+          {options.map((o, i) => {
+            const on = o.value === value;
+            return (
+              <Pressable key={o.value} onPress={() => { onChange(o.value); setOpen(false); }} accessibilityRole="radio" accessibilityState={{ selected: on }}
+                style={({ pressed }) => ({ flexDirection: 'row', alignItems: 'center', gap: S.sm, paddingVertical: 12, paddingHorizontal: 14, borderTopWidth: i ? 1 : 0, borderTopColor: C.border, opacity: pressed ? 0.7 : 1 })}>
+                <View style={{ flex: 1, gap: 1 }}>
+                  <Text style={{ fontSize: fs(14.5), color: on ? C.accent : C.ink, fontWeight: on ? '700' : '500' }}>{o.label}</Text>
+                  {o.sub ? <Text style={T.small}>{o.sub}</Text> : null}
+                </View>
+                {on && <Icon name="check" size={16} color={C.accent} />}
+              </Pressable>
+            );
+          })}
+        </View>
+      )}
     </View>
   );
 }

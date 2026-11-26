@@ -58,6 +58,7 @@
 | Ana ekran küçük uygulaması (expo-widgets, Android) | Vakitler telefonda hesaplanıp küçük uygulamaya yazılır | Ağ kullanmaz |
 | Hac rehberi ve şeytan taşlama | Fıkhî bilgiler ve vakitler | Diyanet İşleri Başkanlığı, Hac İlmihali (Hanefî); Diyanet Fetva Kurulu (Akabe cemresi, izdiham); TDV İslâm Ansiklopedisi “Cemre”, “Vakfe”; Buhârî 1549, 1751; Tirmizî 3585 |
 | Hac yerleri (`src/data/osm/hacSites.ts`) | Arafat ve Mina alanı, Harem sınırı, cemreler, mescitler, istasyonlar, hastaneler | © OpenStreetMap katkıcıları, ODbL 1.0 (26 Kasım 2026, `scripts/hac_sites.py`); Harem sınırı ilişkisinin kaynağı: Hadrân es-Sübeytî ve Suûd es-Sübeytî, A‘lâm ve hudûdü’l-Harem (2012). Sınırlar yaklaşıktır |
+| Güneş ve ayın konumu, ay evresi | Gökyüzü yayı, Vakitler ayrıntısı | suncalc 2 (V. Agafonkin, BSD-2), telefonda hesap |
 | Hac günlerinin tarihi | Ümmü’l-Kurâ takvimi (cihazda, Intl) | Suudi Arabistan’ın ilanıyla bir gün kayabilir |
 | Supabase (isteğe bağlı) | Canlı kapı bildirimleri ve aile/grup konumu | Kendi projeniz (`docs/SUPABASE.md`); konum geçmişi tutulmaz |
 
