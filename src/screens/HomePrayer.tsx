@@ -24,7 +24,7 @@ import { usePrayerWidgetSync } from '@/services/widgetSync';
 
 type Lang = 'tr' | 'en' | 'ar';
 const L = {
-  until: { tr: 'vaktine kalan', en: 'until', ar: 'المتبقي حتى' },
+  until: { tr: '{p} vaktine kalan', en: 'Until {p}', ar: 'المتبقي حتى {p}' },
   here: { tr: 'Konumum', en: 'My location', ar: 'موقعي' },
   makkah: { tr: 'Mekke', en: 'Makkah', ar: 'مكة' },
   madinah: { tr: 'Medine', en: 'Madinah', ar: 'المدينة' },
@@ -109,15 +109,16 @@ export default function HomePrayer() {
         style={{ borderBottomLeftRadius: 32, borderBottomRightRadius: 32 }}>
         {(sp) => (
           <View style={{ paddingTop: insets.top + 10, paddingHorizontal: 16, gap: 8 }} pointerEvents="box-none">
-            <View style={{ flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', gap: 8 }} pointerEvents="box-none">
+            {/* Yer ve tarih çipleri: sığmazsa tarih alt satıra iner (kesilmez) */}
+            <View style={{ flexDirection: 'row', flexWrap: 'wrap', alignItems: 'flex-start', justifyContent: 'space-between', gap: 8 }} pointerEvents="box-none">
               <Pressable onPress={() => setPickOpen((v) => !v)} accessibilityRole="button" accessibilityState={{ expanded: pickOpen }}
                 accessibilityLabel={`${placeLabel}. ${lg === 'en' ? 'Change place' : lg === 'ar' ? 'تغيير المكان' : 'Yeri değiştir'}`}
-                style={{ height: 36, maxWidth: '48%', paddingHorizontal: 12, borderRadius: 18, flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: sp.glass, borderWidth: 1, borderColor: sp.glassBorder }}>
+                style={{ height: 36, maxWidth: '100%', paddingHorizontal: 12, borderRadius: 18, flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: sp.glass, borderWidth: 1, borderColor: sp.glassBorder }}>
                 <Icon name={place === 'auto' ? 'locate' : 'pin'} size={14} color={sp.text} />
                 <Text style={{ flexShrink: 1, fontSize: fs(13), fontWeight: '700', color: sp.text }} numberOfLines={1}>{placeLabel}</Text>
                 <View style={{ transform: [{ rotate: pickOpen ? '-90deg' : '90deg' }] }}><Icon name="chevron" size={12} color={sp.text} /></View>
               </Pressable>
-              <View style={{ flexShrink: 1, alignItems: 'flex-end', paddingVertical: 6, paddingHorizontal: 12, borderRadius: 16, backgroundColor: sp.glass, borderWidth: 1, borderColor: sp.glassBorder }}>
+              <View style={{ maxWidth: '100%', paddingVertical: 6, paddingHorizontal: 12, borderRadius: 16, backgroundColor: sp.glass, borderWidth: 1, borderColor: sp.glassBorder }}>
                 <Text style={{ fontSize: fs(13.5), fontWeight: '800', color: sp.text }} numberOfLines={1}>{hijriText(now, lg)}</Text>
                 <Text style={{ fontSize: fs(11.5), fontWeight: '600', color: sp.textSoft }} numberOfLines={1}>{greg}</Text>
               </View>
@@ -150,7 +151,7 @@ export default function HomePrayer() {
             shadowColor: '#5A3A1E', shadowOpacity: isDark() ? 0.5 : 0.14, shadowRadius: 18, shadowOffset: { width: 0, height: 8 }, elevation: 8 }}>
           <View style={{ flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'space-between', gap: 10, paddingHorizontal: 4 }}>
             <View style={{ flexShrink: 1, gap: 1 }}>
-              <Text style={{ fontSize: fs(13.5), color: C.muted, fontWeight: '600' }} numberOfLines={1}>{names[nx.key]} {pick(L.until, lg)}</Text>
+              <Text style={{ fontSize: fs(13.5), color: C.muted, fontWeight: '600' }} numberOfLines={1}>{pick(L.until, lg).replace('{p}', names[nx.key])}</Text>
               <Countdown to={nx.at} size={36} />
             </View>
             <View style={{ alignItems: 'flex-end', paddingBottom: 4 }}>

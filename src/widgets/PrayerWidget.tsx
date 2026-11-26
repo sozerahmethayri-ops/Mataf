@@ -50,8 +50,8 @@ function prayerLayout(props: PrayerWidgetProps, env: { colorScheme?: 'light' | '
   let c = dk ? props.dark : props.light;
   if (!c) {
     c = dk
-      ? { bg: '#121316', ink: '#F1F1EF', muted: '#A0A6B1', accent: '#F7934F', tint: '#3A2214' }
-      : { bg: '#FFFFFF', ink: '#17181C', muted: '#5E636E', accent: '#C2410C', tint: '#FFF1E8' };
+      ? { bg: '#17120E', ink: '#F6EFE7', muted: '#B3A393', accent: '#F7934F', tint: '#3A2214' }
+      : { bg: '#FBF7F1', ink: '#2A2018', muted: '#6F5D4C', accent: '#B4420F', tint: '#FBE4D3' };
   }
   const days = props.days || [];
   const names = props.names && props.names.length === 6 ? props.names : ['İmsak', 'Güneş', 'Öğle', 'İkindi', 'Akşam', 'Yatsı'];

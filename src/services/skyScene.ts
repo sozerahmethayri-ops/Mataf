@@ -82,8 +82,9 @@ export function scenePalette(sunAlt: number, morning: boolean): ScenePalette {
     dark: lerp(a.dark, b.dark, t),
     text: light ? WHITE : INK,
     textSoft: light ? 'rgba(255,255,255,0.86)' : 'rgba(29,39,53,0.78)',
-    glass: light ? 'rgba(255,255,255,0.16)' : 'rgba(255,255,255,0.5)',
-    glassBorder: light ? 'rgba(255,255,255,0.28)' : 'rgba(255,255,255,0.7)',
+    // Koyu, yarı saydam çip: arkasında güneş ya da açık bir bina olsa da beyaz yazı okunur
+    glass: light ? 'rgba(14,18,34,0.28)' : 'rgba(255,255,255,0.5)',
+    glassBorder: light ? 'rgba(255,255,255,0.22)' : 'rgba(255,255,255,0.7)',
   };
 }
 
