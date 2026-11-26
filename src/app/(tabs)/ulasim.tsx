@@ -3,7 +3,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Constants from 'expo-constants';
 import * as Location from 'expo-location';
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { ActivityIndicator, Linking, Modal, Platform, Pressable, ScrollView, Share, Text, TextInput, View, useWindowDimensions, type TextStyle } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -208,6 +208,23 @@ export default function TransportScreen() {
     setMode(d && d < 1500 ? 'walk' : (here && remoteFor(here, p)) || railOk ? 'transit' : d > 4000 ? 'car' : 'walk');
     if (remember) setRecent({ items: [p, ...recent.items.filter((x) => x.id !== p.id)].slice(0, 6) });
   };
+  // Derin bağlantı: mataf://ulasim?to=21.4225,39.8262&name=Mescid-i Haram (haritadaki "Nasıl giderim" de bunu kullanır).
+  // Konum birkaç saniyede gelmezse hedef yine de açılır.
+  const params = useLocalSearchParams<{ to?: string; name?: string }>();
+  const linked = useRef('');
+  useEffect(() => {
+    const to = typeof params.to === 'string' ? params.to : '';
+    if (!to || linked.current === to) return;
+    const [la, ln] = to.split(',').map(Number);
+    if (!Number.isFinite(la) || !Number.isFinite(ln)) return;
+    const name = (typeof params.name === 'string' && params.name) || l('picked');
+    const id = setTimeout(() => {
+      linked.current = to;
+      choose({ id: `pt:${la.toFixed(5)},${ln.toFixed(5)}`, name, sub: `${la.toFixed(5)}, ${ln.toFixed(5)}`, lat: la, lng: ln }, false);
+    }, here ? 0 : 5000);
+    return () => clearTimeout(id);
+  }, [params.to, !!here]); // eslint-disable-line react-hooks/exhaustive-deps
+
   // Başlangıç: hedef seçildiği andaki konum; o an konum yoksa ~100 m'ye yuvarlanmış güncel konum
   // (rota her GPS güncellemesinde yeniden hesaplanmasın diye).
   const from2 = useMemo(() => from ?? (here ? { lat: +here.lat.toFixed(3), lng: +here.lng.toFixed(3) } : null), [from, here]);

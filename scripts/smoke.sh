@@ -126,6 +126,14 @@ grep -B2 -A4 "expo.modules.widgets.TICK" smoke/alarm-all.txt | head -60 > smoke/
 echo "vakit alarmı: $(grep -c 'expo.modules.widgets.TICK' smoke/alarm-all.txt)" >> smoke/status.txt
 adb shell monkey -p "$PKG" -c android.intent.category.LAUNCHER 1 >/dev/null 2>&1; sleep 6
 
+# Mekke otobüs tarifi (çevrimdışı Makkah Bus ağı): konum Haremeyn treni istasyonu, hedef Harem.
+# Uygulama yeniden açılır ki konum taze okunsun; sonra konum Harem'e döner.
+adb emu geo fix 39.7896 21.4164 || true; sleep 3
+adb shell am force-stop "$PKG"; sleep 1
+open "ulasim?to=21.4225,39.8262&name=Harem"; step "36-otobus-tarifi" 14
+adb shell input swipe $(( W / 2 )) $(( H * 70 / 100 )) $(( W / 2 )) $(( H * 35 / 100 )) 400; step "37-otobus-adimlar" 3
+adb emu geo fix 39.82625 21.42295 || true; sleep 2
+
 # Tema değiştirme (koyu/açık) sonrası uygulama açık kalmalı: Ayarlar'da tema satırına dokun
 open ayarlar; sleep 5
 # Koordinatlar 0.10.0 Ayarlar düzenine göre (Görünüm satırı ~%23, palet ikinci sütun ~%38)

@@ -211,7 +211,9 @@ export default function MapScreen() {
         {demo && !preview ? (
           <View style={{ flexDirection: 'row', gap: 10 }}>
             <Btn title={lang === 'en' ? 'Sample route' : lang === 'ar' ? 'مسار تجريبي' : 'Örnek rota'} icon="nav" kind="secondary" style={{ flex: 1 }} onPress={() => setPreview(true)} />
-            <Btn title={lang === 'en' ? 'Get there' : lang === 'ar' ? 'كيف أصل' : 'Nasıl giderim'} icon="bus" style={{ flex: 1 }} onPress={() => router.push('/ulasim')} />
+            <Btn title={lang === 'en' ? 'Get there' : lang === 'ar' ? 'كيف أصل' : 'Nasıl giderim'} icon="bus" style={{ flex: 1 }} onPress={() => router.push({ pathname: '/ulasim', params: city === 'makkah'
+              ? { to: '21.4225,39.8262', name: lang === 'en' ? 'Masjid al-Haram' : lang === 'ar' ? 'المسجد الحرام' : 'Mescid-i Haram' }
+              : { to: '24.4672,39.6111', name: lang === 'en' ? 'Prophet’s Mosque' : lang === 'ar' ? 'المسجد النبوي' : 'Mescid-i Nebevî' } })} />
           </View>
         ) : (
         <View style={{ flexDirection: 'row', gap: 10 }}>
