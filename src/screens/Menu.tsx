@@ -69,6 +69,7 @@ const EXTRA: Item[] = [
   { icon: 'layers', title: { tr: 'İnternetsiz paket (çevrimdışı)', en: 'Offline pack', ar: 'الحزمة دون اتصال' }, to: '/cevrimdisi' },
   { icon: 'data', title: { tr: 'Veri kaynakları', en: 'Data sources', ar: 'مصادر البيانات' }, to: '/veriler' },
   { icon: 'nav', title: { tr: 'Yol tarifi (mescit içi)', en: 'Directions (in the mosque)', ar: 'الاتجاهات' }, to: '/navigasyon' },
+  { icon: 'train', title: { tr: 'Haremeyn treni (Mekke–Cidde–Medine)', en: 'Haramain train', ar: 'قطار الحرمين' }, to: '/tren' },
   { icon: 'sos', title: { tr: 'Acil durum', en: 'Emergency', ar: 'الطوارئ' }, to: '/acil', tint: '#B42318' },
   { icon: 'palette', title: { tr: 'Tema, renk, yazı boyutu', en: 'Theme, colours, text size', ar: 'المظهر وحجم الخط' }, to: '/ayarlar' },
 ];

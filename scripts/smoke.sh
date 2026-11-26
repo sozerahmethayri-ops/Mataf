@@ -88,8 +88,8 @@ if tapText "Add to home screen|ADD TO HOME SCREEN|Add automatically|ADD AUTOMATI
   sleep 4; widgetAdded && added=1
 fi
 if [ $added = 0 ]; then
-  for p in "850 930" "750 930" "850 960" "750 960" "850 900" "650 930" "850 870" "700 880"; do
-    open "vakitler?widget=1"; sleep 5
+  # Pencereyi bir kez açık tut; uygulamayı yeniden açmak pencereyi arkaya iter (dokunma boşa gider)
+  for p in "700 950" "850 930" "750 930" "850 960" "750 960" "650 950" "850 900" "700 880"; do
     tap $p; sleep 4
     if widgetAdded; then added="dokunma $p"; break; fi
   done

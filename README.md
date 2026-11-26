@@ -2,6 +2,7 @@
 
 Mekke ve Medine'deki ziyaretçiler için iOS ve Android uygulaması:
 
+- **Haremeyn treni (0.10.2)** — Mekke, Cidde (Süleymaniye), Cidde Havalimanı, Kral Abdullah Ekonomik Şehri ve Medine istasyonları haritada ve listede (size uzaklığı, yol tarifi), yaklaşık süreler, bilet ve bagaj bilgisi; sefer saatleri ve bilet için resmî siteye bağlantı. Ulaşım ekranından açılır.
 - **Yerlerim (0.10.1)** — bulunduğunuz yeri tek dokunuşla kaydedin (Mina'daki çadır, buluşma noktası, kafile otobüsü, otopark); haritada görün, yürüyüş rotasıyla dönün, konumu WhatsApp'la paylaşın. Ana haritada "Otelim ve yerlerim" katmanında görünür. Kayıtlar yalnız telefonda.
 - **Gökyüzü yayı (0.10.0)** — ana sayfada ve Vakitler'de güneşin ve ayın şu an gökyüzünde nerede olduğu: güneşin yolu (8 saat öncesinden 16 saat sonrasına), vakitler bu yol üzerinde işaretli, sıradaki vakit yazılı; ayın evresi ve aydınlık yüzdesi; gündüz, alacakaranlık ve gece renkleri. Vakitler ekranında güneşin ve ayın yüksekliği, yönü, doğuş/batış saatleri ve konumun koordinatları. Hesap telefonda (suncalc), internet gerekmez.
 - **Sade arayüz (0.10.0)** — ilk açılışta tek sayfalık "Hoş geldiniz" (dil, konum izni, ezan bildirimi); ana sayfada tek dokunuşla yer seçimi; altışarlı gruplanmış ve aranabilir Menü; Ayarlar'da uzun listeler katlanır satırda; yeni sürüm çıkınca ana sayfada "İndir" şeridi (Android); beklenmeyen hatada sade hata sayfası ve paylaşılabilir hata kaydı.
@@ -43,7 +44,7 @@ Mekke ve Medine'deki ziyaretçiler için iOS ve Android uygulaması:
 - **Ravza rehberi** — ziyaret saatleri, Nusuk izni, resmî 360° sanal tur bağlantısı.
 - **Türkçe, İngilizce, Arapça** (Arapça sağdan sola).
 
-> Durum: **0.10.1 — geliştirme sürümü.** Bina biçimleri ve kapı yerleri OpenStreetMap'ten gelir (doğruluğu bu veri kadardır); mescit içi hizmet noktaları örnektir. Ayrıntı: [docs/VERI-KAYNAKLARI.md](docs/VERI-KAYNAKLARI.md), [scripts/osm-3d.md](scripts/osm-3d.md).
+> Durum: **0.10.2 — geliştirme sürümü.** Bina biçimleri ve kapı yerleri OpenStreetMap'ten gelir (doğruluğu bu veri kadardır); mescit içi hizmet noktaları örnektir. Ayrıntı: [docs/VERI-KAYNAKLARI.md](docs/VERI-KAYNAKLARI.md), [scripts/osm-3d.md](scripts/osm-3d.md).
 
 ## Hızlı başlangıç
 

@@ -31,6 +31,7 @@ import { zikirStats } from '../src/services/zikirStats';
 import { altitudeText, directionText, moonLitPath, moonPhaseName, skyDay, skyNow, skyPhase } from '../src/services/sky';
 import { newer } from '../src/services/version';
 import { guessKind, shareLink } from '../src/services/myPlaces';
+import { HHR_STATIONS } from '../src/data/train';
 import { nextPrayer } from '../src/services/prayer';
 import { SKIP, parseBackup } from '../src/services/backupFormat';
 import { AREAS, GLYPH_RANGES, fontStacks, lat2tile, lon2tile, resolveMataf, rewriteStyle, spriteRoot, tilesFor } from '../src/services/offlineMath';
@@ -717,5 +718,14 @@ ok(newer('0.10.0', '0.9.0') && !newer('0.9.0', '0.9.0') && !newer('0.9.1', '0.10
 // ── Yerlerim ──
 ok(guessKind('Çadırım') === 'tent' && guessKind('Mina çadırı 34/B') === 'tent' && guessKind('Buluşma noktası') === 'meet' && guessKind('Kafile otobüsü') === 'car' && guessKind('Otopark') === 'car' && guessKind('Zemzem musluğu') === 'pin', 'yerlerim: türü addan tahmin (çadır, buluşma, araç, diğer)');
 ok(shareLink({ lat: 21.4225, lng: 39.8262 }) === 'https://maps.google.com/?q=21.422500,39.826200', 'yerlerim: paylaşım bağlantısı');
+
+// ── Haremeyn treni ──
+{
+  const st = (id: string) => HHR_STATIONS.find((x) => x.id === id)!;
+  const dMk = meters(st('makkah'), { lat: 21.4225, lng: 39.8262 });
+  const dMd = meters(st('madinah'), { lat: 24.4672, lng: 39.6111 });
+  ok(HHR_STATIONS.length === 5 && dMk > 3000 && dMk < 5500 && dMd > 7000 && dMd < 11000, `tren: istasyonlar yerinde (Mekke–Harem ${Math.round(dMk)} m, Medine–Mescid ${Math.round(dMd)} m)`);
+  ok(HHR_STATIONS.every((x, i) => i === 0 || x.lat >= HHR_STATIONS[i - 1].lat - 0.01), 'tren: istasyonlar hat sırasında (güneyden kuzeye)');
+}
 
 mosqueChecks().then(transitChecks).then(() => process.exit(fails ? 1 : 0));
