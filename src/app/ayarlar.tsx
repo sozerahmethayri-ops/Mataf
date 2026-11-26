@@ -16,6 +16,7 @@ import { METHODS, getMethod, setMethod, type MethodId } from '@/services/prayer'
 import { useReports } from '@/services/ReportsContext';
 import { useTheme, type HomeId } from '@/services/ThemeContext';
 import { checkUpdate } from '@/services/update';
+import { shareApp } from '@/services/shareApp';
 import { clearErrors, getErrors, shareErrors } from '@/services/errorLog';
 
 type Lang = 'tr' | 'en' | 'ar';
@@ -42,6 +43,8 @@ const L = {
   timesSec: { tr: 'Namaz vakitleri', en: 'Prayer times', ar: 'مواقيت الصلاة' },
   homeScreen: { tr: 'Ortadaki düğme şunu açsın', en: 'The middle button opens', ar: 'الزر الأوسط يفتح' },
   server: { tr: 'Kapı bildirimleri ve aile konumu', en: 'Gate reports and family location', ar: 'بلاغات الأبواب وموقع العائلة' },
+  shareApp: { tr: 'Uygulamayı arkadaşlarınıza gönderin', en: 'Send the app to friends', ar: 'أرسل التطبيق لأصدقائك' },
+  shareAppSub: { tr: 'Android ve iPhone bağlantısı tek mesajda', en: 'Android and iPhone links in one message', ar: 'رابطا أندرويد وآيفون في رسالة واحدة' },
   upd: { tr: 'Güncellemeleri denetle', en: 'Check for updates', ar: 'التحقق من التحديثات' },
   updNew: { tr: 'Yeni sürüm hazır: {v}', en: 'New version ready: {v}', ar: 'إصدار جديد جاهز: {v}' },
   updNone: { tr: 'En yeni sürümü kullanıyorsunuz.', en: 'You have the latest version.', ar: 'لديك أحدث إصدار.' },
@@ -192,6 +195,7 @@ export default function Settings() {
         left={<Icon name="data" color={C.accent} />} />
 
       <SectionTitle>{t('settings.about')}</SectionTitle>
+      <ListRow title={l('shareApp')} subtitle={l('shareAppSub')} left={<Icon name="share" color={C.accent} />} onPress={() => { shareApp(lg); }} />
       {Platform.OS === 'android' && (
         <ListRow title={l('upd')} subtitle={updMsg ?? undefined} left={<Icon name="refresh" color={C.accent} />} onPress={() => {
           setUpdMsg('…');

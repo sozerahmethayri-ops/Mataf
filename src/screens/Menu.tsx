@@ -5,6 +5,7 @@ import { Linking, Pressable, ScrollView, Text, TextInput, View } from 'react-nat
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Icon, type IconName } from '@/components/Icon';
+import { shareApp } from '@/services/shareApp';
 import { C, fs } from '@/constants/theme';
 import { RAWDAH } from '@/data/content';
 import { pick, useI18n } from '@/i18n';
@@ -70,6 +71,7 @@ const EXTRA: Item[] = [
   { icon: 'data', title: { tr: 'Veri kaynakları', en: 'Data sources', ar: 'مصادر البيانات' }, to: '/veriler' },
   { icon: 'nav', title: { tr: 'Yol tarifi (mescit içi)', en: 'Directions (in the mosque)', ar: 'الاتجاهات' }, to: '/navigasyon' },
   { icon: 'train', title: { tr: 'Haremeyn treni (Mekke–Cidde–Medine)', en: 'Haramain train', ar: 'قطار الحرمين' }, to: '/tren' },
+  { icon: 'share', title: { tr: 'Uygulamayı paylaş (arkadaşlarına gönder)', en: 'Share the app', ar: 'شارك التطبيق' }, to: 'share:app' },
   { icon: 'sos', title: { tr: 'Acil durum', en: 'Emergency', ar: 'الطوارئ' }, to: '/acil', tint: '#B42318' },
   { icon: 'palette', title: { tr: 'Tema, renk, yazı boyutu', en: 'Theme, colours, text size', ar: 'المظهر وحجم الخط' }, to: '/ayarlar' },
 ];
@@ -88,7 +90,7 @@ export default function Menu() {
   const [q, setQ] = useState('');
   const fq = fold(q.trim());
   const found = fq ? ALL.filter((it) => [it.title.tr, it.title.en, it.title.ar].some((x) => fold(x).includes(fq))) : null;
-  const open = (it: Item) => (it.url ? Linking.openURL(it.url) : router.push(it.to as never));
+  const open = (it: Item) => (it.url ? Linking.openURL(it.url) : it.to === 'share:app' ? shareApp(lg) : router.push(it.to as never));
   return (
     <ScrollView style={{ flex: 1, backgroundColor: C.bg }} contentContainerStyle={{ paddingTop: insets.top + 12, paddingHorizontal: 16, paddingBottom: 28, gap: 18 }}>
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
