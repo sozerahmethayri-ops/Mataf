@@ -115,6 +115,11 @@ export default function UmreScreen() {
           <View key={c.title.tr} style={{ gap: 2 }}>
             <Text style={T.h3}>{pick(c.title, lg)}</Text>
             <Text style={T.body}>{pick(c.text, lg)}</Text>
+            {c.to && c.link && (
+              <Pressable onPress={() => router.push(c.to as never)} accessibilityRole="link" hitSlop={6} style={{ paddingVertical: 4 }}>
+                <Text style={{ fontSize: fs(14), fontWeight: '700', color: C.accent }}>{pick(c.link, lg)} ›</Text>
+              </Pressable>
+            )}
           </View>
         ))}
         <Text style={[T.small, { marginTop: 6 }]}>{pick(L.source, lg)}</Text>

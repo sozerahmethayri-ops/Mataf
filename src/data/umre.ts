@@ -312,7 +312,7 @@ export const RULES_NOTE: T3 = {
   en: 'Dam: a sheep or goat slaughtered in the Haram area. Sadaqah: the amount of zakat al-fitr. In the Hanafi school, a violation made unknowingly or by forgetting still requires the penalty; with a valid excuse such as illness, one may instead fast three days or feed six poor people. For a ruling on your case, ask a scholar or your group’s religious guide.',
 };
 
-export const SPECIAL_CASES: { title: T3; text: T3 }[] = [
+export const SPECIAL_CASES: { title: T3; text: T3; to?: string; link?: T3 }[] = [
   {
     title: { tr: 'Özel hâldeki kadınlar', en: 'Women during menstruation' },
     text: {
@@ -326,6 +326,8 @@ export const SPECIAL_CASES: { title: T3; text: T3 }[] = [
       tr: 'Tavaf ve sa’y tekerlekli sandalye ya da elektrikli arabayla yapılabilir; üst katlar ve Mes’a’da bu hizmetler vardır.',
       en: 'Tawaf and sa‘y may be performed in a wheelchair or electric cart; these services are available on the upper floors and in the Mas‘a.',
     },
+    to: '/erisim',
+    link: { tr: 'Sandalye ve araba nereden alınır?', en: 'Where to get a wheelchair or cart', ar: 'من أين تُؤخذ الكراسي والعربات؟' },
   },
   {
     title: { tr: 'Çocuklar', en: 'Children' },

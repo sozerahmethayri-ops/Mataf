@@ -71,6 +71,7 @@ const EXTRA: Item[] = [
   { icon: 'data', title: { tr: 'Veri kaynakları', en: 'Data sources', ar: 'مصادر البيانات' }, to: '/veriler' },
   { icon: 'nav', title: { tr: 'Yol tarifi (mescit içi)', en: 'Directions (in the mosque)', ar: 'الاتجاهات' }, to: '/navigasyon' },
   { icon: 'train', title: { tr: 'Haremeyn treni (Mekke–Cidde–Medine)', en: 'Haramain train', ar: 'قطار الحرمين' }, to: '/tren' },
+  { icon: 'wheel', title: { tr: 'Tekerlekli sandalye, golf arabası (yaşlı ve engelli)', en: 'Wheelchairs and golf carts (elderly, disabled)', ar: 'الكراسي المتحركة وعربات القولف' }, to: '/erisim' },
   { icon: 'share', title: { tr: 'Uygulamayı paylaş (arkadaşlarına gönder)', en: 'Share the app', ar: 'شارك التطبيق' }, to: 'share:app' },
   { icon: 'sos', title: { tr: 'Acil durum', en: 'Emergency', ar: 'الطوارئ' }, to: '/acil', tint: '#B42318' },
   { icon: 'palette', title: { tr: 'Tema, renk, yazı boyutu', en: 'Theme, colours, text size', ar: 'المظهر وحجم الخط' }, to: '/ayarlar' },

@@ -38,6 +38,7 @@ const L = {
   hotelD: { tr: 'Otelim (Medine)', en: 'My hotel (Madinah)', ar: 'فندقي (المدينة)' },
   mosque: { tr: 'En yakın cami', en: 'Nearest mosque', ar: 'أقرب مسجد' },
   train: { tr: 'Haremeyn treni', en: 'Haramain train', ar: 'قطار الحرمين' },
+  access: { tr: 'Tekerlekli sandalye', en: 'Wheelchair', ar: 'كرسي متحرك' },
   recent: { tr: 'Son hedefler', en: 'Recent', ar: 'الأخيرة' },
   noResult: { tr: 'Sonuç bulunamadı. Farklı yazmayı deneyin.', en: 'No results. Try another spelling.', ar: 'لا توجد نتائج. جرّب كتابة أخرى.' },
   searchErr: { tr: 'Arama yapılamadı. İnternet bağlantınızı kontrol edin.', en: 'Search failed. Check your connection.', ar: 'تعذّر البحث. تحقق من الاتصال.' },
@@ -232,6 +233,7 @@ export default function TransportScreen() {
     ...(hotels.madinah ? [{ label: l('hotelD'), icon: 'hotel' as IconName, onPress: () => choose({ id: 'q:hotelD', name: l('hotelD'), sub: '', ...hotels.madinah! }) }] : []),
     { label: l('mosque'), icon: 'pin', onPress: () => router.push('/cami') },
     { label: l('train'), icon: 'train', onPress: () => router.push('/tren') },
+    { label: l('access'), icon: 'wheel', onPress: () => router.push('/erisim') },
   ];
 
   // "Buradasınız": hedef seçilmemişken üstte tam, seçilince altta kısa
