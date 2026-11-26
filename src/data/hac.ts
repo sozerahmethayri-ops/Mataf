@@ -156,9 +156,11 @@ export const HAC_STEPS: HacStep[] = [
     todo: [
       { tr: 'Gusül ya da abdest, ihram kıyafeti; iki rekât ihram namazı, niyet ve telbiye.', en: 'Ghusl or wudu, ihram clothes; two rak‘ahs, intention and talbiyah.' },
       { tr: 'İsteyen hac ihramından sonra nafile bir tavaf yapıp haccın sa’yini öne alabilir.', en: 'You may do a voluntary tawaf after the Hajj ihram and perform the Hajj sa‘y early.' },
+      { tr: 'Mina’ya ya da Arafat’a varınca çadırınızın yerini kaydedin (Yerlerim); kalabalıkta geri dönmek kolaylaşır.', en: 'When you reach Mina or Arafat, save your tent’s location (My places); finding your way back gets easier.' },
       { tr: 'Kafilenizin çıkış saatine uyun; su, şemsiye, ilaç, kimlik kartı ve küçük bir çanta yanınızda olsun.', en: 'Follow your group’s departure time; carry water, an umbrella, medicine, your ID card and a small bag.' },
     ],
     duas: [TELBIYE],
+    action: { label: { tr: 'Çadırımın yerini kaydet', en: 'Save my tent’s location', ar: 'احفظ موقع خيمتي' }, to: '/yerlerim', icon: 'pin' },
     mistakes: [
       { text: { tr: 'Hac ihramına girmeden Arafat’a çıkmak', en: 'Going to Arafat without the Hajj ihram' }, penalty: { tr: 'Vakfe ihramsız geçerli olmaz.', en: 'The standing is not valid without ihram.' } },
     ],

@@ -12,6 +12,7 @@ import { ARAFAT_AREA, HAC_PLACES, HARAM_BOUNDARY, MINA_AREA, NAMIRA_MOSQUE, type
 import type { T3 } from '@/data/umre';
 import { pick } from '@/i18n';
 import { useHotel } from '@/services/hotel';
+import { useMyPlaces } from '@/services/myPlaces';
 import { findMosques, type Mosque } from '@/services/mosques';
 import { nearbyPois, type Poi } from '@/services/osm';
 import { usePersisted } from '@/services/usePersisted';
@@ -22,7 +23,7 @@ export type LayerId = 'hotel' | 'mosque' | 'health' | 'hac' | 'haram';
 export type Layers = Record<LayerId, boolean>;
 
 const LAYERS: { id: LayerId; icon: IconName; label: T3; color: string; makkahOnly?: boolean }[] = [
-  { id: 'hotel', icon: 'hotel', label: { tr: 'Otelim', en: 'My hotel', ar: 'فندقي' }, color: '#C2410C' },
+  { id: 'hotel', icon: 'hotel', label: { tr: 'Otelim ve yerlerim', en: 'My hotel and places', ar: 'فندقي وأماكني' }, color: '#C2410C' },
   { id: 'mosque', icon: 'pin', label: { tr: 'Camiler', en: 'Mosques', ar: 'المساجد' }, color: '#277F4C' },
   { id: 'health', icon: 'aid', label: { tr: 'Hastane ve eczane', en: 'Hospitals and pharmacies', ar: 'مستشفيات وصيدليات' }, color: '#DC2626' },
   { id: 'hac', icon: 'sun', label: { tr: 'Hac yerleri', en: 'Hajj sites', ar: 'المشاعر' }, color: '#0E7490', makkahOnly: true },
@@ -44,6 +45,7 @@ const ll = (p: LL2) => ({ lat: p[0], lng: p[1] });
 export function useMapLayers(city: City, origin: { lat: number; lng: number }, lg: Lang) {
   const [layers, setLayers] = usePersisted<Layers>('map:layers', { hotel: true, mosque: false, health: false, hac: false, haram: false });
   const { hotel } = useHotel(city);
+  const { places } = useMyPlaces();
   const [mosques, setMosques] = useState<{ key: string; list: Mosque[] } | null>(null);
   const [pois, setPois] = useState<{ key: string; list: Poi[] } | null>(null);
   // Kaynak noktası ~500 m kayınca yeniden yükle
@@ -68,13 +70,14 @@ export function useMapLayers(city: City, origin: { lat: number; lng: number }, l
   const pins = useMemo<PlainPin[]>(() => {
     const out: PlainPin[] = [];
     if (layers.hotel && hotel) out.push({ id: 'L:hotel', lat: hotel.lat, lng: hotel.lng, color: '#C2410C', label: hotel.name || pick(L.myHotel, lg), big: true });
+    if (layers.hotel) for (const p of places) out.push({ id: `L:yer-${p.id}`, lat: p.lat, lng: p.lng, color: '#0E7490', label: p.name });
     if (layers.mosque && mosques) for (const m of mosques.list) out.push({ id: `L:m:${m.id}`, lat: m.lat, lng: m.lng, color: '#277F4C', label: m.name || pick(L.mosque, lg) });
     if (layers.health && pois) for (const p of pois.list) out.push({ id: `L:p:${p.id}`, lat: p.lat, lng: p.lng, color: p.cat === 'hospital' ? '#DC2626' : '#DB2777', label: p.name || pick(p.cat === 'hospital' ? L.hospital : L.pharmacy, lg) });
     if (makkah && layers.hac) {
       for (const p of HAC_PLACES) if (p.kind !== 'hospital' && p.kind !== 'station') out.push({ id: `L:hac:${p.id}`, lat: p.lat, lng: p.lng, color: '#0E7490', label: pick(p.name, lg), big: p.kind === 'area' });
     }
     return out;
-  }, [layers, hotel, mosques, pois, makkah, lg]);
+  }, [layers, hotel, places, mosques, pois, makkah, lg]);
 
   const areas = useMemo<PlainArea[]>(() => {
     const out: PlainArea[] = [];
@@ -90,6 +93,7 @@ export function useMapLayers(city: City, origin: { lat: number; lng: number }, l
   /** Katman noktasına ikinci dokunuşta açılacak ekran */
   const open = (id: string) => {
     if (id === 'L:hotel') router.push('/otel');
+    else if (id.startsWith('L:yer-')) router.push({ pathname: '/yerlerim', params: { id: id.slice(6) } });
     else if (id.startsWith('L:m:')) router.push('/cami');
     else if (id.startsWith('L:hac:')) router.push('/hac-harita');
     else if (id.startsWith('L:p:')) router.push('/acil');

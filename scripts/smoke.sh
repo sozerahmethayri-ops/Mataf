@@ -109,9 +109,10 @@ adb shell monkey -p "$PKG" -c android.intent.category.LAUNCHER 1 >/dev/null 2>&1
 
 # Tema değiştirme (koyu/açık) sonrası uygulama açık kalmalı: Ayarlar'da tema satırına dokun
 open ayarlar; sleep 5
-tap 500 158; step "30-tema-koyu" 4
-tap 470 262; step "31-palet-zumrut" 4
-tap 200 158; step "32-tema-acik" 4
+# Koordinatlar 0.10.0 Ayarlar düzenine göre (Görünüm satırı ~%23, palet ikinci sütun ~%38)
+tap 500 230; step "30-tema-koyu" 4
+tap 545 380; step "31-palet-zumrut" 4
+tap 200 230; step "32-tema-acik" 4
 open harita; step "33-harita-tema" 8
 
 adb logcat -d > smoke/logcat.txt

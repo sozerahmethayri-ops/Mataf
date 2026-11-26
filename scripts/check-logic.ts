@@ -30,6 +30,7 @@ import { UMRE_STEPS, IHRAM_RULES } from '../src/data/umre';
 import { zikirStats } from '../src/services/zikirStats';
 import { altitudeText, directionText, moonLitPath, moonPhaseName, skyDay, skyNow, skyPhase } from '../src/services/sky';
 import { newer } from '../src/services/version';
+import { guessKind, shareLink } from '../src/services/myPlaces';
 import { nextPrayer } from '../src/services/prayer';
 import { SKIP, parseBackup } from '../src/services/backupFormat';
 import { AREAS, GLYPH_RANGES, fontStacks, lat2tile, lon2tile, resolveMataf, rewriteStyle, spriteRoot, tilesFor } from '../src/services/offlineMath';
@@ -712,5 +713,9 @@ async function transitChecks() {
 
 // ── Güncelleme uyarısı: sürüm karşılaştırma ──
 ok(newer('0.10.0', '0.9.0') && !newer('0.9.0', '0.9.0') && !newer('0.9.1', '0.10.0') && newer('1.0', '0.99.9'), 'güncelleme: sürüm karşılaştırma (0.10 > 0.9)');
+
+// ── Yerlerim ──
+ok(guessKind('Çadırım') === 'tent' && guessKind('Mina çadırı 34/B') === 'tent' && guessKind('Buluşma noktası') === 'meet' && guessKind('Kafile otobüsü') === 'car' && guessKind('Otopark') === 'car' && guessKind('Zemzem musluğu') === 'pin', 'yerlerim: türü addan tahmin (çadır, buluşma, araç, diğer)');
+ok(shareLink({ lat: 21.4225, lng: 39.8262 }) === 'https://maps.google.com/?q=21.422500,39.826200', 'yerlerim: paylaşım bağlantısı');
 
 mosqueChecks().then(transitChecks).then(() => process.exit(fails ? 1 : 0));

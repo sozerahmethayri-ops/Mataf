@@ -41,17 +41,6 @@ export default function HadithDua({ back = false }: { back?: boolean }) {
   return (
     <Screen>
       <Header back={back} title={t('hadith.title')} />
-      <Pressable onPress={() => router.push('/tavaf')} accessibilityRole="button"
-        style={{ flexDirection: 'row', alignItems: 'center', gap: 12, padding: 14, borderRadius: 18, backgroundColor: C.ink }}>
-        <View style={{ width: 44, height: 44, borderRadius: 22, backgroundColor: C.route, alignItems: 'center', justifyContent: 'center' }}>
-          <Icon name="kaaba" size={24} color="#FFFFFF" />
-        </View>
-        <View style={{ flex: 1 }}>
-          <Text style={{ color: C.onInk, fontSize: fs(16), fontWeight: '700' }}>{pick(L.tawaf, lang)}</Text>
-          <Text style={{ color: C.onInk, opacity: 0.75, fontSize: fs(12.5) }}>{pick(L.tawafSub, lang)}</Text>
-        </View>
-        <Icon name="chevron" size={18} color={C.onInk} />
-      </Pressable>
       <Card>
         <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
           <Text style={{ fontSize: fs(12), fontWeight: '700', color: C.accent, textTransform: 'uppercase', letterSpacing: 0.7 }}>{t('hadith.daily')}</Text>

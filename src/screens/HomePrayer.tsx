@@ -100,19 +100,20 @@ export default function HomePrayer() {
     <ScrollView style={{ flex: 1, backgroundColor: C.bg }} contentContainerStyle={{ paddingTop: insets.top + 18, paddingHorizontal: 22, paddingBottom: 28, gap: 18 }}>
       {/* Tarih ve yer */}
       <View style={{ gap: 8 }}>
+        <Text style={{ fontSize: fs(14), color: C.muted, fontWeight: '600' }} numberOfLines={1}>{greg}</Text>
+        <Text style={{ fontSize: fs(22), color: C.ink, fontWeight: '700', letterSpacing: -0.3, marginTop: -6 }}>{hijriText(now, lg)}</Text>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
-          <Text style={{ flex: 1, fontSize: fs(14), color: C.muted, fontWeight: '600' }} numberOfLines={1}>{greg}</Text>
           <Pressable onPress={() => setPickOpen((v) => !v)} accessibilityRole="button" accessibilityState={{ expanded: pickOpen }}
             accessibilityLabel={`${placeLabel}. ${lg === 'en' ? 'Change place' : lg === 'ar' ? 'تغيير المكان' : 'Yeri değiştir'}`}
-            style={{ height: 34, maxWidth: 170, paddingHorizontal: 12, borderRadius: 17, flexDirection: 'row', alignItems: 'center', gap: 5, backgroundColor: C.accentTint }}>
+            style={{ height: 34, maxWidth: '80%', paddingHorizontal: 12, borderRadius: 17, flexDirection: 'row', alignItems: 'center', gap: 5, backgroundColor: C.accentTint }}>
             <Icon name={place === 'auto' ? 'locate' : 'pin'} size={13} color={C.accent} />
             <Text style={{ flexShrink: 1, fontSize: fs(12.5), fontWeight: '700', color: C.accent }} numberOfLines={1}>{placeLabel}</Text>
             <View style={{ transform: [{ rotate: pickOpen ? '-90deg' : '90deg' }] }}><Icon name="chevron" size={12} color={C.accent} /></View>
           </Pressable>
+          {place === 'auto' && (waiting || denied) && <Text style={{ flex: 1, fontSize: fs(12), color: C.muted }} numberOfLines={2}>{pick(denied ? L.noPerm : L.waiting, lg)}</Text>}
         </View>
-        <Text style={{ fontSize: fs(22), color: C.ink, fontWeight: '700', letterSpacing: -0.3, marginTop: -4 }}>{hijriText(now, lg)}</Text>
         {pickOpen && (
-          <View style={{ flexDirection: 'row', gap: 6, justifyContent: 'flex-end' }}>
+          <View style={{ flexDirection: 'row', gap: 6 }}>
             {(['auto', 'makkah', 'madinah'] as PlaceId[]).map((p) => {
               const on = p === place;
               return (
@@ -125,7 +126,6 @@ export default function HomePrayer() {
             })}
           </View>
         )}
-        {place === 'auto' && (waiting || denied) && <Text style={{ fontSize: fs(12), color: C.muted, textAlign: 'right' }}>{pick(denied ? L.noPerm : L.waiting, lg)}</Text>}
       </View>
 
       {upd && (
@@ -145,11 +145,11 @@ export default function HomePrayer() {
       <Pressable onPress={() => router.push('/vakitler')} accessibilityRole="button" style={{ gap: 10 }}>
         <SkyArc now={now} lat={loc.lat} lng={loc.lng} tz={loc.tz} method={method} nextKey={nx.key} nextAt={nx.at} names={names} lang={lg} />
         <View style={{ flexDirection: 'row', justifyContent: 'space-between', gap: 8 }}>
-          <Text style={{ flex: 1, fontSize: fs(12), color: C.muted }} numberOfLines={2}>
+          <Text style={{ flex: 1, fontSize: fs(12), color: C.muted }} numberOfLines={3}>
             <Text style={{ fontWeight: '700', color: C.ink2 }}>{pick(L.sunWord, lg)} </Text>{altitudeText(sky.sun.alt, lg)}, {directionText(sky.sun.az, lg)}
           </Text>
-          <Text style={{ flex: 1, fontSize: fs(12), color: C.muted, textAlign: 'right' }} numberOfLines={2}>
-            <Text style={{ fontWeight: '700', color: C.ink2 }}>{pick(L.moonWord, lg)} </Text>{moonPhaseName(sky.moon.phase, lg)} · {pct(sky.moon.fraction, lg)} {pick(L.lit, lg)}{sky.moon.alt < 0 ? ` · ${pick(L.moonDown, lg)}` : ''}
+          <Text style={{ flex: 1, fontSize: fs(12), color: C.muted, textAlign: 'right' }} numberOfLines={3}>
+            <Text style={{ fontWeight: '700', color: C.ink2 }}>{pick(L.moonWord, lg)} </Text>{moonPhaseName(sky.moon.phase, lg)} · {pct(sky.moon.fraction, lg)}{sky.moon.alt < 0 ? ` · ${pick(L.moonDown, lg)}` : ''}
           </Text>
         </View>
         <View style={{ alignItems: 'center', gap: 2, paddingTop: 4 }}>
