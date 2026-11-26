@@ -2,6 +2,7 @@
 
 Mekke ve Medine'deki ziyaretçiler için iOS ve Android uygulaması:
 
+- **Tam vaktinde uyarı izni (0.13.1)** — Android 14 yeni kurulumda “Alarmlar ve hatırlatıcılar” iznini kapalı veriyor; o zaman sistem ezan bildirimini ve ana ekran kutusunun vakit yenilemesini 10 dakikaya kadar geciktirebiliyor (duman testinde alarm penceresi +10 dk görüldü). Bildirimler ekranı ve vakit kutusu satırı izin kapalıysa bunu söyler, “İzni aç” ile ayar sayfası açılır; dönünce bildirimler ve kutu alarmları tam zamanlı yeniden kurulur.
 - **Mekke otobüsleri, internetsiz (0.13.0)** — Ulaşım → Toplu taşıma Mekke'de Makkah Bus hatlarıyla adım adım tarif verir: “7A otobüsüne binin (Al-Shabeka 439 yönü) · Al-Shabeka 439 durağında inin · Varış noktasına yürüyün”. 12 hat ve 392 durak OpenStreetMap'ten gelir; tarif telefonda hesaplanır, süreler yaklaşıktır. Arapça arayüzde durak adları Arapça, öbür dillerde İngilizce (duraktaki tabelalarla aynı). Canlı varış saati ve bilet için Makkah Bus uygulaması. Mekke ve Medine çevresinde Transitous'a istek gönderilmez (orada verisi yok).
 - **Liste kutusu düzeltmesi (0.12.1)** — Uzun (liste) vakit kutusunda Akşam ve Yatsı görünmüyordu: Android'in kutu çizicisi (Glance) bir sütunda en çok 10 öğe çiziyor, fazlasını sessizce kesiyordu. Altı satır artık ayrı bir sütunda. Yatsı geçince ana sayfadaki vakit kartı ve Vakitler ekranı yarının vakitlerini gösterir (“Yarının vakitleri”); vurgulanan imsak geri sayımın saatiyle aynı olur. Kutu seçiminde “2×2, 4×2” gibi hücre sayıları kalktı (başlatıcıya göre değişiyordu); yerine kare, geniş, uzun, tek satır yazıyor.
 - **Toplu taşıma tarifi ve dört boy küçük uygulama (0.12.0)** — Ulaşım → Toplu taşıma artık adım adım, gündelik dille anlatır: “Taksim istasyonuna yürüyün · M2 metrosuna binin (Yenikapı yönü) · Yenikapı istasyonunda inin · M1B metrosuna binin (Kirazlı yönü) · 11 durak · Bağcılar Meydan istasyonunda inin”. İstanbul’da metro, tramvay, Marmaray ve füniküler tarifi OpenStreetMap verisiyle telefonda, internetsiz hesaplanır (süreler yaklaşık); otobüsler (İETT) ve başka şehirler (Ankara, İzmir, Konya, yurt dışı) Transitous’tan gelir. Depo MIT lisanslı oldu. Ana ekrana dört boy vakit kutusu: küçük (sıradaki vakit büyük yazıyla), orta (günün vakitleri), liste (alt alta) ve ince şerit; hepsi sade ve büyük yazılı, vakit girdiği anda kendini yeniler.
@@ -49,7 +50,7 @@ Mekke ve Medine'deki ziyaretçiler için iOS ve Android uygulaması:
 - **Ravza rehberi** — ziyaret saatleri, Nusuk izni, resmî 360° sanal tur bağlantısı.
 - **Türkçe, İngilizce, Arapça** (Arapça sağdan sola).
 
-> Durum: **0.13.0 — geliştirme sürümü.** Bina biçimleri ve kapı yerleri OpenStreetMap'ten gelir (doğruluğu bu veri kadardır); mescit içi hizmet noktaları örnektir. Ayrıntı: [docs/VERI-KAYNAKLARI.md](docs/VERI-KAYNAKLARI.md), [scripts/osm-3d.md](scripts/osm-3d.md).
+> Durum: **0.13.1 — geliştirme sürümü.** Bina biçimleri ve kapı yerleri OpenStreetMap'ten gelir (doğruluğu bu veri kadardır); mescit içi hizmet noktaları örnektir. Ayrıntı: [docs/VERI-KAYNAKLARI.md](docs/VERI-KAYNAKLARI.md), [scripts/osm-3d.md](scripts/osm-3d.md).
 
 ## Hızlı başlangıç
 

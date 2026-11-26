@@ -8,12 +8,14 @@ import { ListRow } from '@/components/ui';
 import { C, fs } from '@/constants/theme';
 import { pick, useI18n } from '@/i18n';
 import type { Lang } from '@/i18n/strings';
-import { pinPrayerWidget, widgetCount, widgetPinSupported, type WidgetName } from '@/services/widgetSync';
+import { askExactAlarm, exactAlarmGranted } from '@/services/adhanNotify';
+import { pinPrayerWidget, refreshWidgetTicks, widgetCount, widgetPinSupported, type WidgetName } from '@/services/widgetSync';
 
 type T3 = { tr: string; en: string; ar: string };
 const L = {
   title: { tr: 'Ana ekrana vakit kutusu ekle', en: 'Add prayer times to home screen', ar: 'أضف المواقيت إلى الشاشة الرئيسية' },
   sub: { tr: 'Dört boy: küçük, orta, liste ve ince şerit', en: 'Four sizes: small, medium, list and slim strip', ar: 'أربعة أحجام: صغير ومتوسط وقائمة وشريط' },
+  exact: { tr: 'Kutu vakit girince birkaç dakika geç değişebilir. Tam vaktinde değişsin diye “Alarmlar ve hatırlatıcılar” iznini açın ›', en: 'The widget may switch a few minutes late. Tap to allow “Alarms & reminders” so it changes exactly on time ›', ar: 'قد تتغير الأداة متأخرة بضع دقائق. اضغط للسماح بـ«المنبهات والتذكيرات» لتتغير في الوقت تمامًا ›' },
   added: { tr: 'Ana ekranda {n} tane ✓ · başka boy eklemek için dokunun', en: '{n} on your home screen ✓ · tap to add another size', ar: '{n} على الشاشة ✓ · اضغط لإضافة حجم آخر' },
   manual: { tr: 'Olmadıysa: ana ekranda boş yere basılı tutun → Widget’lar → MATAF', en: 'If nothing happened: long-press the home screen → Widgets → MATAF', ar: 'إن لم يحدث شيء: اضغط مطولًا على الشاشة الرئيسية ← الأدوات ← MATAF' },
 };
@@ -31,7 +33,13 @@ export function WidgetPinRow() {
   const [count, setCount] = useState(widgetCount);
   const [open, setOpen] = useState(false);
   const [asked, setAsked] = useState(false);
-  const refresh = useCallback(() => setCount(widgetCount()), []);
+  const [exact, setExact] = useState(true);
+  const refresh = useCallback(() => {
+    setCount(widgetCount());
+    exactAlarmGranted().then(setExact).catch(() => undefined);
+  }, []);
+  // İzin durumu açılışta bir kez (sonuç sonradan gelir; doğrudan setState yok)
+  useEffect(() => { exactAlarmGranted().then(setExact).catch(() => undefined); }, []);
   useEffect(() => {
     const sub = AppState.addEventListener('change', (s) => s === 'active' && refresh());
     return () => sub.remove();
@@ -41,6 +49,12 @@ export function WidgetPinRow() {
   return (
     <View>
       <ListRow title={pick(L.title, lg)} subtitle={sub} onPress={() => setOpen((v) => !v)} left={<Icon name="plus" color={C.accent} />} />
+      {count > 0 && !exact && (
+        <Pressable accessibilityRole="button" onPress={() => askExactAlarm().then((ok) => { setExact(ok); if (ok) refreshWidgetTicks(); })}
+          style={{ paddingLeft: 12, paddingBottom: 8 }}>
+          <Text style={{ fontSize: fs(12.5), color: C.limited }}>{pick(L.exact, lg)}</Text>
+        </Pressable>
+      )}
       {open && (
         <View style={{ gap: 6, paddingLeft: 12, paddingBottom: 6 }}>
           {SIZES.map((w) => (

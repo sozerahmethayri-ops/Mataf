@@ -9,6 +9,7 @@ export function usePrayerWidgetSync(input: WidgetSyncInput): void {
 }
 
 export const widgetPinSupported = () => false;
+export const refreshWidgetTicks = () => undefined;
 export const widgetCount = () => 0;
 export const WIDGET_NAMES = ['PrayerWidget', 'NextPrayerWidget', 'PrayerListWidget', 'PrayerStripWidget'] as const;
 export type WidgetName = (typeof WIDGET_NAMES)[number];

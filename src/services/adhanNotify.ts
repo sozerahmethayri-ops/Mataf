@@ -73,6 +73,21 @@ export async function notifPermission(ask: boolean): Promise<boolean> {
   return r.granted;
 }
 
+/**
+ * Android 12+ "Alarmlar ve hatırlatıcılar" (tam zamanlı alarm) izni. Android 14'te yeni kurulumda kapalı gelir;
+ * kapalıyken sistem bildirimleri ve ana ekran kutusunun vakit yenilemesini 10 dakikaya kadar geciktirebilir.
+ */
+export async function exactAlarmGranted(): Promise<boolean> {
+  if (Platform.OS !== 'android') return true;
+  try { return (await Notifications.getExactAlarmPermissionsAsync()).granted; } catch { return true; }
+}
+
+/** İzin ekranını açar; kullanıcı uygulamaya dönünce sonucu verir. */
+export async function askExactAlarm(): Promise<boolean> {
+  if (Platform.OS !== 'android') return true;
+  try { return (await Notifications.requestExactAlarmPermissionsAsync()).granted; } catch { return false; }
+}
+
 /** Hangi konumun vakitleri? "Bulunduğum yer" için son bilinen konum (izin varsa güncellenir). */
 async function resolvePlace(p: NotifPrefs): Promise<{ lat: number; lng: number; tz?: string; method: MethodId } | null> {
   if (p.place !== 'here') return { ...PLACES[p.place], method: 'UmmAlQura' };

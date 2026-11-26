@@ -3,7 +3,7 @@ import { createAudioPlayer, setAudioModeAsync, type AudioPlayer } from 'expo-aud
 import * as DocumentPicker from 'expo-document-picker';
 import { Directory, File, Paths } from 'expo-file-system';
 import { useEffect, useRef, useState } from 'react';
-import { Linking, Platform, Pressable, Text, View } from 'react-native';
+import { AppState, Linking, Platform, Pressable, Text, View } from 'react-native';
 
 import { playAdhan, stopAdhan } from '@/components/AdhanHost';
 import { Icon } from '@/components/Icon';
@@ -11,9 +11,10 @@ import { Btn, Card, Chip, Header, Screen, SectionTitle, Segmented, T, Toggle } f
 import { C } from '@/constants/theme';
 import { pick, useI18n } from '@/i18n';
 import { BEFORE_CHOICES, DEFAULT_NOTIF, SOUNDS, prayerName, type NotifPrefs, type SoundId } from '@/services/adhanPlan';
-import { NOTIF_KEY, applySchedule, mergeNotif, notificationsSupported, sendTest, type ApplyResult } from '@/services/adhanNotify';
+import { NOTIF_KEY, applySchedule, askExactAlarm, exactAlarmGranted, mergeNotif, notificationsSupported, sendTest, type ApplyResult } from '@/services/adhanNotify';
 import type { PrayerKey } from '@/services/prayer';
 import { usePersisted } from '@/services/usePersisted';
+import { refreshWidgetTicks } from '@/services/widgetSync';
 
 type Lang = 'tr' | 'en' | 'ar';
 const L = {
@@ -51,6 +52,8 @@ const L = {
   noPerm: { tr: 'Bildirim izni kapalı. Telefon ayarlarından MATAF için bildirimlere izin verin.', en: 'Notifications are not allowed. Enable them for MATAF in phone settings.', ar: 'الإشعارات غير مسموحة. فعّلها لـ MATAF من إعدادات الهاتف.' },
   noLoc: { tr: 'Konum bilinmiyor. Konum izni verin ya da Mekke/Medine seçin.', en: 'Location unknown. Allow location or choose Makkah/Madinah.', ar: 'الموقع غير معروف. اسمح بالموقع أو اختر مكة/المدينة.' },
   openSettings: { tr: 'Ayarları aç', en: 'Open settings', ar: 'افتح الإعدادات' },
+  exactNote: { tr: 'Bildirimler birkaç dakika gecikebilir. Ezan bildirimi ve ana ekran kutusu tam vaktinde gelsin diye “Alarmlar ve hatırlatıcılar” iznini açın.', en: 'Alerts may arrive a few minutes late. Allow “Alarms & reminders” so the adhan alert and the home screen widget change exactly on time.', ar: 'قد تتأخر التنبيهات بضع دقائق. فعّل إذن «المنبهات والتذكيرات» ليصل تنبيه الأذان وتتغير أداة الشاشة الرئيسية في الوقت تمامًا.' },
+  exactBtn: { tr: 'İzni aç', en: 'Allow', ar: 'السماح' },
   web: { tr: 'Bildirimler telefonda (iOS/Android) çalışır; bu önizlemede sesleri dinleyebilirsiniz.', en: 'Notifications work on the phone (iOS/Android); you can preview the sounds here.', ar: 'تعمل الإشعارات على الهاتف؛ يمكنك معاينة الأصوات هنا.' },
   notes: {
     tr: '• Uygulamaya özel sesler (Zil, Çan, Nağme, Damla) kendi derlemenizde (APK/IPA) çalar; Expo Go’da telefonun varsayılan sesi duyulur.\n• Bildirimler birkaç günlük kurulur ve uygulamayı her açtığınızda yenilenir.\n• Android’de pil tasarrufu bildirimleri geciktirebilir: MATAF için “Alarmlar ve hatırlatıcılar” iznini açın, pil kısıtlamasını kaldırın.',
@@ -109,6 +112,25 @@ export default function NotificationSettings() {
 
   useEffect(() => () => { previewPlayer.current?.remove(); stopAdhan(); }, []);
 
+  // Tam zamanlı alarm izni (Android 12+): ayarlardan dönünce yeniden bakılır
+  const [exact, setExact] = useState(true);
+  useEffect(() => {
+    if (!notificationsSupported) return;
+    const check = () => { exactAlarmGranted().then(setExact).catch(() => undefined); };
+    check();
+    const sub = AppState.addEventListener('change', (s) => s === 'active' && check());
+    return () => sub.remove();
+  }, []);
+  const allowExact = async () => {
+    const ok = await askExactAlarm();
+    setExact(ok);
+    // Önceden kurulan bildirimler gecikmeli kuruldu: izinle yeniden kur
+    if (ok) {
+      applySchedule(mergeNotif(raw), lg).then(setStatus).catch(() => undefined);
+      refreshWidgetTicks();
+    }
+  };
+
   const stopPreview = () => {
     try { previewPlayer.current?.pause(); previewPlayer.current?.remove(); } catch { /* kapalı */ }
     previewPlayer.current = null;
@@ -164,6 +186,12 @@ export default function NotificationSettings() {
           </View>
         )}
         {status && !status.ok && status.reason === 'location' && <Text style={[T.small, { color: C.closed }]}>{l('noLoc')}</Text>}
+        {prefs.enabled && !exact && (
+          <View style={{ gap: 8 }}>
+            <Text style={[T.small, { color: C.limited }]}>{l('exactNote')}</Text>
+            <Btn title={l('exactBtn')} kind="secondary" icon="clock" onPress={allowExact} />
+          </View>
+        )}
         {okText ? <Text style={[T.small, { color: C.green }]}>{okText}</Text> : null}
       </Card>
 

@@ -32,6 +32,7 @@ function loadWidgets() {
 }
 
 let lastSig = '';
+let lastProps: ReturnType<typeof buildWidgetProps> | null = null;
 const today = () => new Date();
 
 export function usePrayerWidgetSync({ loc, method, label, waiting }: WidgetSyncInput) {
@@ -66,6 +67,7 @@ export function usePrayerWidgetSync({ loc, method, label, waiting }: WidgetSyncI
           for (const w of ws) w.updateSnapshot(props);
           // Vakit girince (ve gün dönünce) küçük uygulamalar hemen yenilensin
           pinApi()?.scheduleWidgetTicks?.(widgetTicks(props, Date.now()));
+          lastProps = props;
           lastSig = sig;
         } catch (e) {
           console.warn('[widget] güncellenemedi', e);
@@ -74,6 +76,11 @@ export function usePrayerWidgetSync({ loc, method, label, waiting }: WidgetSyncI
     }, 1200);
     return () => clearTimeout(id);
   }, [waiting, loc.lat, loc.lng, loc.tz, method, place, lg, names, prefs.palette, prefs.mode]);
+}
+
+/** Yenileme anlarını yeniden kur (ör. tam zamanlı alarm izni yeni verildiyse alarmlar artık tam vaktinde). */
+export function refreshWidgetTicks() {
+  if (lastProps) pinApi()?.scheduleWidgetTicks?.(widgetTicks(lastProps, Date.now()));
 }
 
 // ── Ana ekrana ekleme (başlatıcı onay penceresi açar; Android 8+) ──
