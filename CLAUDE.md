@@ -124,13 +124,13 @@ Platforma özel dosyalar: `X.web.tsx`, `X.android.ts`, `X.types.ts`. Giriş `ind
 14. **Veriden bilinçli sapmalar:** OSM'de turuncu işaretli kubbeler mermer tonunda; Yeşil Kubbe kasnak + sivri kubbe (~26 m); Medine çatısındaki 27 sürgülü kubbe çizilmez (yerleri bilinmiyor). Ana kapılar: Mekke 1, 79, 62, 45, 100; Medine 1, 41, 37, 20–22, 7–9, 33–35.
 15. **Doğrulama üç katlı:** saf mantık testleri (Node), web ekran görüntüsü (Playwright), emülatör duman testi (API 34). Gerçek cihaz denemesi henüz yapılmadı.
 
-## Tamamlanan özellikler (0.21.0)
+## Tamamlanan özellikler (0.21.1)
 Sürüm sırasıyla ayrıntı README.md'nin başında.
 - **Ana sayfa ve vakitler:** resimli gökyüzü, geri sayım, altı vakit, hicrî tarih, yaklaşan mübarek gün, teşrik tekbiri; Vakitler ekranı (haftalık tablo, güneş ve ay bilgisi); hesaplama yöntemi; ana sayfa seçimi (sade vakit, Kur'an, harita, tavaf, zikir, hadis). `screens/HomePrayer.tsx`, `PrayerTimes.tsx`, `services/prayer.ts`.
 - **Her gün dönülen yerler (0.14.0):** namaz takibi (ana sayfada bugünkü beş vakit tek dokunuşla; ekranda son 7 gün, seri, kaza bağlantısı; kayıt telefonda, yedeğe girer), günün duası (kaynaklı kısa dualardan güne göre). `app/namaz-takibi.tsx`, `components/PrayerLogCard.tsx`, `DailyDuaCard.tsx`, `services/prayerLog.ts`, `usePrayerLog.ts`, `daily.ts`.
 - **Bağlılık (0.15.0):** hatim planı (30–180 gün, bölüm cüze göre eşit, Hatim ayracından; ana sayfa kartı, yatsıdan sonra hatırlatma), cuma kartı ve hatırlatması (Kehf), günlük zikir hedefi (ana sayfada), son 7 günün özeti (namaz, zikir, hatim), ezan bildiriminde "Kıldım" düğmesi (0.20.0'dan beri Android'de uygulamayı açmadan vakti işler, bildirimi kapatır, kutuyu yeniler; `services/prayedTask.android.ts`, `index.ts`), hac-umre hazırlık listesi, temel Arapça ifadeler (göster, dinlet). `app/hatim.tsx`, `hazirlik.tsx`, `arapca.tsx`, `components/HatimCard.tsx`, `ZikirCard.tsx`, `FridayCard.tsx`, `services/hatim.ts`, `sharedPersisted.ts`, `data/checklist.ts`, `phrases.ts`.
 - **Bildirimler:** ezandan önce ve vaktinde; 4 ses ve kendi kaydın; mübarek gün ve hac hatırlatmaları; tam zamanlı alarm uyarısı. `app/bildirimler.tsx`, `services/adhanPlan.ts`, `adhanNotify.ts`.
-- **Ana ekran kutuları (Android):** kare, geniş, uzun, tek satır; Vakitler ve Ayarlar'dan eklenir; `mataf://vakitler?widget=<Ad>`. Namaz takibi kutusu (0.19.0, `PrayerLogWidget`): bugün kılınan vakitler ✓/○, "3/5" ya da "Beş vakit tamam", hatim planı varsa "Hatim %N"; işaret değişince uygulama yazar (`services/logWidget.android.ts`, `useLogWidgetSync.ts`), "bugün"ü kutu kendisi bulur (yeni gün boş başlar); Namaz takibi ekranından eklenir.
+- **Ana ekran kutuları (Android):** kare, geniş, uzun, tek satır; Vakitler ve Ayarlar'dan eklenir; `mataf://vakitler?widget=<Ad>`. Namaz takibi kutusu (0.19.0, `PrayerLogWidget`): bugün kılınan vakitler vurgu renginde dolu daire ve ✓, kalanlar açık daire (0.21.1; ○ harfi küçük çiziliyordu), "3/5" ya da "Beş vakit tamam", hatim planı varsa "Hatim %N"; işaret değişince uygulama yazar (`services/logWidget.android.ts`, `useLogWidgetSync.ts`), "bugün"ü kutu kendisi bulur (yeni gün boş başlar); Namaz takibi ekranından eklenir.
 - **Harem haritası ve navigasyon:** gerçek ölçekli 3D (OSM) ve 2D gerçek harita, katmanlar, kapı bildirimleri ve onayları, kapalı kapıya göre rota, adım adım yönlendirme. `screens/MapScreen.tsx`, `scene/`, `app/kapilar.tsx`, `bildir.tsx`, `navigasyon.tsx`.
 - **Hac ve umre:** umre rehberi (7 adım), hac rehberi (tür seçimi, gün gün), cemerat sayacı ve atış vakti, hac yerleri haritası (Arafat, Mina, Harem içinde mi), tavaf asistanı (3D, GPS sayacı, sesli rehber), sa'y sayacı, tekerlekli sandalye ve araba bilgisi. `app/umre.tsx`, `hac.tsx`, `cemerat.tsx`, `hac-harita.tsx`, `tavaf.tsx`, `say.tsx`, `erisim.tsx`.
 - **Ulaşım:** yürüme ve araç (OSRM); toplu taşıma adım adım (İstanbul raylı ve Mekke otobüsü çevrimdışı, gerisi Transitous); taksi ve şoföre gösterme kartı; Haremeyn treni; `mataf://ulasim?to=enlem,boylam&name=Ad`. `app/(tabs)/ulasim.tsx`, `services/transport.ts`, `railRouter.ts`, `transitText.ts`, `app/tren.tsx`.
@@ -140,7 +140,7 @@ Sürüm sırasıyla ayrıntı README.md'nin başında.
 - **Genel:** ilk açılış, TR/EN/AR, açık/koyu tema ve 5 palet, yazı ölçeği, çevrimdışı paket, yedek ve geri yükleme, güncelleme uyarısı, hata ekranı ve kaydı, uygulamayı paylaşma, web sürümü.
 
 ## Şu anki durum
-- Sürüm 0.21.0 (versionCode 31). CI, APK ve web yeşil. APK: https://github.com/sozerahmethayri-ops/Mataf/releases/download/apk-latest/mataf.apk; web: https://sozerahmethayri-ops.github.io/Mataf/.
+- Sürüm 0.21.1 (versionCode 32). CI, APK ve web yeşil. APK: https://github.com/sozerahmethayri-ops/Mataf/releases/download/apk-latest/mataf.apk; web: https://sozerahmethayri-ops.github.io/Mataf/.
 - Doğrulandı: 291 mantık testi; web görüntüleri (Arapça sağdan sola dahil); emülatörde çökme yok, beş kutu eklendi ve çizildi (namaz takibi kutusu 0.19.0), 24 vakit alarmı kurulu, Mekke otobüs tarifi (7A) doğru.
 - Doğrulanmadı: gerçek telefon, Mekke ve Medine'de saha, Samsung ve Xiaomi başlatıcıları.
 - Proje sahibinden beklenenler: Supabase URL ve Publishable key (GitHub secrets'a), sahada deneme, hoca kontrolü (gözden geçirme belgesi: https://claude.ai/artifact/BZSU1wpF6vLspLDwDCGiGc), dağıtım izni olan bir ezan kaydı.
@@ -160,7 +160,7 @@ Sürüm sırasıyla ayrıntı README.md'nin başında.
 11. Fotoğraf yükleme ve cihazda yüz bulanıklaştırma; iç mekân konumu ve AR.
 12. Kur'an ayraçları ve zikir defterinin cihazlar arası eşitlenmesi.
 13. Mağaza: Play Store için kendi imza anahtarı; iPhone için Apple Developer hesabı ve TestFlight; iOS kutuları (şimdilik yalnız Android).
-14. Acil numaralarını ve temsilcilik telefonlarını her sürümde yeniden kontrol et.
+14. Acil numaralarını ve temsilcilik telefonlarını her sürümde yeniden kontrol et (son: 27.11.2026, Cidde Başkonsolosluğu iletişim sayfası ve duyuruları, my.gov.sa ve stc listeleri, NCSO haberleri; uygulamadakilerle aynı. 911 Mekke, Medine, Riyad ve Doğu Bölgesi'nde).
 
 ## Bilinen hatalar ve sınırlar
 - Android 14'te "Alarmlar ve hatırlatıcılar" izni kapalı gelir; verilmezse ezan bildirimi ve kutu yenilemesi 10 dk'ya kadar gecikebilir (uygulama uyarıyor).

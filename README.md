@@ -2,6 +2,7 @@
 
 Mekke ve Medine'deki ziyaretçiler için iOS ve Android uygulaması:
 
+- **Namaz takibi kutusu daha okunaklı (0.21.1)** — Kutudaki vakit işaretleri büyüdü: kılınan vakit vurgu renginde dolu daire içinde ✓, kılınmayan açık renkli daire; önceki ○ işareti telefonda çok küçük görünüyordu. Acil durum numaraları ve temsilcilik telefonları yeniden denetlendi, değişiklik yok.
 - **Arapça düzen (0.21.0)** — Web sürümünde (iPhone) Arapça seçilince sayfa artık sağdan sola: satırlar, sekmeler ve alt çubuk dönüyor; önceden yalnız yazı sağa yaslanıyordu. Liste okları ve geri düğmesi Arapçada ters yöne bakıyor (telefonda da). Arapça arayüzde İngilizce kalan 93 metin (kıble, yönlendirme, kapı bildirimleri, Ravza, arama, ayarlar…) Arapçaya çevrildi; Kur'an listesinde Mekkî/Medenî ve âyet sayısı, ayraçlarda sûre adı ve âyet numarası seçili dilde.
 - **“Kıldım” uygulamayı açmadan (0.20.0)** — Android'de vakit bildirimindeki “Kıldım”a dokununca uygulama artık açılmıyor: vakit Namaz takibine işleniyor, bildirim kapanıyor, ana ekrandaki namaz takibi kutusu da güncelleniyor. Uygulama kapalıyken de çalışır. Bildirimler ekranındaki deneme bildiriminde de “Kıldım” görünür; dokununca yalnız bildirim kapanır, namaz işlenmez.
 - **Namaz takibi kutusu (0.19.0)** — Android'de telefonun ana ekranına “Bugünkü namazlarım” kutusu eklenebilir: bugün kıldığınız vakitler ✓, kalanlar ○ ile görünür; üstte kaç vaktin tamam olduğu (“3/5”, beşi de kılınınca “Beş vakit tamam”), hatim planınız varsa altta hatim yüzdesi. Uygulamada işaretlediğiniz anda kutu da güncellenir; gece yarısından sonra uygulamayı açmasanız da yeni gün boş başlar. Namaz takibi ekranındaki “Telefonun ana ekranına ekle” satırıyla ya da başlatıcının kutu listesinden (“MATAF · Namaz takibi”) eklenir; dokununca uygulama açılır.
@@ -62,7 +63,7 @@ Mekke ve Medine'deki ziyaretçiler için iOS ve Android uygulaması:
 - **Ravza rehberi** — ziyaret saatleri, Nusuk izni, resmî 360° sanal tur bağlantısı.
 - **Türkçe, İngilizce, Arapça** (Arapça sağdan sola).
 
-> Durum: **0.21.0 — geliştirme sürümü.** Bina biçimleri ve kapı yerleri OpenStreetMap'ten gelir (doğruluğu bu veri kadardır); mescit içi hizmet noktaları örnektir. Ayrıntı: [docs/VERI-KAYNAKLARI.md](docs/VERI-KAYNAKLARI.md), [scripts/osm-3d.md](scripts/osm-3d.md).
+> Durum: **0.21.1 — geliştirme sürümü.** Bina biçimleri ve kapı yerleri OpenStreetMap'ten gelir (doğruluğu bu veri kadardır); mescit içi hizmet noktaları örnektir. Ayrıntı: [docs/VERI-KAYNAKLARI.md](docs/VERI-KAYNAKLARI.md), [scripts/osm-3d.md](scripts/osm-3d.md).
 
 ## Hızlı başlangıç
 

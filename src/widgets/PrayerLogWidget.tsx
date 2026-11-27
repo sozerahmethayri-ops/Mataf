@@ -1,4 +1,5 @@
-// Ana ekran "Namaz takibi" küçük uygulaması (Android, expo-widgets, 4×2): bugün kılınan vakitler ✓, kılınmayanlar ○,
+// Ana ekran "Namaz takibi" küçük uygulaması (Android, expo-widgets, 4×2): bugün kılınan vakitler vurgu renginde dolu
+// daire içinde ✓, kılınmayanlar açık renkli boş daire (○ harfi emülatörde çok küçük çiziliyordu, 0.21.1),
 // sayı ve varsa hatim yüzdesi. Veriyi uygulama yazar (işaret değişince ve ana sayfa açılınca); "bugün"ü küçük
 // uygulama her çizimde kendisi bulur, gece yarısından sonra uygulama açılmasa da yeni gün 0/5 başlar.
 // Görünüm ayrı JS ortamında çizilir ('widget' yönergesi): dosyadaki başka değere erişemez; ?. ?? ... yayma ve
@@ -9,6 +10,7 @@ import { createWidget } from 'expo-widgets';
 
 import type { PrayerWidgetColors } from './PrayerWidget';
 
+declare const Box: typeof UI.Box;
 declare const Column: typeof UI.Column;
 declare const Row: typeof UI.Row;
 declare const Text: typeof UI.Text;
@@ -75,7 +77,10 @@ function logLayout(props: PrayerLogWidgetProps, env: { colorScheme?: 'light' | '
     const on = ((mask >> k) & 1) === 1;
     cells.push(
       <Column key={'n' + k} horizontalAlignment="center" modifiers={[width(52), padding(0, 2, 0, 2)]}>
-        <Text color={on ? c.accent : c.muted} maxLines={1} style={{ fontSize: 22, fontWeight: 'bold' }}>{on ? '✓' : '○'}</Text>
+        <Box contentAlignment="center" modifiers={[width(30), height(30), background(on ? c.accent : c.tint), cornerRadius(15)]}>
+          <Text color={c.bg} maxLines={1} style={{ fontSize: 16, fontWeight: 'bold' }}>{on ? '✓' : ' '}</Text>
+        </Box>
+        <Spacer modifiers={[height(3)]} />
         <Text color={on ? c.ink : c.muted} maxLines={1} style={{ fontSize: 11 }}>{names[k]}</Text>
       </Column>,
     );
