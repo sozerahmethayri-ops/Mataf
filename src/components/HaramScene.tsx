@@ -25,7 +25,8 @@ function sceneFor(city: City, kq: number, rotDeg: number) {
   if (!s) {
     const cam = new Cam(kq, 0, 0, rotDeg);
     s = city === 'makkah' ? buildMakkah(cam) : buildMadinah(cam);
-    if (sceneCache.size >= 6) sceneCache.delete(sceneCache.keys().next().value as string);
+    // Döndürme (45°'lik 8 açı) ve birkaç ölçek adımı önbellekte kalsın
+    if (sceneCache.size >= 12) sceneCache.delete(sceneCache.keys().next().value as string);
     sceneCache.set(key, s);
   }
   return s;
@@ -99,9 +100,10 @@ export function HaramScene(props: SceneProps) {
     return Cam.centeredOn(BASE_K[city] * zoom, [fx, fy], width * ax, height * ay, rotDeg);
   }, [fitKey, city, zoom, fx, fy, width, height, ax, ay, vt, vb, vl, vr, rotDeg]);
   const k = cam.k;
-  // Sahne ölçeği %6'lık adımlara yuvarlanıp orijinde kurulur; kaydırma ve küçük ölçek farkı SVG dönüşümüyle
-  // uygulanır. Böylece konum güncellemeleri ve küçük yakınlaştırmalar sahneyi yeniden kurdurmaz.
-  const kq = Math.pow(1.06, Math.round(Math.log(k) / Math.log(1.06)));
+  // Sahne ölçeği %20'lik adımlara yuvarlanıp orijinde kurulur; kaydırma ve aradaki ölçek farkı SVG dönüşümüyle
+  // uygulanır. Böylece konum güncellemeleri ve yakınlaştırma düğmeleri sahneyi çoğu zaman yeniden kurdurmaz
+  // (önceden %6'lık adımlarla her basışta binlerce şekil yeniden hesaplanıyordu).
+  const kq = Math.pow(1.2, Math.round(Math.log(k) / Math.log(1.2)));
   const scene = useMemo(() => sceneFor(city, kq, rotDeg), [city, kq, rotDeg]);
   const sceneTf = `translate(${cam.ox.toFixed(2)} ${cam.oy.toFixed(2)}) scale(${(k / kq).toFixed(4)})`;
 
