@@ -11,7 +11,8 @@ import { RAWDAH } from '@/data/content';
 import { pick, useI18n } from '@/i18n';
 
 type Lang = 'tr' | 'en' | 'ar';
-type Item = { icon: IconName; title: { tr: string; en: string; ar: string }; to?: string; url?: string; tint?: string };
+// sos: kırmızı yazılır (Acil durum); öbürlerinin simgesi tek renk (renkli simge zeminleri şablon gibi duruyordu, 0.13.5)
+type Item = { icon: IconName; title: { tr: string; en: string; ar: string }; to?: string; url?: string; sos?: boolean };
 // Sade menü: her ekran bir kez, gruplar altışar; başka ekranlardan açılanlar (kapı bildir, Ravza 360°, okuma
 // ayarları, veri kaynakları, yol tarifi, ezan bildirimleri) yalnız aramada çıkar.
 const GROUPS: { title: { tr: string; en: string; ar: string }; items: Item[] }[] = [
@@ -51,11 +52,11 @@ const GROUPS: { title: { tr: string; en: string; ar: string }; items: Item[] }[]
   {
     title: { tr: 'Yolculuk', en: 'On the way', ar: 'في الطريق' },
     items: [
-      { icon: 'pin', title: { tr: 'En yakın cami', en: 'Nearest mosque', ar: 'أقرب مسجد' }, to: '/cami', tint: '#277F4C' },
+      { icon: 'pin', title: { tr: 'En yakın cami', en: 'Nearest mosque', ar: 'أقرب مسجد' }, to: '/cami' },
       { icon: 'hotel', title: { tr: 'Otelime dön', en: 'Back to hotel', ar: 'العودة إلى الفندق' }, to: '/otel' },
       { icon: 'users', title: { tr: 'Aile ve grup', en: 'Family & group', ar: 'العائلة والمجموعة' }, to: '/grup' },
       { icon: 'bus', title: { tr: 'Ulaşım', en: 'Transport', ar: 'التنقل' }, to: '/ulasim' },
-      { icon: 'pin', title: { tr: 'Yerlerim (çadır, buluşma)', en: 'My places', ar: 'أماكني' }, to: '/yerlerim', tint: '#0E7490' },
+      { icon: 'pin', title: { tr: 'Yerlerim (çadır, buluşma)', en: 'My places', ar: 'أماكني' }, to: '/yerlerim' },
       { icon: 'settings', title: { tr: 'Ayarlar', en: 'Settings', ar: 'الإعدادات' }, to: '/ayarlar' },
     ],
   },
@@ -73,7 +74,7 @@ const EXTRA: Item[] = [
   { icon: 'train', title: { tr: 'Haremeyn treni (Mekke–Cidde–Medine)', en: 'Haramain train', ar: 'قطار الحرمين' }, to: '/tren' },
   { icon: 'wheel', title: { tr: 'Tekerlekli sandalye, golf arabası (yaşlı ve engelli)', en: 'Wheelchairs and golf carts (elderly, disabled)', ar: 'الكراسي المتحركة وعربات القولف' }, to: '/erisim' },
   { icon: 'share', title: { tr: 'Uygulamayı paylaş (arkadaşlarına gönder)', en: 'Share the app', ar: 'شارك التطبيق' }, to: 'share:app' },
-  { icon: 'sos', title: { tr: 'Acil durum', en: 'Emergency', ar: 'الطوارئ' }, to: '/acil', tint: '#B42318' },
+  { icon: 'sos', title: { tr: 'Acil durum', en: 'Emergency', ar: 'الطوارئ' }, to: '/acil', sos: true },
   { icon: 'palette', title: { tr: 'Tema, renk, yazı boyutu', en: 'Theme, colours, text size', ar: 'المظهر وحجم الخط' }, to: '/ayarlar' },
 ];
 const ALL: Item[] = [...GROUPS.flatMap((g) => g.items), ...EXTRA];
@@ -109,33 +110,30 @@ export default function Menu() {
         {!!q && <Pressable onPress={() => setQ('')} accessibilityRole="button" accessibilityLabel="✕" hitSlop={10}><Icon name="close" size={16} color={C.muted} /></Pressable>}
       </View>
       {found ? (
-        <View style={{ gap: 4 }}>
-          {found.length === 0 && <Text style={{ fontSize: fs(14), color: C.muted, paddingVertical: 8 }}>{lg === 'en' ? 'Nothing found' : lg === 'ar' ? 'لا نتائج' : 'Bulunamadı'}</Text>}
-          {found.map((it) => (
-            <Pressable key={it.title.tr} accessibilityRole="button" onPress={() => open(it)}
-              style={({ pressed }) => ({ flexDirection: 'row', alignItems: 'center', gap: 12, minHeight: 52, paddingHorizontal: 4, borderBottomWidth: 1, borderBottomColor: C.border, opacity: pressed ? 0.7 : 1 })}>
-              <Icon name={it.icon} size={20} color={it.tint ?? C.accent} />
-              <Text style={{ flex: 1, fontSize: fs(15), fontWeight: '600', color: C.ink }}>{pick(it.title, lg)}</Text>
-              <Icon name="chevron" size={16} color={C.muted} />
-            </Pressable>
-          ))}
-        </View>
+        found.length === 0
+          ? <Text style={{ fontSize: fs(14), color: C.muted, paddingVertical: 8 }}>{lg === 'en' ? 'Nothing found' : lg === 'ar' ? 'لا نتائج' : 'Bulunamadı'}</Text>
+          : <View style={listBox()}>{found.map((it, i) => <Row key={it.title.tr} it={it} lg={lg} first={i === 0} onPress={() => open(it)} />)}</View>
       ) : GROUPS.map((g) => (
         <View key={g.title.tr} style={{ gap: 8 }}>
-          <Text style={{ fontSize: fs(12), fontWeight: '700', color: C.muted, textTransform: 'uppercase', letterSpacing: 0.7 }}>{pick(g.title, lg)}</Text>
-          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 10 }}>
-            {g.items.map((it) => (
-              <Pressable key={it.title.tr} accessibilityRole="button" onPress={() => open(it)}
-                style={({ pressed }) => ({ width: '31%', minHeight: 88, padding: 10, borderRadius: 16, backgroundColor: C.surface, gap: 8, justifyContent: 'space-between', opacity: pressed ? 0.75 : 1 })}>
-                <View style={{ width: 36, height: 36, borderRadius: 18, backgroundColor: C.bg, alignItems: 'center', justifyContent: 'center' }}>
-                  <Icon name={it.icon} size={19} color={it.tint ?? C.accent} />
-                </View>
-                <Text style={{ fontSize: fs(13), fontWeight: '600', color: C.ink, lineHeight: fs(16.5) }} numberOfLines={2}>{pick(it.title, lg)}</Text>
-              </Pressable>
-            ))}
-          </View>
+          <Text style={{ fontSize: fs(14), fontWeight: '700', color: C.ink2 }} accessibilityRole="header">{pick(g.title, lg)}</Text>
+          <View style={listBox()}>{g.items.map((it, i) => <Row key={it.title.tr} it={it} lg={lg} first={i === 0} onPress={() => open(it)} />)}</View>
         </View>
       ))}
     </ScrollView>
+  );
+}
+
+// Grup kutusu: Vakitler listesiyle aynı ince çerçeve (renk çizim anında okunur; tema değişebilir)
+const listBox = () => ({ borderWidth: 1, borderColor: C.border, borderRadius: 18, paddingHorizontal: 14 });
+
+/** Menü satırı: simge, ad, ok; dokunma alanı 52 px. */
+function Row({ it, lg, first, onPress }: { it: Item; lg: Lang; first: boolean; onPress: () => void }) {
+  return (
+    <Pressable accessibilityRole="button" onPress={onPress}
+      style={({ pressed }) => ({ flexDirection: 'row', alignItems: 'center', gap: 14, minHeight: 52, paddingVertical: 6, borderTopWidth: first ? 0 : 1, borderTopColor: C.border, opacity: pressed ? 0.7 : 1 })}>
+      <Icon name={it.icon} size={20} color={it.sos ? C.closed : C.ink2} />
+      <Text style={{ flex: 1, fontSize: fs(15.5), fontWeight: '600', color: it.sos ? C.closed : C.ink }}>{pick(it.title, lg)}</Text>
+      <Icon name="chevron" size={16} color={C.muted} />
+    </Pressable>
   );
 }

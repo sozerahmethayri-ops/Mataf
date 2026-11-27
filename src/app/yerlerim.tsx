@@ -24,7 +24,7 @@ const L = {
   sub: { tr: 'Çadırınız, buluşma noktanız, otoparkınız', en: 'Your tent, meeting point, parking', ar: 'خيمتك ونقطة اللقاء والموقف' },
   save: { tr: 'Bulunduğum yeri kaydet', en: 'Save where I am', ar: 'احفظ مكاني الحالي' },
   name: { tr: 'Ad (ör. Mina çadırı)', en: 'Name (e.g. Mina tent)', ar: 'الاسم (مثل: خيمة منى)' },
-  note: { tr: 'Not (ör. çadır 34/B, kapı 12) — isteğe bağlı', en: 'Note (e.g. tent 34/B, gate 12) — optional', ar: 'ملاحظة (اختياري)' },
+  note: { tr: 'Not (isteğe bağlı): çadır 34/B, kapı 12…', en: 'Note (optional): tent 34/B, gate 12…', ar: 'ملاحظة (اختياري)' },
   ok: { tr: 'Kaydet', en: 'Save', ar: 'حفظ' },
   cancel: { tr: 'Vazgeç', en: 'Cancel', ar: 'إلغاء' },
   waitLoc: { tr: 'Konum bekleniyor…', en: 'Waiting for location…', ar: 'في انتظار الموقع…' },

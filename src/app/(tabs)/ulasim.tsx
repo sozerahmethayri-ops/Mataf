@@ -53,7 +53,7 @@ const L = {
   transit: { tr: 'Toplu taşıma', en: 'Transit', ar: 'نقل عام' },
   car: { tr: 'Araç · Taksi', en: 'Car · Taxi', ar: 'سيارة · تاكسي' },
   routing: { tr: 'Rota hesaplanıyor…', en: 'Finding a route…', ar: 'جارٍ حساب المسار…' },
-  approx: { tr: 'Rota sunucusuna ulaşılamadı — süre kaba tahmindir.', en: "Couldn't reach the routing server — time is a rough estimate.", ar: 'تعذّر الوصول إلى خادم المسارات — المدة تقديرية.' },
+  approx: { tr: 'Rota sunucusuna ulaşılamadı. Süre kaba tahmindir.', en: "Couldn't reach the routing server. The time is a rough estimate.", ar: 'تعذّر الوصول إلى خادم المسارات. المدة تقديرية.' },
   noFrom: { tr: 'Konumunuz olmadan süre hesaplanamıyor; tarifi telefonun haritasında açabilirsiniz.', en: "Without your location the time can't be calculated; open directions in your maps app.", ar: 'بدون موقعك لا يمكن حساب المدة؛ افتح الاتجاهات في تطبيق الخرائط.' },
   openMaps: { tr: 'Telefonun haritasında aç', en: 'Open in maps app', ar: 'افتح في تطبيق الخرائط' },
   startWalk: { tr: 'Yürüyüş tarifini başlat', en: 'Start walking directions', ar: 'ابدأ اتجاهات المشي' },
@@ -317,7 +317,7 @@ export default function TransportScreen() {
     <SafeAreaView style={{ flex: 1, backgroundColor: C.bg }} edges={['top', 'left', 'right']}>
       <View style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 8, gap: 12 }}>
         <Text style={[T.h1, { flex: 1 }]} accessibilityRole="header">{l('title')}</Text>
-        <IconBtn name="settings" label={pick({ tr: 'Ayarlar', en: 'Settings', ar: 'الإعدادات' }, lg)} size={40} tint={C.accentTint} color={C.accent} onPress={() => router.push('/ayarlar')} />
+        <IconBtn name="settings" label={pick({ tr: 'Ayarlar', en: 'Settings', ar: 'الإعدادات' }, lg)} size={44} color={C.ink2} onPress={() => router.push('/ayarlar')} />
       </View>
       <View style={{ height: Math.round(height * 0.36), borderTopWidth: 1, borderBottomWidth: 1, borderColor: C.border }}>
         <TransportMap user={here} dest={dest} segments={segments} onLongPress={pickPoint}
@@ -357,9 +357,9 @@ export default function TransportScreen() {
                 <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
                   {quick.map((q) => (
                     <Pressable key={q.label} onPress={q.onPress} accessibilityRole="button"
-                      style={({ pressed }) => ({ flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 12, height: 38, borderRadius: 19, backgroundColor: C.accentTint, opacity: pressed ? 0.7 : 1 })}>
-                      <Icon name={q.icon} color={C.accent} size={16} />
-                      <Text style={{ color: C.accent, fontWeight: '700', fontSize: fs(14) }}>{q.label}</Text>
+                      style={({ pressed }) => ({ flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 14, height: 44, borderRadius: 22, backgroundColor: C.surface, opacity: pressed ? 0.7 : 1 })}>
+                      <Icon name={q.icon} color={C.ink2} size={17} />
+                      <Text style={{ color: C.ink, fontWeight: '600', fontSize: fs(14.5) }}>{q.label}</Text>
                     </Pressable>
                   ))}
                 </View>

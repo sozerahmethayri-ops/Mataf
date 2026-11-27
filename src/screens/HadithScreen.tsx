@@ -43,7 +43,7 @@ export default function HadithDua({ back = false }: { back?: boolean }) {
       <Header back={back} title={t('hadith.title')} />
       <Card>
         <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-          <Text style={{ fontSize: fs(12), fontWeight: '700', color: C.accent, textTransform: 'uppercase', letterSpacing: 0.7 }}>{t('hadith.daily')}</Text>
+          <Text style={{ fontSize: fs(14), fontWeight: '700', color: C.accent }}>{t('hadith.daily')}</Text>
           <IconBtn name="share" label={t('common.share')} size={36} tint={C.bg} onPress={() => Share.share({ message: `${h.ar}\n\n${lang === 'en' ? h.en : h.tr}\n— ${h.ref}` })} />
         </View>
         <Text style={[T.arabic, { fontSize: fsAr(26) }]}>{h.ar}</Text>

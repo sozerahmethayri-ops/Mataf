@@ -128,7 +128,7 @@ export function notifText(p: Planned, lang: 'tr' | 'en' | 'ar', time: string, mi
     : '';
   return {
     title: { tr: `${n} ezanı vakti`, en: `${n} adhan time`, ar: `حان وقت أذان ${n}` }[lang],
-    body: { tr: `${n} namazının vakti girdi — ${time}.${fajrNote}${tesrik}`, en: `It is time for ${n} prayer — ${time}.${fajrNote}${tesrik}`, ar: `دخل وقت صلاة ${n} — ${time}.${fajrNote}${tesrik}` }[lang],
+    body: { tr: `${n} namazının vakti girdi: ${time}.${fajrNote}${tesrik}`, en: `It is time for ${n} prayer: ${time}.${fajrNote}${tesrik}`, ar: `دخل وقت صلاة ${n}: ${time}.${fajrNote}${tesrik}` }[lang],
   };
 }
 

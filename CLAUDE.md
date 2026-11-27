@@ -93,12 +93,13 @@ Platforma özel dosyalar: `X.web.tsx`, `X.android.ts`, `X.types.ts`.
 - Gölge sıcak kahve (#4A3424, opaklık 0,12; koyuda siyah 0,45).
 
 ### Yazı
-- Sistem yazı tipi. `T.h1` 26/700, `T.h2` 18/700, `T.h3` 16/700, `T.body` 15 (satır 22), `T.muted` 13, `T.small` 12, `T.section` 12/700 büyük harf; Arapça `T.arabic` 24 (satır 40), sağa yaslı. Hepsi kullanıcının yazı ölçeğiyle büyür (`fs`, `fsAr`).
+- Sistem yazı tipi. `T.h1` 26/700, `T.h2` 18/700, `T.h3` 16/700, `T.body` 15 (satır 22), `T.muted` 13, `T.small` 12, `T.section` 14/700 `ink2` cümle düzeninde (büyük harf dönüşümü yok: Türkçe "i" → "I" oluyordu); Arapça `T.arabic` 24 (satır 40), sağa yaslı. Hepsi kullanıcının yazı ölçeğiyle büyür (`fs`, `fsAr`).
 
 ### Biçim ve davranış
 - Aralık `S`: 4/8/12/16/20/24. Köşe `R`: 10/14/18/24/hap. Kart: `surface` zemin, ince `border`. Dokunma alanı en az 44 px.
 - Hazır parçaları kullan (`ui.tsx`); yeni ekran `Screen` + `Header` ile kurulur.
 - Sadelik: ekranda bir ana eylem; ikincil seçenek katlanır satırda (`SelectRow`) ya da Menü aramasında.
+- Şablon (yapay zeka) görünümünden kaçın (0.13.5): simge renkli kare ya da daire zemine oturmaz, yazının yanında tek renk (`ink2`) durur; başlıkta büyük harf ve harf aralığı yok; vurgu rengi yalnız sıradaki vakit, seçili öğe ve ana eylemde; renkli zeminli kart yalnız anlam taşıyınca (kapalı, kısıtlı, açık, uyarı, seçili, bugünkü adım); alt sekmeler eşit, ortada büyütülmüş düğme yok; kısa arayüz metninde uzun tire (—) yok; veri canlı değilse "canlı" yazılmaz. Menü gruplu liste, ana sayfa kısayolları iki sütun.
 - Ana sayfa: üstte resimli, hareketli gökyüzü (Mekke'de Kâbe, Saat Kulesi ve tavaf eden kalabalık; Medine'de Yeşil Kubbe; başka yerde cami). Gökyüzü rengi güneşin yüksekliğine göre değişir, güneş ve ay gerçek yerinde durur. Animasyon yerel sürücüyle, yalnız ekran öndeyken ve "Hareketleri azalt" kapalıyken.
 - Harita: etiketler çakışmaz (yer yoksa gizlenir), hedef etiketi hep görünür; Saat Kulesi yarı saydam; ölçek çubuğu; "© OpenStreetMap" atfı.
 - Kutular: krem ve kum zemin; sıradaki vakit vurgu renginde ve açık zeminde, geçenler soluk. Adlarda hücre sayısı yok (başlatıcıya göre değişir): kare, geniş, uzun, tek satır.
@@ -121,7 +122,7 @@ Platforma özel dosyalar: `X.web.tsx`, `X.android.ts`, `X.types.ts`.
 14. **Veriden bilinçli sapmalar:** OSM'de turuncu işaretli kubbeler mermer tonunda; Yeşil Kubbe kasnak + sivri kubbe (~26 m); Medine çatısındaki 27 sürgülü kubbe çizilmez (yerleri bilinmiyor). Ana kapılar: Mekke 1, 79, 62, 45, 100; Medine 1, 41, 37, 20–22, 7–9, 33–35.
 15. **Doğrulama üç katlı:** saf mantık testleri (Node), web ekran görüntüsü (Playwright), emülatör duman testi (API 34). Gerçek cihaz denemesi henüz yapılmadı.
 
-## Tamamlanan özellikler (0.13.4)
+## Tamamlanan özellikler (0.13.5)
 Sürüm sırasıyla ayrıntı README.md'nin başında.
 - **Ana sayfa ve vakitler:** resimli gökyüzü, geri sayım, altı vakit, hicrî tarih, yaklaşan mübarek gün, teşrik tekbiri; Vakitler ekranı (haftalık tablo, güneş ve ay bilgisi); hesaplama yöntemi; ana sayfa seçimi (sade vakit, Kur'an, harita, tavaf, zikir, hadis). `screens/HomePrayer.tsx`, `PrayerTimes.tsx`, `services/prayer.ts`.
 - **Bildirimler:** ezandan önce ve vaktinde; 4 ses ve kendi kaydın; mübarek gün ve hac hatırlatmaları; tam zamanlı alarm uyarısı. `app/bildirimler.tsx`, `services/adhanPlan.ts`, `adhanNotify.ts`.
@@ -134,7 +135,7 @@ Sürüm sırasıyla ayrıntı README.md'nin başında.
 - **Genel:** ilk açılış, TR/EN/AR, açık/koyu tema ve 5 palet, yazı ölçeği, çevrimdışı paket, yedek ve geri yükleme, güncelleme uyarısı, hata ekranı ve kaydı, uygulamayı paylaşma, web sürümü.
 
 ## Şu anki durum
-- Sürüm 0.13.4 (versionCode 22). CI, APK ve web yeşil. APK: https://github.com/sozerahmethayri-ops/Mataf/releases/download/apk-latest/mataf.apk; web: https://sozerahmethayri-ops.github.io/Mataf/.
+- Sürüm 0.13.5 (versionCode 23). CI, APK ve web yeşil. APK: https://github.com/sozerahmethayri-ops/Mataf/releases/download/apk-latest/mataf.apk; web: https://sozerahmethayri-ops.github.io/Mataf/.
 - Doğrulandı: 238 mantık testi; web görüntüleri; emülatörde çökme yok, dört kutu eklendi ve çizildi, 24 vakit alarmı kurulu, Mekke otobüs tarifi (7A) doğru.
 - Doğrulanmadı: gerçek telefon, Mekke ve Medine'de saha, Samsung ve Xiaomi başlatıcıları.
 - Proje sahibinden beklenenler: Supabase URL ve Publishable key (GitHub secrets'a), sahada deneme, hoca kontrolü (gözden geçirme belgesi: https://claude.ai/artifact/BZSU1wpF6vLspLDwDCGiGc), dağıtım izni olan bir ezan kaydı.

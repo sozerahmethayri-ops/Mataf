@@ -10,7 +10,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Icon, type IconName } from '@/components/Icon';
 import { SkyScene } from '@/components/SkyScene';
 import { TesrikNote, tesrikActive } from '@/components/TesrikNote';
-import { C, fs, isDark } from '@/constants/theme';
+import { C, fs, isDark, shadow } from '@/constants/theme';
 import { pick, useI18n } from '@/i18n';
 import { hijriText, nextSpecial } from '@/services/hijri';
 import { PRAYERS, fmtTime, nextPrayer, shownDay, times, type PrayerKey } from '@/services/prayer';
@@ -149,8 +149,7 @@ export default function HomePrayer() {
       <View style={{ paddingHorizontal: 16, gap: 16 }}>
         {/* Vakit kartı: sonraki vakte geri sayım ve günün altı vakti (sahnenin üstüne biner) */}
         <Pressable onPress={() => router.push('/vakitler')} accessibilityRole="button" accessibilityHint={pick(L.all, lg)}
-          style={{ marginTop: -34, borderRadius: 26, backgroundColor: isDark() ? C.surface : C.bg, paddingTop: 16, paddingBottom: 12, paddingHorizontal: 14, gap: 12,
-            shadowColor: '#5A3A1E', shadowOpacity: isDark() ? 0.5 : 0.14, shadowRadius: 18, shadowOffset: { width: 0, height: 8 }, elevation: 8 }}>
+          style={[{ marginTop: -34, borderRadius: 24, backgroundColor: isDark() ? C.surface : C.bg, borderWidth: 1, borderColor: C.border, paddingTop: 16, paddingBottom: 12, paddingHorizontal: 14, gap: 12 }, shadow]}>
           <View style={{ flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'space-between', gap: 10, paddingHorizontal: 4 }}>
             <View style={{ flexShrink: 1, gap: 1 }}>
               <Text style={{ fontSize: fs(13.5), color: C.muted, fontWeight: '600' }} numberOfLines={1}>{pick(L.until, lg).replace('{p}', names[nx.key])}</Text>
@@ -191,7 +190,7 @@ export default function HomePrayer() {
       )}
 
       {special && special.inDays <= 60 && (
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 12, paddingHorizontal: 14, borderRadius: 16, backgroundColor: C.greenTint }}>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 12, paddingHorizontal: 14, borderRadius: 16, backgroundColor: C.surface }}>
           <Icon name="moon" size={18} color={C.green} />
           <Text style={{ flex: 1, fontSize: fs(14), fontWeight: '700', color: C.ink }}>{pick(special.s.name, lg)}</Text>
           <Text style={{ fontSize: fs(13), color: C.green, fontWeight: '700' }}>
@@ -213,24 +212,20 @@ export default function HomePrayer() {
         </Pressable>
       )}
 
-      {/* Kısayollar */}
-      <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+      {/* Kısayollar: iki sütun, simge ve ad yan yana (sayı hep çift: 4 ya da 8) */}
+      <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 10 }}>
         <Shortcut icon="compass" label={pick(L.qibla, lg)} onPress={() => router.push('/kible')} />
         <Shortcut icon="beads" label={pick(L.zikr, lg)} onPress={() => router.push('/zikir')} />
         <Shortcut icon="book" label={pick(L.quran, lg)} onPress={() => router.push('/kuran')} />
         <Shortcut icon="pin" label={pick(L.mosque, lg)} onPress={() => router.push('/cami')} />
+        {/* Mekke ya da Medine'deyken (ya da vakitler oraya göreyken) ziyaretçi kısayolları */}
+        {pilgrim && nearMakkah && (hajj ? <Shortcut icon="sun" label={pick(L.hajj, lg)} onPress={() => router.push('/hac')} /> : <Shortcut icon="list" label={pick(L.umre, lg)} onPress={() => router.push('/umre')} />)}
+        {pilgrim && nearMakkah && <Shortcut icon="kaaba" label={pick(L.tawaf, lg)} onPress={() => router.push('/tavaf')} />}
+        {pilgrim && <Shortcut icon="hotel" label={pick(L.hotel, lg)} onPress={() => router.push('/otel')} />}
+        {pilgrim && <Shortcut icon="sos" label={pick(L.sos, lg)} onPress={() => router.push('/acil')} tint={C.closed} />}
+        {pilgrim && !nearMakkah && <Shortcut icon="star" label={pick(L.rawdah, lg)} onPress={() => router.push('/ravza')} />}
+        {pilgrim && !nearMakkah && <Shortcut icon="map" label={pick(L.map, lg)} onPress={() => router.push('/harita')} />}
       </View>
-      {/* Mekke ya da Medine'deyken (ya da vakitler oraya göreyken) ziyaretçi kısayolları */}
-      {pilgrim && (
-        <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-          {nearMakkah && (hajj ? <Shortcut icon="sun" label={pick(L.hajj, lg)} onPress={() => router.push('/hac')} /> : <Shortcut icon="list" label={pick(L.umre, lg)} onPress={() => router.push('/umre')} />)}
-          {nearMakkah && <Shortcut icon="kaaba" label={pick(L.tawaf, lg)} onPress={() => router.push('/tavaf')} />}
-          <Shortcut icon="hotel" label={pick(L.hotel, lg)} onPress={() => router.push('/otel')} />
-          <Shortcut icon="sos" label={pick(L.sos, lg)} onPress={() => router.push('/acil')} tint={C.closed} />
-          {!nearMakkah && <Shortcut icon="star" label={pick(L.rawdah, lg)} onPress={() => router.push('/ravza')} />}
-          {!nearMakkah && <Shortcut icon="map" label={pick(L.map, lg)} onPress={() => router.push('/harita')} />}
-        </View>
-      )}
       <Pressable onPress={() => router.push('/vakitler')} style={{ alignSelf: 'center', paddingVertical: 6 }}>
         <Text style={{ fontSize: fs(13), color: C.accent, fontWeight: '700' }}>{pick(L.all, lg)} ›</Text>
       </Pressable>
@@ -252,13 +247,13 @@ export function Countdown({ to, size = 40 }: { to: Date; size?: number }) {
   return <Text style={{ fontSize: fs(size), fontWeight: '700', color: C.ink, fontVariant: ['tabular-nums'], letterSpacing: -0.5 }}>{p(h)}:{p(m)}:{p(s)}</Text>;
 }
 
+/** Kısayol: simge ve ad yan yana, yarım genişlik. Renkli simge zemini yok (şablon gibi duruyordu, 0.13.5); yalnız Acil kırmızı. */
 function Shortcut({ icon, label, onPress, tint }: { icon: IconName; label: string; onPress: () => void; tint?: string }) {
   return (
-    <Pressable onPress={onPress} accessibilityRole="button" accessibilityLabel={label} style={({ pressed }) => ({ alignItems: 'center', gap: 6, width: 72, opacity: pressed ? 0.7 : 1 })}>
-      <View style={{ width: 56, height: 56, borderRadius: 20, backgroundColor: tint ? C.closedTint : C.accentSoft, alignItems: 'center', justifyContent: 'center' }}>
-        <Icon name={icon} size={22} color={tint ?? C.accent} />
-      </View>
-      <Text style={{ fontSize: fs(12), color: C.ink2, fontWeight: '600' }} numberOfLines={1}>{label}</Text>
+    <Pressable onPress={onPress} accessibilityRole="button" accessibilityLabel={label}
+      style={({ pressed }) => ({ flexGrow: 1, flexBasis: '40%', minHeight: 52, flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 14, borderRadius: 14, backgroundColor: C.surface, opacity: pressed ? 0.7 : 1 })}>
+      <Icon name={icon} size={20} color={tint ?? C.ink2} />
+      <Text style={{ flexShrink: 1, fontSize: fs(15), color: tint ?? C.ink, fontWeight: '600' }} numberOfLines={1}>{label}</Text>
     </Pressable>
   );
 }

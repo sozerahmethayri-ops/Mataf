@@ -9,6 +9,7 @@ import { GATES } from '@/data/sites';
 import { pick, useI18n } from '@/i18n';
 import { useApp } from '@/services/AppContext';
 import { useReports } from '@/services/ReportsContext';
+import { SUPABASE_CONFIGURED } from '@/services/supabase';
 
 type Filter = 'all' | 'closed' | 'limited' | 'open';
 
@@ -30,9 +31,10 @@ export default function GatesScreen() {
   return (
     <Screen>
       <Header back title={t('gates.title')} right={<Pressable onPress={() => router.push('/veriler')} accessibilityRole="button"><Icon name="data" color={C.muted} /></Pressable>} />
+      {/* "Canlı" yalnız sunucu bağlıyken; yoksa bildirimler bu telefonda kalır (yerel demo) */}
       <Pressable onPress={() => router.push('/veriler')} style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-        <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: C.open }} />
-        <Text style={T.muted}>{t('gates.live')}</Text>
+        <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: SUPABASE_CONFIGURED ? C.open : C.muted }} />
+        <Text style={T.muted}>{t(SUPABASE_CONFIGURED ? 'gates.live' : 'settings.backendLocal')}</Text>
       </Pressable>
       <Segmented value={city} onChange={setCity} options={[{ value: 'makkah', label: t('city.makkah') }, { value: 'madinah', label: t('city.madinah') }]} />
       <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8 }}>
@@ -44,6 +46,8 @@ export default function GatesScreen() {
         const s = summaries[g.id];
         const tone = STATUS_TONE[s?.status ?? 'open'];
         const last = reports.filter((r) => r.gateId === g.id && r.comment).sort((a, b) => b.createdAt - a.createdAt)[0];
+        // Alt satır: resmî kaynak, onay sayısı, son bildirim; hiçbiri yoksa satır çizilmez ("0 onay" yazmaz)
+        const meta = [s?.source === 'official' ? t('detail.official') : '', s?.confirmations ? t('gates.confirmations', { n: s.confirmations }) : '', s?.lastAt ? ago(s.lastAt, t) : ''].filter(Boolean).join(' · ');
         return (
           <Pressable key={g.id} onPress={() => router.push({ pathname: '/kapi/[id]', params: { id: g.id } })} accessibilityRole="button"
             style={({ pressed }) => [{ borderWidth: 1, borderColor: C.border, borderRadius: 18, padding: 14, gap: 10, opacity: pressed ? 0.8 : 1 }]}>
@@ -58,10 +62,7 @@ export default function GatesScreen() {
               <StatusPill status={s?.status ?? 'open'} />
             </View>
             {last?.comment ? <Text style={T.body} numberOfLines={2}>{last.comment}</Text> : null}
-            <Text style={T.small}>
-              {s?.source === 'official' ? `${t('detail.official')} · ` : ''}
-              {t('gates.confirmations', { n: s?.confirmations ?? 0 })}{s?.lastAt ? ` · ${ago(s.lastAt, t)}` : ''}
-            </Text>
+            {meta ? <Text style={T.small}>{meta}</Text> : null}
           </Pressable>
         );
       })}

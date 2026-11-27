@@ -184,7 +184,8 @@ const buildT = () => ({
   body: { fontSize: fs(15), lineHeight: fs(22), color: C.ink2 } as TextStyle,
   muted: { fontSize: fs(13), color: C.muted } as TextStyle,
   small: { fontSize: fs(12), color: C.muted } as TextStyle,
-  section: { fontSize: fs(12), fontWeight: '700', color: C.muted, textTransform: 'uppercase', letterSpacing: 0.7, marginTop: S.sm } as TextStyle,
+  // Bölüm başlığı cümle düzeninde: büyük harf dönüşümü Türkçe "i"yi "I" yapıyordu ve şablon gibi duruyordu
+  section: { fontSize: fs(14), fontWeight: '700', color: C.ink2, marginTop: S.sm } as TextStyle,
   arabic: { fontSize: fsAr(24), lineHeight: fsAr(40), color: C.ink, textAlign: 'right', writingDirection: 'rtl' } as TextStyle,
 });
 /** Yazı stilleri — tema değişince aynı nesne yeni renklerle güncellenir. */

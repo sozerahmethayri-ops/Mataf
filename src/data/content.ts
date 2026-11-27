@@ -48,7 +48,7 @@ export const RAWDAH = {
 // ── Veri kaynakları ekranı için ──
 export const SOURCES = [
   { id: 'reports', title: 'Kapı durumları', meta: 'Ziyaretçi bildirimleri (yerel demo / Supabase)', live: true },
-  { id: 'official', title: 'Resmî kapanmalar ve rotalar', meta: 'Genel Kurum akıllı haritası — entegrasyon anlaşması bekleniyor', live: true },
+  { id: 'official', title: 'Resmî kapanmalar ve rotalar', meta: 'Genel Kurum akıllı haritası (entegrasyon anlaşması bekleniyor)', live: true },
   { id: 'quran', title: 'Kur’an metni ve meal', meta: 'alquran.cloud · cihazda saklanır', live: false, cacheKey: 'quran' },
   { id: 'hadith', title: 'Sahîh-i Buhârî', meta: 'fawazahmed0/hadith-api · cihazda saklanır', live: false, cacheKey: 'hadith' },
   { id: 'osm', title: 'Şehir haritası yerleri', meta: 'OpenStreetMap (Overpass) · haftalık', live: false, cacheKey: 'osm' },

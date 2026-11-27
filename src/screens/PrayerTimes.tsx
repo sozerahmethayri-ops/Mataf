@@ -104,9 +104,9 @@ export default function PrayerTimes({ back = false }: { back?: boolean }) {
       {/* Gökyüzü ve sonraki vakit */}
       <SkyScene now={now} lat={loc.lat} lng={loc.lng} kind={sceneKind(loc.lat, loc.lng)} height={196} style={{ borderRadius: 24 }}
         label={`${altitudeText(sky.sun.alt, lg)}, ${directionText(sky.sun.az, lg)}. ${moonPhaseName(sky.moon.phase, lg)}`} />
-      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 12, paddingHorizontal: 16, borderRadius: 18, backgroundColor: C.accentSoft, borderWidth: 1, borderColor: C.accentTint }}>
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 12, paddingHorizontal: 16, borderRadius: 18, backgroundColor: C.surface }}>
         <View style={{ flex: 1, gap: 2 }}>
-          <Text style={{ fontSize: fs(11.5), fontWeight: '700', color: C.accent, textTransform: 'uppercase', letterSpacing: 0.7 }}>{t('times.next')}</Text>
+          <Text style={{ fontSize: fs(13), fontWeight: '600', color: C.muted }}>{t('times.next')}</Text>
           <Text style={{ fontSize: fs(22), fontWeight: '700', color: C.ink }} numberOfLines={1}>{names[nx.key]} <Text style={{ color: C.accent }}>{fmtTime(nx.at, loc.tz)}</Text></Text>
         </View>
         <Countdown to={nx.at} size={20} />

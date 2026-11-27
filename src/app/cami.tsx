@@ -27,7 +27,7 @@ const L = {
   error: { tr: 'Camiler yüklenemedi. İnternet bağlantınızı kontrol edip tekrar deneyin.', en: 'Could not load mosques. Check your connection and try again.', ar: 'تعذّر تحميل المساجد. تحقق من الاتصال وحاول مرة أخرى.' },
   retry: { tr: 'Tekrar dene', en: 'Try again', ar: 'أعد المحاولة' },
   empty: { tr: '60 km içinde kayıtlı cami bulunamadı. Kıble yönüne dönerek namazınızı kılabilirsiniz.', en: 'No mosque is recorded within 60 km. You can pray facing the Qibla.', ar: 'لا يوجد مسجد مسجّل ضمن ٦٠ كم. يمكنك الصلاة باتجاه القبلة.' },
-  offline: { tr: 'İnternet yok — son aramadaki camiler gösteriliyor', en: 'Offline — showing mosques from your last search', ar: 'لا يوجد اتصال — تُعرض مساجد آخر بحث' },
+  offline: { tr: 'İnternet yok: son aramadaki camiler gösteriliyor', en: 'Offline: showing mosques from your last search', ar: 'لا يوجد اتصال: تُعرض مساجد آخر بحث' },
   directions: { tr: 'Yol tarifi', en: 'Directions', ar: 'الاتجاهات' },
   route: { tr: 'Telefonun harita uygulamasında aç', en: 'Open in your maps app', ar: 'افتح في تطبيق الخرائط' },
   walk: { tr: 'dk yürüme', en: 'min walk', ar: 'دقيقة سيرًا' },

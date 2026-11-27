@@ -72,9 +72,6 @@ export default function Welcome() {
   return (
     <ScrollView style={{ flex: 1, backgroundColor: C.bg }} contentContainerStyle={{ flexGrow: 1, paddingTop: insets.top + 36, paddingBottom: insets.bottom + 24, paddingHorizontal: 24, gap: 22 }}>
       <View style={{ gap: 10 }}>
-        <View style={{ width: 64, height: 64, borderRadius: 20, backgroundColor: C.accentTint, alignItems: 'center', justifyContent: 'center' }}>
-          <Icon name="kaaba" size={34} color={C.accent} />
-        </View>
         <Text style={{ fontSize: fs(30), fontWeight: '800', color: C.ink, letterSpacing: -0.5 }}>{pick(L.title, lg)}</Text>
         <Text style={{ fontSize: fs(15.5), color: C.ink2, lineHeight: fs(22) }}>{pick(L.sub, lg)}</Text>
       </View>
@@ -118,9 +115,9 @@ const webDevice: 'ios' | 'android' | null = (() => {
 
 function Step({ icon, title, sub, st, btn = '', doneLabel, onPress, info }: { icon: IconName; title: string; sub: string; st: St; btn?: string; doneLabel: string; onPress?: () => void; info?: boolean }) {
   return (
-    <View style={{ flexDirection: 'row', gap: 14, padding: 16, borderRadius: 20, backgroundColor: C.surface }}>
-      <View style={{ width: 40, height: 40, borderRadius: 20, backgroundColor: C.bg, alignItems: 'center', justifyContent: 'center' }}>
-        <Icon name={icon} size={20} color={C.accent} />
+    <View style={{ flexDirection: 'row', gap: 12, padding: 16, borderRadius: 20, backgroundColor: C.surface }}>
+      <View style={{ paddingTop: 1 }}>
+        <Icon name={icon} size={22} color={C.ink2} />
       </View>
       <View style={{ flex: 1, gap: 8 }}>
         <Text style={{ fontSize: fs(16), fontWeight: '700', color: C.ink }}>{title}</Text>
