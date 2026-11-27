@@ -51,7 +51,8 @@ export default function OfflineScreen() {
   const cancel = useRef<Cancel>({ cancelled: false });
   useEffect(() => () => { cancel.current.cancelled = true; }, []);
 
-  const editions = [prefs.translation, prefs.translit ? TRANSLIT[lang === 'en' ? 'en' : 'tr'] : null].filter(Boolean) as string[];
+  // Tecvidli baskı da indirilir (renkli Kur'an internetsiz açılsın)
+  const editions = [prefs.translation, prefs.translit ? TRANSLIT[lang === 'en' ? 'en' : 'tr'] : null, 'quran-tajweed'].filter(Boolean) as string[];
   const tileCount = AREAS.filter((a) => areas[a.id]).reduce((n, a) => n + tilesFor(a).length, 0);
 
   const run = async (part: Part) => {

@@ -72,6 +72,7 @@ const EXTRA: Item[] = [
   { icon: 'alert', title: { tr: 'Kapı bildir', en: 'Report a gate', ar: 'الإبلاغ عن باب' }, to: '/bildir' },
   { icon: 'tour', title: { tr: 'Ravza 360°', en: 'Rawdah 360°', ar: 'الروضة ٣٦٠°' }, url: RAWDAH.tourUrl },
   { icon: 'text', title: { tr: "Kur'an okuma ayarları", en: 'Quran reading settings', ar: 'إعدادات القراءة' }, to: '/kuran-ayarlar' },
+  { icon: 'text', title: { tr: 'Tecvid kuralları (renkli Kur’an)', en: 'Tajweed rules', ar: 'أحكام التجويد' }, to: '/tecvid' },
   { icon: 'layers', title: { tr: 'İnternetsiz paket (çevrimdışı)', en: 'Offline pack', ar: 'الحزمة دون اتصال' }, to: '/cevrimdisi' },
   { icon: 'data', title: { tr: 'Veri kaynakları', en: 'Data sources', ar: 'مصادر البيانات' }, to: '/veriler' },
   { icon: 'nav', title: { tr: 'Yol tarifi (mescit içi)', en: 'Directions (in the mosque)', ar: 'الاتجاهات' }, to: '/navigasyon' },

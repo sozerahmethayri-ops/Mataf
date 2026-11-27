@@ -34,6 +34,9 @@ import { JUZ_STARTS, TOTAL_AYAH, cleanPlan, fromGlobal, hatimToday, juzPos, read
 import { zikirToday } from '../src/services/zikirStats';
 import { CHECKLIST } from '../src/data/checklist';
 import { PHRASES } from '../src/data/phrases';
+import { dropWords, parseTajweed, plainOf, stripTajweedBasmala } from '../src/services/tajweed';
+import { SAJDAH, isSajdah, stripSajdahSign } from '../src/data/sajdah';
+import { OTHER_RULES, TAJWEED_RULES } from '../src/data/tajweed';
 import { allTextDuas } from '../src/data/duas';
 import { altitudeText, directionText, moonLitPath, moonPhaseName, skyDay, skyNow, skyPhase } from '../src/services/sky';
 import { newer } from '../src/services/version';
@@ -952,6 +955,27 @@ ok(shareLink({ lat: 21.4225, lng: 39.8262 }) === 'https://maps.google.com/?q=21.
   ok(new Set(ids).size === ids.length && CHECKLIST.every((g) => g.items.every((i) => i.text.tr && i.text.en && i.text.ar)), `hazırlık listesi: ${ids.length} madde, kimlikler tekil, üç dilde`);
   const ph = PHRASES.flatMap((g) => g.items);
   ok(new Set(ph.map((p) => p.id)).size === ph.length && ph.every((p) => /[\u0600-\u06FF]/.test(p.ar) && p.tr && p.mean.tr && p.mean.en), `Arapça ifadeler: ${ph.length} ifade, Arapça metin, okunuş ve anlam`);
+}
+
+// ── Tecvid ve secde âyetleri ──
+{
+  const b = parseTajweed('بِسْمِ [h:1[ٱ]للَّهِ [h:2[ٱ][l[ل]رَّحْمَ[n[ـٰ]نِ');
+  ok(plainOf(b) === 'بِسْمِ ٱللَّهِ ٱلرَّحْمَـٰنِ' && b.filter((x) => x.r).map((x) => x.r).join('') === 'hhln', `tecvid: işaretleme parçalanır (${b.map((x) => x.r ?? '-').join('')})`);
+  const bad = parseTajweed('قُلْ [z[هُوَ] ٱللَّهُ [h[ٱ');
+  ok(!/[[\]]/.test(plainOf(bad)) && bad.every((x) => !x.r) && plainOf(bad).includes('هُوَ'), 'tecvid: tanınmayan ya da yarım işaret metne karışmaz');
+  ok(plainOf(dropWords(parseTajweed('بِسْمِ [h[ٱ]للَّهِ ٱلرَّحْمَٰنِ ٱلرَّحِيمِ [q[ٱ]لْحَمْدُ'), 4)) === 'ٱلْحَمْدُ', 'tecvid: baştaki dört kelime atılır, işaret korunur');
+  ok(plainOf(stripTajweedBasmala(2, 1, parseTajweed('بِسْمِ [h[ٱ]للَّهِ ٱلرَّحْمَٰنِ ٱلرَّحِيمِ الٓمٓ'))) === 'الٓمٓ' && plainOf(stripTajweedBasmala(1, 1, parseTajweed('بِسْمِ ٱللَّهِ ٱلرَّحْمَٰنِ ٱلرَّحِيمِ'))).startsWith('بِسْمِ'), 'tecvid: besmele 1. âyetten ayrılır (Fâtiha hariç)');
+  ok(TAJWEED_RULES.length === 17 && TAJWEED_RULES.every((r) => parseTajweed(r.example).some((x) => x.r === r.id)) && OTHER_RULES.every((r) => !/\[/.test(r.example)),
+    'tecvid: 17 renkli kural, her örnekte kendi rengi');
+  const badColor: string[] = [];
+  for (const dark of [false, true]) for (const p of Object.keys(PALETTES) as PaletteId[]) {
+    const bg = colorsFor(dark, p).bg;
+    for (const r of TAJWEED_RULES) if (contrast(dark ? r.dark : r.light, bg) < 3) badColor.push(`${r.id}/${p}/${dark ? 'koyu' : 'açık'}`);
+  }
+  ok(!badColor.length, `tecvid renkleri her palette okunur, kontrast ≥ 3${badColor.length ? ': ' + badColor.join(' ') : ''}`);
+  ok(SAJDAH.length === 14 && SAJDAH.every(([s2, a2]) => a2 >= 1 && a2 <= surahLength(s2)) && isSajdah(32, 15) && isSajdah(96, 19) && !isSajdah(22, 77),
+    'secde âyetleri: Hanefî 14 yer (Hac 77 yok), numaralar geçerli');
+  ok(stripSajdahSign('كَلَّا لَا تُطِعْهُ وَٱسْجُدْ وَٱقْتَرِب ۩') === 'كَلَّا لَا تُطِعْهُ وَٱسْجُدْ وَٱقْتَرِب' && stripSajdahSign('قَالَ') === 'قَالَ', 'secde âyetleri: kaynak metindeki işaret ayrılır (çift görünmez)');
 }
 
 mosqueChecks().then(transitChecks).then(() => process.exit(fails ? 1 : 0));

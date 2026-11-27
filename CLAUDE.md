@@ -26,7 +26,7 @@ Projenin kararları ve çalışma kuralları burada; bir karar değişince bu do
 
 ## Komutlar
 - `npm install`: postinstall `patches/expo-widgets+58.0.29.patch`'i uygular.
-- Her değişiklikten sonra üçü de temiz olmalı: `npm run typecheck`, `npm run lint`, `npm run check` (266 test, her satır `OK`). CI typecheck ve check çalıştırır.
+- Her değişiklikten sonra üçü de temiz olmalı: `npm run typecheck`, `npm run lint`, `npm run check` (274 test, her satır `OK`). CI typecheck ve check çalıştırır.
 - `npx expo start`: Expo Go'da kutular, özel ezan sesleri ve tam zamanlı alarm yok; yerel davranışı APK ya da duman testinde gör.
 - Web görüntüsü: `npx expo export -p web --output-dir /tmp/web`, sonra `python3 tools/web-shots/shoot.py /tmp/web /tmp/shots tools/web-shots/ornek-spec.json`. Spec biçimi dosyanın başında.
 - Emülatör (duman testi, ~25 dk): `gh workflow run android-smoke.yml -R sozerahmethayri-ops/Mataf --ref main`. Sonuçlar "smoke-latest" sürüm sayfasında: `crash.txt`, `status.txt`, `screen-*.png`, `logcat.txt`, `widget-log.txt`, `alarm.txt`. Akış `scripts/smoke.sh`'te.
@@ -123,7 +123,7 @@ Platforma özel dosyalar: `X.web.tsx`, `X.android.ts`, `X.types.ts`.
 14. **Veriden bilinçli sapmalar:** OSM'de turuncu işaretli kubbeler mermer tonunda; Yeşil Kubbe kasnak + sivri kubbe (~26 m); Medine çatısındaki 27 sürgülü kubbe çizilmez (yerleri bilinmiyor). Ana kapılar: Mekke 1, 79, 62, 45, 100; Medine 1, 41, 37, 20–22, 7–9, 33–35.
 15. **Doğrulama üç katlı:** saf mantık testleri (Node), web ekran görüntüsü (Playwright), emülatör duman testi (API 34). Gerçek cihaz denemesi henüz yapılmadı.
 
-## Tamamlanan özellikler (0.15.0)
+## Tamamlanan özellikler (0.16.0)
 Sürüm sırasıyla ayrıntı README.md'nin başında.
 - **Ana sayfa ve vakitler:** resimli gökyüzü, geri sayım, altı vakit, hicrî tarih, yaklaşan mübarek gün, teşrik tekbiri; Vakitler ekranı (haftalık tablo, güneş ve ay bilgisi); hesaplama yöntemi; ana sayfa seçimi (sade vakit, Kur'an, harita, tavaf, zikir, hadis). `screens/HomePrayer.tsx`, `PrayerTimes.tsx`, `services/prayer.ts`.
 - **Her gün dönülen yerler (0.14.0):** namaz takibi (ana sayfada bugünkü beş vakit tek dokunuşla; ekranda son 7 gün, seri, kaza bağlantısı; kayıt telefonda, yedeğe girer), günün duası (kaynaklı kısa dualardan güne göre). `app/namaz-takibi.tsx`, `components/PrayerLogCard.tsx`, `DailyDuaCard.tsx`, `services/prayerLog.ts`, `usePrayerLog.ts`, `daily.ts`.
@@ -134,12 +134,13 @@ Sürüm sırasıyla ayrıntı README.md'nin başında.
 - **Hac ve umre:** umre rehberi (7 adım), hac rehberi (tür seçimi, gün gün), cemerat sayacı ve atış vakti, hac yerleri haritası (Arafat, Mina, Harem içinde mi), tavaf asistanı (3D, GPS sayacı, sesli rehber), sa'y sayacı, tekerlekli sandalye ve araba bilgisi. `app/umre.tsx`, `hac.tsx`, `cemerat.tsx`, `hac-harita.tsx`, `tavaf.tsx`, `say.tsx`, `erisim.tsx`.
 - **Ulaşım:** yürüme ve araç (OSRM); toplu taşıma adım adım (İstanbul raylı ve Mekke otobüsü çevrimdışı, gerisi Transitous); taksi ve şoföre gösterme kartı; Haremeyn treni; `mataf://ulasim?to=enlem,boylam&name=Ad`. `app/(tabs)/ulasim.tsx`, `services/transport.ts`, `railRouter.ts`, `transitText.ts`, `app/tren.tsx`.
 - **Yer:** en yakın cami (dünyada), şehir haritası, otelime dön, Yerlerim, acil durum (numaralar, konum gönderme, hastaneler, temsilcilikler), aile ve grup konumu (Supabase'le).
-- **İbadet içerikleri:** Kur'an (4 görünüm, ayraçlar, kâriler, meal, tefsir), dualar, Sahîh-i Buhârî, zikirmatik ve istatistik, kaza namazı ve oruç takibi, Ravza ve Medine rehberi, kıble pusulası.
+- **Kur'an okuma (0.16.0):** beş görünüm (mealli, Arapça, meal, mushaf, tecvid); mushaf sayfası (çerçeve, sûre başlığı, palet renginde ﴿n﴾ âyet işareti); okuma ekranında yazı büyütme (A−/A+, `quran:prefs.zoom`, 0,8–2); secde âyetleri (Hanefî 14 yer, ۩ ve yeşil vurgu, tilâvet secdesi notu; kaynak metindeki ۩ ayrılır); tecvidli renkli görünüm (alquran.cloud `quran-tajweed`, çevrimdışı pakette de) ve kurallar sayfası (`/tecvid`, 17 renkli + 4 renksiz kural, renkli örnekler). `app/kuran/[sure].tsx`, `app/tecvid.tsx`, `services/tajweed.ts`, `data/tajweed.ts`, `data/sajdah.ts`.
+- **İbadet içerikleri:** Kur'an (ayraçlar, kâriler, meal, tefsir), dualar, Sahîh-i Buhârî, zikirmatik ve istatistik, kaza namazı ve oruç takibi, Ravza ve Medine rehberi, kıble pusulası.
 - **Genel:** ilk açılış, TR/EN/AR, açık/koyu tema ve 5 palet, yazı ölçeği, çevrimdışı paket, yedek ve geri yükleme, güncelleme uyarısı, hata ekranı ve kaydı, uygulamayı paylaşma, web sürümü.
 
 ## Şu anki durum
-- Sürüm 0.15.0 (versionCode 25). CI, APK ve web yeşil. APK: https://github.com/sozerahmethayri-ops/Mataf/releases/download/apk-latest/mataf.apk; web: https://sozerahmethayri-ops.github.io/Mataf/.
-- Doğrulandı: 266 mantık testi; web görüntüleri; emülatörde çökme yok, dört kutu eklendi ve çizildi, 24 vakit alarmı kurulu, Mekke otobüs tarifi (7A) doğru.
+- Sürüm 0.16.0 (versionCode 26). CI, APK ve web yeşil. APK: https://github.com/sozerahmethayri-ops/Mataf/releases/download/apk-latest/mataf.apk; web: https://sozerahmethayri-ops.github.io/Mataf/.
+- Doğrulandı: 274 mantık testi; web görüntüleri; emülatörde çökme yok, dört kutu eklendi ve çizildi, 24 vakit alarmı kurulu, Mekke otobüs tarifi (7A) doğru.
 - Doğrulanmadı: gerçek telefon, Mekke ve Medine'de saha, Samsung ve Xiaomi başlatıcıları.
 - Proje sahibinden beklenenler: Supabase URL ve Publishable key (GitHub secrets'a), sahada deneme, hoca kontrolü (gözden geçirme belgesi: https://claude.ai/artifact/BZSU1wpF6vLspLDwDCGiGc), dağıtım izni olan bir ezan kaydı.
 - Sürüm sürüm ayrıntılı notlar: claude.ai'deki "MATAF uygulama" projesinde `eksikler-ve-yol-haritasi.md`.
@@ -147,7 +148,7 @@ Sürüm sırasıyla ayrıntı README.md'nin başında.
 ## Yapılacaklar (öncelik sırasıyla)
 1. Saha denemesi: haritanın akıcılığı ve Suudi mobil ağında açılış süresi; tavaf ve sa'y sayacı (zemin, 1. kat, çatı); Arafat ve Mina sınır denetimi; kutular Samsung ve Xiaomi'de; bildirimlerin pil tasarrufunda gelmesi; Mekke otobüs sürelerinin Makkah Bus uygulamasıyla karşılaştırılması; çevrimdışı paketin boyutu ve süresi.
 2. Supabase'i bağla (canlı kapı bildirimleri, aile konumu): `docs/SUPABASE.md`.
-3. Dinî metinleri hocanın düzeltmeleriyle güncelle.
+3. Dinî metinleri hocanın düzeltmeleriyle güncelle (tecvid kuralları sayfası ve secde notu dahil).
 4. Bağlılık (ilke: suçlama yok, yarış ve sıralama yok, veri telefonda): namaz takibi kutusu (Android, Glance; duman testiyle); "Kıldım" düğmesinin uygulamayı açmadan işlemesi (arka plan görevi); hatim ilerlemesi için kutu; Kur'an dışı günlük içerik (hadis) seçeneği.
 5. Ezan sesi: izinli kayıt; uygulama kapalıyken tam ezan için ön plan servisi.
 6. Toplu taşıma: Medine otobüs verisi; İstanbul vapurları (OSM'de durak üyeleri eksik); sefer saatli veri (GTFS); kullanıcı artarsa kendi MOTIS sunucusu.
@@ -171,6 +172,7 @@ Sürüm sırasıyla ayrıntı README.md'nin başında.
 - Kapı bildirimleri ve aile konumu Supabase bağlanana dek demo ve önizleme.
 - APK hata ayıklama anahtarıyla imzalı; Play Store'a yüklenemez.
 - Harem 3D modeli OSM kadar doğru; mescit içi hizmet noktaları örnek veri.
+- Tecvid renkleri alquran.cloud `quran-tajweed` işaretlemesine dayanır (`[kural[metin]`); bulut oturumundan servis açılmadığı için gerçek metinle görülmedi, telefonda bakılmalı. Ayrıştırıcı tanınmayan işareti renksiz bırakır.
 - GitHub'da kullanılmayan `probe` ve `smoke-run` dalları duruyor (bulut oturumundan silinemedi); elle silinebilir.
 
 ## Ortam notları

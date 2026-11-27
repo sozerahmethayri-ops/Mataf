@@ -55,6 +55,11 @@ function Marks({ items, lang, onRemove }: { items: Bookmark[]; lang: 'tr' | 'en'
         <Text style={{ flex: 1, fontSize: fs(15), fontWeight: '700', color: C.accent }}>{lang === 'en' ? 'Khatm plan: a daily portion' : lang === 'ar' ? 'خطة الختمة: ورد يومي' : 'Hatim planı: her gün bir bölüm'}</Text>
         <Icon name="chevron" size={16} color={C.muted} />
       </Pressable>
+      <Pressable onPress={() => router.push('/tecvid')} accessibilityRole="button" style={({ pressed }) => ({ minHeight: 44, flexDirection: 'row', alignItems: 'center', gap: 8, opacity: pressed ? 0.7 : 1 })}>
+        <Icon name="text" size={18} color={C.accent} />
+        <Text style={{ flex: 1, fontSize: fs(15), fontWeight: '700', color: C.accent }}>{lang === 'en' ? 'Tajweed rules and colours' : lang === 'ar' ? 'أحكام التجويد وألوانها' : 'Tecvid kuralları ve renkleri'}</Text>
+        <Icon name="chevron" size={16} color={C.muted} />
+      </Pressable>
     </View>
   );
 }

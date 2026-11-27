@@ -65,7 +65,7 @@ export function stripBasmala(surah: number, ayah: number, text: string) {
   return text;
 }
 
-export async function getSurahText(n: number, translation: string | null, translit: string | null): Promise<{ ayahs: FullAyah[]; fromCache: boolean }> {
+export async function getSurahText(n: number, translation: string | null, translit: string | null): Promise<{ ayahs: FullAyah[]; fromCache: boolean; name?: string }> {
   const eds = ['quran-uthmani', translation, translit].filter(Boolean) as string[];
   // Çevrimdışı paket indirildiyse önce oradan (ağ gerekmez)
   const off = offlineSurah(n, eds);
@@ -77,7 +77,7 @@ export async function getSurahText(n: number, translation: string | null, transl
     };
   }
   try {
-    const r = await cachedJson<{ data: { edition: { identifier: string }; ayahs: { number: number; numberInSurah: number; text: string }[] }[] }>(
+    const r = await cachedJson<{ data: { name?: string; edition: { identifier: string }; ayahs: { number: number; numberInSurah: number; text: string }[] }[] }>(
       `quran:${n}:${eds.join(',')}`, `${API}/surah/${n}/editions/${eds.join(',')}`, 90 * DAY,
     );
     const by = (id: string | null) => (id ? r.data.data.find((d) => d.edition.identifier === id) : undefined);
@@ -87,11 +87,20 @@ export async function getSurahText(n: number, translation: string | null, transl
     return {
       ayahs: ar.ayahs.map((a, i) => ({ n: a.numberInSurah, global: a.number, ar: stripBasmala(n, a.numberInSurah, a.text), meal: tr?.ayahs[i]?.text, translit: tl?.ayahs[i]?.text })),
       fromCache: r.fromCache,
+      name: ar.name,
     };
   } catch (e) {
     if (n === 1) return { ayahs: FATIHA.map((a) => ({ n: a.n, global: a.n, ar: a.ar, meal: translation?.startsWith('tr.') ? a.tr : undefined })), fromCache: true };
     throw e;
   }
+}
+
+/** Tecvidli Arapça metin (alquran.cloud quran-tajweed): âyet başına işaretli metin; çevrimdışı pakette varsa oradan. */
+export async function getSurahTajweed(n: number): Promise<string[]> {
+  const off = offlineSurah(n, ['quran-tajweed']);
+  if (off?.['quran-tajweed']) return off['quran-tajweed'];
+  const r = await cachedJson<{ data: { ayahs: { text: string }[] } }>(`quran:tajweed:${n}`, `${API}/surah/${n}/quran-tajweed`, 90 * DAY);
+  return r.data.data.ayahs.map((a) => a.text);
 }
 
 /** Sûrenin ayet ayet ses adresleri (kâri ya da sesli meal). */
