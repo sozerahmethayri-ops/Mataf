@@ -4,15 +4,20 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Icon } from '@/components/Icon';
 import { Header, SectionTitle, Segmented, T } from '@/components/ui';
-import { C, fs } from '@/constants/theme';
+import { C, fs, fsAr } from '@/constants/theme';
+import { QURAN_FONTS, lineFor } from '@/data/quranFonts';
 import { LANG_NAMES, MEAL_AUDIO, RECITERS, TAFSIRS } from '@/data/quranEditions';
 import type { ML } from '@/data/sites';
 import { pick, useI18n } from '@/i18n';
 import { listTranslations, type Edition } from '@/services/quran';
 import { useQuranPrefs } from '@/services/QuranPrefs';
 import { useAsync } from '@/services/useAsync';
+import { useAllQuranFonts } from '@/services/useQuranFont';
 
+const BESMELE = 'بِسْمِ ٱللَّهِ ٱلرَّحْمَٰنِ ٱلرَّحِيمِ';
 const L = {
+  font: { tr: 'Hat (yazı stili)', en: 'Script style', ar: 'نوع الخط' },
+  fontSub: { tr: 'Kur’an metni seçtiğiniz yazıyla gösterilir; arayüz değişmez.', en: 'The Quran text is shown in the style you choose; the rest of the app stays the same.', ar: 'يُعرض نص القرآن بالخط الذي تختاره، وتبقى الواجهة كما هي.' },
   title: { tr: 'Okuma ayarları', en: 'Reading settings', ar: 'إعدادات القراءة' },
   meal: { tr: 'Meal', en: 'Translation', ar: 'الترجمة' },
   none: { tr: 'Meal gösterme', en: 'No translation', ar: 'بدون ترجمة' },
@@ -52,10 +57,33 @@ export default function QuranSettings() {
   const tafLangs = Array.from(new Set(TAFSIRS.map((x) => x.lang)));
   const tafCurrent = TAFSIRS.find((x) => x.id === prefs.tafsir)?.lang ?? lang;
   const [tafLang, setTafLang] = useState<string>(tafCurrent);
+  // Hat önizlemesi: bütün yazı tipleri yüklenir (uygulamanın içinde, internet gerekmez)
+  const fontsReady = useAllQuranFonts();
+  const fontNow = prefs.font ?? 'system';
 
   return (
     <ScrollView style={{ flex: 1, backgroundColor: C.bg }} contentContainerStyle={{ padding: 16, paddingTop: insets.top + 8, paddingBottom: insets.bottom + 32, gap: 10 }}>
       <Header back title={pick(L.title, lang)} />
+
+      <SectionTitle>{pick(L.font, lang)}</SectionTitle>
+      <Text style={T.small}>{pick(L.fontSub, lang)}</Text>
+      {QURAN_FONTS.map((f) => {
+        const on = fontNow === f.id;
+        const size = fsAr(24) * f.size;
+        return (
+          <Pressable key={f.id} onPress={() => setPrefs({ font: f.id })} accessibilityRole="radio" accessibilityState={{ selected: on }} accessibilityLabel={pick(f.name, lang)}
+            style={({ pressed }) => ({ borderWidth: on ? 2 : 1, borderColor: on ? C.accent : C.border, borderRadius: 16, paddingVertical: 10, paddingHorizontal: 14, gap: 4, backgroundColor: on ? C.accentSoft : C.bg, opacity: pressed ? 0.8 : 1 })}>
+            <Text style={{ fontFamily: f.family && fontsReady.has(f.family) ? f.family : undefined, fontSize: size, lineHeight: lineFor(f, size, fsAr(42)), color: C.ink, textAlign: 'center', writingDirection: 'rtl' }}>{BESMELE}</Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+              <View style={{ flex: 1, gap: 1 }}>
+                <Text style={{ fontSize: fs(15), fontWeight: '700', color: on ? C.accent : C.ink }}>{pick(f.name, lang)}</Text>
+                <Text style={T.small}>{pick(f.desc, lang)}</Text>
+              </View>
+              {on && <Icon name="check" size={18} color={C.accent} />}
+            </View>
+          </Pressable>
+        );
+      })}
 
       <SectionTitle>{pick(L.meal, lang)}</SectionTitle>
       <LangChips langs={langs} value={mealLang} onChange={setMealLang} />

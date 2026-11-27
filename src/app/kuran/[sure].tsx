@@ -9,6 +9,7 @@ import { Btn, Header, IconBtn, T } from '@/components/ui';
 import { C, fs, fsAr, isDark, shadow } from '@/constants/theme';
 import { MEAL_AUDIO, RECITERS, TRANSLIT, type QuranView } from '@/data/quranEditions';
 import { SAJDAH_NOTE, SAJDAH_SIGN, isSajdah, stripSajdahSign, surahHasSajdah } from '@/data/sajdah';
+import { lineFor } from '@/data/quranFonts';
 import { TAJWEED_RULES, ruleColor } from '@/data/tajweed';
 import type { ML } from '@/data/sites';
 import { pick, useI18n } from '@/i18n';
@@ -17,6 +18,7 @@ import { getSurahAudio, getSurahTajweed, getSurahText, surahName, type FullAyah 
 import { useQuranPrefs, type Bookmark } from '@/services/QuranPrefs';
 import { useAsync } from '@/services/useAsync';
 import { parseTajweed, stripTajweedBasmala } from '@/services/tajweed';
+import { useQuranFont } from '@/services/useQuranFont';
 import { stopVoice } from '@/services/voice';
 
 const L = {
@@ -76,6 +78,10 @@ export default function SurahReader() {
   const tjRes = useAsync(() => (view === 'tecvid' ? getSurahTajweed(n) : Promise.resolve(null)), [n, view, attempt]);
   const tj = useMemo(() => (tjRes.data ? tjRes.data.map((x, i) => stripTajweedBasmala(n, i + 1, parseTajweed(x))) : null), [tjRes.data, n]);
   const dark = isDark();
+  // Hat (yazı stili): seçilen Kur'an yazı tipi; boyut ve satır yüksekliği yazıya göre (harekeler kesilmesin)
+  const { f: qf, fontFamily: qff } = useQuranFont(prefs.font);
+  const arSize = (base: number) => fsAr(base) * z * qf.size;
+  const arLine = (size: number, base: number) => lineFor(qf, size, base);
 
   // ── Ses: ayet ayet Arapça tilavet ve/veya sesli meal ──
   const player = useAudioPlayer(null);
@@ -219,16 +225,16 @@ mushafLike ? (
             <View style={{ gap: 8, marginBottom: 10 }}>
               {/* Sûre başlığı: mushaftaki gibi çerçeveli */}
               <View style={{ paddingVertical: 8, borderTopWidth: 2, borderBottomWidth: 2, borderColor: C.accentTint, alignItems: 'center' }}>
-                <Text style={{ fontSize: fsAr(22) * z, lineHeight: fsAr(36) * z, color: C.accent, fontWeight: '700', textAlign: 'center' }}>{res.data?.name ?? surahName(n, lang)}</Text>
+                <Text style={{ fontFamily: res.data?.name ? qff : undefined, fontSize: arSize(22), lineHeight: arLine(arSize(22), fsAr(36) * z), color: C.accent, fontWeight: '700', textAlign: 'center' }}>{res.data?.name ?? surahName(n, lang)}</Text>
               </View>
               {view === 'tecvid' && <TajweedLegend lang={lang} dark={dark} />}
               {view === 'tecvid' && tjRes.error ? <Text style={T.small}>{pick(L.tjErr, lang)}</Text> : null}
-              {n !== 1 && n !== 9 ? <Text style={[T.arabic, { textAlign: 'center', fontSize: fsAr(26) * z, lineHeight: fsAr(46) * z }]}>بِسْمِ ٱللَّهِ ٱلرَّحْمَٰنِ ٱلرَّحِيمِ</Text> : null}
+              {n !== 1 && n !== 9 ? <Text style={[T.arabic, { fontFamily: qff, textAlign: 'center', fontSize: arSize(26), lineHeight: arLine(arSize(26), fsAr(46) * z) }]}>بِسْمِ ٱللَّهِ ٱلرَّحْمَٰنِ ٱلرَّحِيمِ</Text> : null}
             </View>
           }
           renderItem={({ item: c }) => (
             // direction: web'de paragraf sağdan sola olsun (writingDirection yalnız iOS'ta işler); yoksa satır başına düşen âyet numarası sola kayıyor
-            <Text style={{ fontSize: fsAr(24) * z, lineHeight: fsAr(54) * z, color: C.ink, textAlign: 'justify', writingDirection: 'rtl', direction: 'rtl' }}>
+            <Text style={{ fontFamily: qff, fontSize: arSize(24), lineHeight: arLine(arSize(24), fsAr(54) * z), color: C.ink, textAlign: 'justify', writingDirection: 'rtl', direction: 'rtl' }}>
               {c.map((ay) => {
                 const idx = ay.n - 1;
                 const on = now?.idx === idx;
@@ -240,7 +246,7 @@ mushafLike ? (
                     {segs ? segs.map((sg, k) => { const tx = k === segs.length - 1 ? stripSajdahSign(sg.t) : sg.t; return sg.r ? <Text key={k} style={{ color: ruleColor(sg.r, dark) }}>{tx}</Text> : tx; }) : stripSajdahSign(ay.ar)}
                     {sj ? <Text style={{ color: C.green, fontWeight: '700' }} accessibilityLabel={pick(L.sajdah, lang)}>{` ${SAJDAH_SIGN}`}</Text> : null}
                     {/* Âyet sonu: süslü parantez içinde Arapça rakam, palet renginde */}
-                    <Text style={{ color: C.accent, fontWeight: '700', fontSize: fsAr(21) * z }}>{` \uFD3F${AR_DIGITS(ay.n)}\uFD3E `}</Text>
+                    <Text style={{ color: C.accent, fontWeight: '700', fontSize: arSize(21) }}>{` \uFD3F${AR_DIGITS(ay.n)}\uFD3E `}</Text>
                   </Text>
                 );
               })}
@@ -265,7 +271,7 @@ mushafLike ? (
           ListHeaderComponent={
             <View style={{ gap: 12, marginBottom: 8 }}>
               <Btn title={pick(L.playAll, lang)} icon="play" kind="secondary" onPress={() => start(0)} />
-              {n !== 1 && n !== 9 ? <Text style={[T.arabic, { textAlign: 'center', fontSize: fsAr(26) * z, lineHeight: fsAr(44) * z }]}>بِسْمِ ٱللَّهِ ٱلرَّحْمَٰنِ ٱلرَّحِيمِ</Text> : null}
+              {n !== 1 && n !== 9 ? <Text style={[T.arabic, { fontFamily: qff, textAlign: 'center', fontSize: arSize(26), lineHeight: arLine(arSize(26), fsAr(44) * z) }]}>بِسْمِ ٱللَّهِ ٱلرَّحْمَٰنِ ٱلرَّحِيمِ</Text> : null}
             </View>
           }
           renderItem={({ item: a, index }) => {
@@ -276,7 +282,7 @@ mushafLike ? (
                   <View style={{ width: 28, height: 28, borderRadius: 14, borderWidth: 1.5, borderColor: isSajdah(n, a.n) ? C.green : C.route, alignItems: 'center', justifyContent: 'center', marginTop: 6, backgroundColor: active ? C.accent : 'transparent' }}>
                     <Text style={{ fontSize: fs(11), fontWeight: '700', color: active ? C.onAccent : C.accent }}>{a.n}</Text>
                   </View>
-                  {view === 'meal' && a.meal ? <Text style={[T.body, { flex: 1, fontSize: fs(17) * z, lineHeight: fs(26) * z, color: C.ink }]}>{a.meal}</Text> : <Text style={[T.arabic, { flex: 1, fontSize: fsAr(24) * z, lineHeight: fsAr(40) * z }]}>{stripSajdahSign(a.ar)}</Text>}
+                  {view === 'meal' && a.meal ? <Text style={[T.body, { flex: 1, fontSize: fs(17) * z, lineHeight: fs(26) * z, color: C.ink }]}>{a.meal}</Text> : <Text style={[T.arabic, { flex: 1, fontFamily: qff, fontSize: arSize(24), lineHeight: arLine(arSize(24), fsAr(40) * z) }]}>{stripSajdahSign(a.ar)}</Text>}
                 </View>
                 {isSajdah(n, a.n) && (
                   <View style={{ alignSelf: 'flex-start', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 12, backgroundColor: C.greenTint }}>

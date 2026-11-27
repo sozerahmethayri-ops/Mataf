@@ -40,6 +40,7 @@
 | Servis | Amaç | Lisans / not |
 |---|---|---|
 | api.alquran.cloud | Kur'an metni + meal | Arapça metin Tanzil; meal hakları sahiplerine aittir |
+| api.alquran.cloud (`quran-tajweed`) | Tecvidli renkli Kur'an | Tanzil metni, tecvid işaretlemesi alquran.cloud |
 | cdn.islamic.network/quran/audio | Ayet ayet tilavet ve sesli meal (alquran.cloud) | Kayıt hakları kâri/yayıncılara aittir |
 | cdn.jsdelivr.net/gh/spa5k/tafsir_api | Tefsir (30+ dil) | Depo MIT; tefsir metinlerinin hakları yayıncılarına aittir |
 | cdn.jsdelivr.net/gh/fawazahmed0/hadith-api | Sahîh-i Buhârî | Açık veri |
@@ -73,3 +74,14 @@
 - Tavaf hadisleri sunnah.com ile karşılaştırıldı: Buhârî 1604 (remel), 1609 (iki Yemânî rükün), 1613 (tekbir), 1637 (Zemzem); Ebû Dâvûd 1892 (iki rükün arası dua); Müslim 1218 (Makam, iki rekât, sa'y).
 - Dua kütüphanesindeki hadis numaraları sunnah.com numaralandırmasıdır. Yayından önce bir ilahiyatçıya kontrol ettirin.
 - Cihaz sesi (metin okuma) bir hafız tilaveti değildir; ayetler her zaman kâri kaydıyla çalınır, bağlantı yoksa cihaz sesine düşer.
+
+## Uygulamaya gömülü yazı tipleri (yalnız Kur'an metni)
+
+| Yazı tipi | Paket | Lisans |
+|---|---|---|
+| Amiri Quran (Khaled Hosny) | `@expo-google-fonts/amiri-quran` | SIL Open Font License 1.1 |
+| Scheherazade New (SIL International) | `@expo-google-fonts/scheherazade-new` | SIL Open Font License 1.1 |
+| Noto Naskh Arabic (Google) | `@expo-google-fonts/noto-naskh-arabic` | SIL Open Font License 1.1 |
+| Lateef (SIL International) | `@expo-google-fonts/lateef` | SIL Open Font License 1.1 |
+
+Seçim ölçütü: Uthmani metnin bütün Kur'an işaretlerini (U+06D6–U+06ED, ﴿﴾, ۩) çizmesi; fontTools ile ölçüldü. Reem Kufi, Aref Ruqaa ve Noto Nastaliq Urdu 19–23 işaret eksik olduğu için alınmadı. OFL yazı tiplerinin yazılımla dağıtılmasına izin verir; dosyalar değiştirilmeden paketlerden kullanılır.

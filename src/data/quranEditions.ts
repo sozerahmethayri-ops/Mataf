@@ -1,6 +1,7 @@
 // Kur'an sesleri, sesli mealler ve tefsir kaynakları.
 // Ses ve meal: alquran.cloud (edition listesi 24.11.2026'da kontrol edildi).
 // Tefsir: spa5k/tafsir_api (MIT; metinlerin hakları yayıncılarına aittir — yayından önce lisansı kontrol edin).
+import type { QuranFontId } from './quranFonts';
 import { readShare } from '@/services/hatim';
 import type { Lang } from '@/i18n/strings';
 
@@ -105,6 +106,8 @@ export type QuranPrefs = {
   view?: QuranView;
   /** Okuma ekranında yazı büyütme (1 = normal; 0,8–2) */
   zoom?: number;
+  /** Kur'an hattı (yazı tipi): data/quranFonts.ts */
+  font?: QuranFontId;
 };
 export type QuranView = 'ar+meal' | 'ar' | 'meal' | 'mushaf' | 'tecvid';
 

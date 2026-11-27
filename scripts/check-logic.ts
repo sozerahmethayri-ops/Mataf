@@ -37,6 +37,9 @@ import { PHRASES } from '../src/data/phrases';
 import { dropWords, parseTajweed, plainOf, stripTajweedBasmala } from '../src/services/tajweed';
 import { SAJDAH, isSajdah, stripSajdahSign } from '../src/data/sajdah';
 import { OTHER_RULES, TAJWEED_RULES } from '../src/data/tajweed';
+import { QURAN_FONTS, lineFor, quranFont } from '../src/data/quranFonts';
+// Node tür tanımları projede yok; dosya varlığına bakmak için düz require
+const { existsSync } = require('fs') as { existsSync: (path: string) => boolean };
 import { allTextDuas } from '../src/data/duas';
 import { altitudeText, directionText, moonLitPath, moonPhaseName, skyDay, skyNow, skyPhase } from '../src/services/sky';
 import { newer } from '../src/services/version';
@@ -976,6 +979,17 @@ ok(shareLink({ lat: 21.4225, lng: 39.8262 }) === 'https://maps.google.com/?q=21.
   ok(SAJDAH.length === 14 && SAJDAH.every(([s2, a2]) => a2 >= 1 && a2 <= surahLength(s2)) && isSajdah(32, 15) && isSajdah(96, 19) && !isSajdah(22, 77),
     'secde âyetleri: Hanefî 14 yer (Hac 77 yok), numaralar geçerli');
   ok(stripSajdahSign('كَلَّا لَا تُطِعْهُ وَٱسْجُدْ وَٱقْتَرِب ۩') === 'كَلَّا لَا تُطِعْهُ وَٱسْجُدْ وَٱقْتَرِب' && stripSajdahSign('قَالَ') === 'قَالَ', 'secde âyetleri: kaynak metindeki işaret ayrılır (çift görünmez)');
+}
+
+// ── Kur'an hatları ──
+{
+  const ids = QURAN_FONTS.map((f) => f.id);
+  const pkg: Record<string, string> = { AmiriQuran: 'amiri-quran', ScheherazadeNew: 'scheherazade-new', NotoNaskhArabic: 'noto-naskh-arabic', Lateef: 'lateef' };
+  const files = QURAN_FONTS.filter((f) => f.family).map((f) => `node_modules/@expo-google-fonts/${pkg[f.family as string]}/400Regular/${f.family}_400Regular.ttf`);
+  ok(new Set(ids).size === ids.length && ids[0] === 'system' && quranFont('yok').id === 'system' && files.length === 4 && files.every((p2) => existsSync(p2)),
+    `Kur’an hatları: ${ids.length} seçenek, yazı dosyaları paketlerde`);
+  ok(lineFor(quranFont('amiri'), 24, 40) === 60 && lineFor(quranFont('system'), 24, 40) === 40 && QURAN_FONTS.every((f) => f.id === 'system' || f.minLine >= 1.45),
+    'Kur’an hatları: satır yüksekliği yazının doğal yüksekliğinden kısa olmaz');
 }
 
 mosqueChecks().then(transitChecks).then(() => process.exit(fails ? 1 : 0));

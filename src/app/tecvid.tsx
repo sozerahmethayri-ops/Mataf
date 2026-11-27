@@ -4,9 +4,12 @@ import { Text, View } from 'react-native';
 
 import { Header, Screen, SectionTitle, T } from '@/components/ui';
 import { C, fs, fsAr, isDark } from '@/constants/theme';
+import { lineFor, type QuranFont } from '@/data/quranFonts';
 import { OTHER_RULES, TAJWEED_RULES, ruleColor } from '@/data/tajweed';
 import { pick, useI18n } from '@/i18n';
+import { useQuranPrefs } from '@/services/QuranPrefs';
 import { parseTajweed } from '@/services/tajweed';
+import { useQuranFont } from '@/services/useQuranFont';
 
 type Lang = 'tr' | 'en' | 'ar';
 const L = {
@@ -28,10 +31,11 @@ const L = {
 };
 
 /** Tecvid işaretli örneği renkli çizer */
-function Example({ text, dark }: { text: string; dark: boolean }) {
+function Example({ text, dark, f, family }: { text: string; dark: boolean; f: QuranFont; family?: string }) {
+  const size = fsAr(28) * f.size;
   return (
     <View style={{ backgroundColor: C.surface, borderRadius: 14, paddingVertical: 10, paddingHorizontal: 12 }}>
-      <Text style={[T.arabic, { fontSize: fsAr(28), lineHeight: fsAr(48), textAlign: 'center' }]}>
+      <Text style={[T.arabic, { fontFamily: family, fontSize: size, lineHeight: lineFor(f, size, fsAr(48)), textAlign: 'center' }]}>
         {parseTajweed(text).map((sg, k) => (sg.r ? <Text key={k} style={{ color: ruleColor(sg.r, dark) }}>{sg.t}</Text> : sg.t))}
       </Text>
     </View>
@@ -42,6 +46,9 @@ export default function Tecvid() {
   const { lang } = useI18n();
   const lg = lang as Lang;
   const dark = isDark();
+  // Örnekler okuma ekranındaki hatla (yazı stiliyle) çizilir
+  const { prefs } = useQuranPrefs();
+  const { f, fontFamily } = useQuranFont(prefs.font);
   return (
     <Screen>
       <Header back title={pick(L.title, lg)} subtitle={pick(L.sub, lg)} />
@@ -61,7 +68,7 @@ export default function Tecvid() {
               {pick(L.letters, lg)}: <Text style={{ fontSize: fsAr(19), color: C.ink }}>{r.letters}</Text>
             </Text>
           ) : null}
-          <Example text={r.example} dark={dark} />
+          <Example text={r.example} dark={dark} f={f} family={fontFamily} />
         </View>
       ))}
 
@@ -73,7 +80,7 @@ export default function Tecvid() {
             {lg !== 'ar' && <Text style={{ fontSize: fsAr(17), color: C.muted }}>{r.name.ar}</Text>}
           </View>
           <Text style={T.body}>{pick(r.desc, lg)}</Text>
-          <Example text={r.example} dark={dark} />
+          <Example text={r.example} dark={dark} f={f} family={fontFamily} />
         </View>
       ))}
       <Text style={T.small}>{pick(L.note, lg)}</Text>
