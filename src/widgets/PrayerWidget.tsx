@@ -111,7 +111,8 @@ function prayerLayout(props: PrayerWidgetProps, env: { colorScheme?: 'light' | '
   const fallback = Math.floor(mins / 60) + ':' + (mins % 60 < 10 ? '0' : '') + (mins % 60);
   const label = (props.left || '{p}').replace('{p}', names[pi]);
   const date = day.d + (day.h ? ' · ' + day.h : '');
-  const when = day.t[pi] + (tomorrow && props.tomorrow ? ' · ' + props.tomorrow : '');
+  // Yatsıdan sonra "yarın" saatin yanında ayrı ve küçük: dar kutuda kesilen o olsun, saat değil
+  const tmr = tomorrow && props.tomorrow ? props.tomorrow : '';
   // Boyutlar kutunun genişliğine göre (küçük ekranlarda altı vakit sığsın)
   const W = env.width && env.width > 0 ? env.width : 320;
   const cellW = Math.max(36, Math.min(56, Math.floor((W - 28) / 6)));
@@ -150,7 +151,11 @@ function prayerLayout(props: PrayerWidgetProps, env: { colorScheme?: 'light' | '
         <Spacer modifiers={[width(8)]} />
         <Column>
           <Text color={c.accent} maxLines={1} style={{ fontSize: 12, fontWeight: 'bold' }}>{label}</Text>
-          <Text color={c.ink} maxLines={1} style={{ fontSize: 15, fontWeight: 'bold' }}>{names[pi] + ' ' + when}</Text>
+          <Row verticalAlignment="center">
+            <Text color={c.ink} maxLines={1} style={{ fontSize: 15, fontWeight: 'bold' }}>{names[pi] + ' ' + day.t[pi]}</Text>
+            {tmr ? <Spacer modifiers={[width(4)]} /> : null}
+            {tmr ? <Text color={c.muted} maxLines={1} style={{ fontSize: 11 }}>{tmr}</Text> : null}
+          </Row>
         </Column>
       </Row>
       <Spacer modifiers={[height(8)]} />
