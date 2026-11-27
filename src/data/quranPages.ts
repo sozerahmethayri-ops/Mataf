@@ -2,7 +2,7 @@
 // Kaynak: quran-meta 7.0.0 (MIT, Huseyn Guliyev, quran-center/quran-meta). Paketin kodu çalıştırılmadan dosyasından
 // okundu ve bilinen sayfalarla denetlendi (Bakara 1 = s. 2, Bakara 142 = s. 22, Nebe 1 = s. 582, İhlâs 1 = s. 604).
 // Dört cüz bu düzende sayfa ortasında başlar (4, 7, 11, 26); bu Medine Mushafı'nın kendi düzenidir.
-import { globalAyah } from '@/services/quranIndex';
+import { globalAyah, surahLength } from '@/services/quranIndex';
 
 export const PAGE_COUNT = 604;
 
@@ -54,3 +54,35 @@ export function pageOfGlobal(g: number) {
 
 /** Sûre ve âyetin sayfası */
 export const pageOf = (surah: number, ayah: number) => pageOfGlobal(globalAyah(surah, ayah));
+
+/** Mushaf sırasından (1–6236) sûre ve âyet */
+export function fromGlobalAyah(g: number): [number, number] {
+  let k = Math.max(1, Math.min(6236, Math.round(g)));
+  for (let s = 1; s <= 114; s++) {
+    const len = surahLength(s);
+    if (k <= len) return [s, k];
+    k -= len;
+  }
+  return [114, 6];
+}
+
+/** Sayfanın âyet aralığı, genel numaralarla [ilk, son] */
+export function pageGlobalRange(page: number): [number, number] {
+  const p = Math.max(1, Math.min(PAGE_COUNT, Math.round(page) || 1));
+  return [PAGE_START[p - 1], p < PAGE_COUNT ? PAGE_START[p] - 1 : 6236];
+}
+
+/** Sayfadaki âyetler, sayfa sırasıyla [sûre, âyet] */
+export function pageAyahs(page: number): [number, number][] {
+  const [g0, g1] = pageGlobalRange(page);
+  const out: [number, number][] = [];
+  let [s, a] = fromGlobalAyah(g0);
+  for (let g = g0; g <= g1; g++) {
+    out.push([s, a]);
+    if (a >= surahLength(s)) {
+      s += 1;
+      a = 1;
+    } else a += 1;
+  }
+  return out;
+}

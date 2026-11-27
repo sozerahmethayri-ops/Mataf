@@ -8,6 +8,7 @@ import type { ReactElement } from 'react';
 
 import type { CountdownProps, PrayerWidgetProps } from './PrayerWidget';
 
+declare const Box: typeof UI.Box;
 declare const Row: typeof UI.Row;
 declare const Text: typeof UI.Text;
 declare const Spacer: typeof UI.Spacer;
@@ -17,7 +18,7 @@ declare const cornerRadius: typeof M.cornerRadius;
 declare const padding: typeof M.padding;
 declare const width: typeof M.width;
 
-function stripLayout(props: PrayerWidgetProps, env: { colorScheme?: 'light' | 'dark' }) {
+function stripLayout(props: PrayerWidgetProps, env: { colorScheme?: 'light' | 'dark'; width?: number; height?: number }) {
   'widget';
   const dk = props.mode === 'dark' || (props.mode !== 'light' && env.colorScheme === 'dark');
   let c = dk ? props.dark : props.light;
@@ -61,8 +62,11 @@ function stripLayout(props: PrayerWidgetProps, env: { colorScheme?: 'light' | 'd
       <Text color={c.accent} maxLines={1} style={{ fontSize: 17, fontWeight: 'bold' }}>{names[pi]}</Text>
       <Spacer modifiers={[width(6)]} />
       <Text color={c.ink} maxLines={1} style={{ fontSize: 17, fontWeight: 'bold' }}>{when}</Text>
-      <Spacer modifiers={[width(14)]} />
-      <Countdown countdownTo={target} color={c.ink} maxLines={1} style={{ fontSize: 17, fontWeight: 'bold' }}>{fallback}</Countdown>
+      <Spacer modifiers={[width(10)]} />
+      {/* Sayaç kabın kalan alanına yayılır: sabit genişlikli kapta, sağa yaslı */}
+      <Box contentAlignment="centerEnd" modifiers={[width(80)]}>
+        <Countdown countdownTo={target} color={c.ink} maxLines={1} style={{ fontSize: 17, fontWeight: 'bold', textAlign: 'end' }}>{fallback}</Countdown>
+      </Box>
       <Spacer modifiers={[width(4)]} />
       <Text color={c.muted} maxLines={1} style={{ fontSize: 13 }}>{props.remain || ''}</Text>
     </Row>

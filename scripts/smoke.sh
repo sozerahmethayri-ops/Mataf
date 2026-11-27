@@ -139,6 +139,11 @@ open "ulasim?to=21.4225,39.8262&name=Harem"; step "36-otobus-tarifi" 14
 adb shell input swipe $(( W / 2 )) $(( H * 70 / 100 )) $(( W / 2 )) $(( H * 35 / 100 )) 400; step "37-otobus-adimlar" 3
 adb emu geo fix 39.82625 21.42295 || true; sleep 2
 
+# Mushaf sayfa sayfa (0.22.0): 2. sayfa açılır; parmak soldan sağa kayınca sonraki sayfa (3) gelmeli
+open "mushaf?p=2"; step "38-mushaf-2" 10
+adb shell input swipe $(( W * 15 / 100 )) $(( H / 2 )) $(( W * 85 / 100 )) $(( H / 2 )) 250
+step "39-mushaf-cevir" 8
+
 # Tema değiştirme (koyu/açık) sonrası uygulama açık kalmalı: Ayarlar'da tema satırına dokun
 open ayarlar; sleep 5
 # Koordinatlar 0.10.0 Ayarlar düzenine göre (Görünüm satırı ~%23, palet ikinci sütun ~%38)

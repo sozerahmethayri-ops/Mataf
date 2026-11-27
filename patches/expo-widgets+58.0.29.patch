@@ -1,5 +1,5 @@
 diff --git a/node_modules/expo-widgets/android/src/main/java/expo/modules/widgets/ExpoWidgetEmittableTree.kt b/node_modules/expo-widgets/android/src/main/java/expo/modules/widgets/ExpoWidgetEmittableTree.kt
-index 3df9e4a..a6db4ba 100644
+index 3df9e4a..415e49b 100644
 --- a/node_modules/expo-widgets/android/src/main/java/expo/modules/widgets/ExpoWidgetEmittableTree.kt
 +++ b/node_modules/expo-widgets/android/src/main/java/expo/modules/widgets/ExpoWidgetEmittableTree.kt
 @@ -5,6 +5,7 @@ package expo.modules.widgets
@@ -41,7 +41,7 @@ index 3df9e4a..a6db4ba 100644
      "Button", "FilledTonalButton", "OutlinedButton", "ElevatedButton", "TextButton" -> listOf(
        toPeekButton(converterContext, source)
      )
-@@ -213,6 +222,21 @@ private fun ReadableMap.toPeekSpacer(converterContext: ConverterContext): Emitta
+@@ -213,6 +222,22 @@ private fun ReadableMap.toPeekSpacer(converterContext: ConverterContext): Emitta
    }
  }
  
@@ -56,6 +56,7 @@ index 3df9e4a..a6db4ba 100644
 +    target,
 +    colorToComposeColorOrNull(props.color)?.toArgb(),
 +    props.fontSize,
++    countdownGravity(props.textAlign?.value),
 +    props.textModifier(converterContext)
 +  )
 +}
@@ -79,12 +80,29 @@ index 84c025f..8707827 100644
      if (intent.action == WIDGET_INTERACTION_ACTION) {
        val source = intent.getStringExtra(WIDGET_INTERACTION_SOURCE_EXTRA) ?: return
        val target = intent.getStringExtra(WIDGET_INTERACTION_TARGET_EXTRA) ?: return
+diff --git a/node_modules/expo-widgets/android/src/main/java/expo/modules/widgets/ExpoWidgetsPeekWidget.kt b/node_modules/expo-widgets/android/src/main/java/expo/modules/widgets/ExpoWidgetsPeekWidget.kt
+index edabde8..b9f218b 100644
+--- a/node_modules/expo-widgets/android/src/main/java/expo/modules/widgets/ExpoWidgetsPeekWidget.kt
++++ b/node_modules/expo-widgets/android/src/main/java/expo/modules/widgets/ExpoWidgetsPeekWidget.kt
+@@ -25,7 +25,11 @@ internal class ExpoWidgetsPeekWidget(
+     val layout = WidgetsLayoutRegistry.layout(appContext, widgetName)
+       ?: return createErrorRoot("No layout found for $widgetName")
+     val props = WidgetsLayoutRegistry.props(appContext, widgetName)
+-    val environment = getWidgetEnvironment(appContext)
++    // MATAF: kutunun gerçek boyu (dp; SizeMode.Exact) düzene verilir: hücreler ve yazılar buna göre ayarlanır
++    val environment = getWidgetEnvironment(appContext) + mapOf(
++      "width" to size.width.value.takeIf { it.isFinite() && it > 0f }?.toDouble(),
++      "height" to size.height.value.takeIf { it.isFinite() && it > 0f }?.toDouble()
++    )
+     val node = evaluateLayout(appContext, layout, props, environment)
+ 
+     return node.toPeekRoot(appContext, InteractionSource.Widget(widgetName), size)
 diff --git a/node_modules/expo-widgets/android/src/main/java/expo/modules/widgets/WidgetCountdown.kt b/node_modules/expo-widgets/android/src/main/java/expo/modules/widgets/WidgetCountdown.kt
 new file mode 100644
-index 0000000..01f9452
+index 0000000..64c21c1
 --- /dev/null
 +++ b/node_modules/expo-widgets/android/src/main/java/expo/modules/widgets/WidgetCountdown.kt
-@@ -0,0 +1,36 @@
+@@ -0,0 +1,47 @@
 +@file:Suppress("INVISIBLE_MEMBER", "INVISIBLE_REFERENCE", "RestrictedApiAndroidX")
 +
 +package expo.modules.widgets
@@ -93,10 +111,18 @@ index 0000000..01f9452
 +import android.os.Build
 +import android.os.SystemClock
 +import android.util.TypedValue
++import android.view.Gravity
 +import android.widget.RemoteViews
 +import androidx.glance.Emittable
 +import androidx.glance.GlanceModifier
 +import androidx.glance.appwidget.EmittableAndroidRemoteViews
++
++/** Text'in textAlign'ından yazının kap içindeki hizası */
++internal fun countdownGravity(align: String?): Int = when (align) {
++  "center" -> Gravity.CENTER
++  "right", "end" -> Gravity.END or Gravity.CENTER_VERTICAL
++  else -> Gravity.START or Gravity.CENTER_VERTICAL
++}
 +
 +// MATAF: canlı geri sayım. Text'e countdownTo (hedef an, ms) verilirse Android Chronometer çizilir; başlatıcı onu
 +// saniye saniye kendisi işletir, uygulamanın ya da küçük uygulamanın yenilenmesi gerekmez. Vakit girince
@@ -107,6 +133,7 @@ index 0000000..01f9452
 +  targetMs: Long,
 +  color: Int?,
 +  fontSizeSp: Float?,
++  gravity: Int,
 +  modifier: GlanceModifier
 +): Emittable? {
 +  if (Build.VERSION.SDK_INT < Build.VERSION_CODES.N) return null
@@ -116,6 +143,8 @@ index 0000000..01f9452
 +  views.setChronometerCountDown(R.id.expo_widgets_countdown, true)
 +  if (color != null) views.setTextColor(R.id.expo_widgets_countdown, color)
 +  if (fontSizeSp != null) views.setTextViewTextSize(R.id.expo_widgets_countdown, TypedValue.COMPLEX_UNIT_SP, fontSizeSp)
++  // Sayaç kabını doldurur (Glance onu kabın kalan alanına yayar); yazı kabın içinde hizalanır
++  views.setInt(R.id.expo_widgets_countdown, "setGravity", gravity)
 +  return EmittableAndroidRemoteViews().also {
 +    it.remoteViews = views
 +    it.modifier = modifier
@@ -239,7 +268,7 @@ index 05d6a9c..4b919f2 100644
          WidgetObject(context, name, layout, initialProps)
 diff --git a/node_modules/expo-widgets/android/src/main/res/layout/expo_widgets_countdown.xml b/node_modules/expo-widgets/android/src/main/res/layout/expo_widgets_countdown.xml
 new file mode 100644
-index 0000000..fbec256
+index 0000000..d40f6d2
 --- /dev/null
 +++ b/node_modules/expo-widgets/android/src/main/res/layout/expo_widgets_countdown.xml
 @@ -0,0 +1,10 @@
@@ -247,7 +276,7 @@ index 0000000..fbec256
 +<!-- MATAF: canlı geri sayım (WidgetCountdown.kt). Chronometer RemoteViews içinde saniye saniye kendiliğinden işler. -->
 +<Chronometer xmlns:android="http://schemas.android.com/apk/res/android"
 +    android:id="@+id/expo_widgets_countdown"
-+    android:layout_width="wrap_content"
++    android:layout_width="match_parent"
 +    android:layout_height="wrap_content"
 +    android:fontFeatureSettings="tnum"
 +    android:includeFontPadding="false"

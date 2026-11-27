@@ -11,8 +11,11 @@
 //
 // Görünüm (0.22.0, proje sahibinin isteği: "Ezan Vakti Pro'ya benzesin"): zemin seçili paletin koyu ya da açık
 // tonu, şeffaflığı ayarlanır (varsayılan koyu, %40 şeffaf; duvar kâğıdı görünür); büyük ve saniye saniye işleyen
-// geri sayım, miladi ve hicrî tarih, altı vakit yan yana ve sıradaki dolu renkli hapta. Geri sayım Text'e verilen countdownTo ile yerelde Android Chronometer olur
-// (expo-widgets yaması, WidgetCountdown.kt); başlatıcı onu kendisi işletir, yenileme gerekmez.
+// geri sayım, miladi ve hicrî tarih, altı vakit yan yana ve sıradaki dolu renkli hapta. Geri sayım Text'e verilen
+// countdownTo ile yerelde Android Chronometer olur (expo-widgets yaması, WidgetCountdown.kt); başlatıcı onu kendisi
+// işletir, yenileme gerekmez. Sayaç bulunduğu kabın kalan alanına yayılır: bu yüzden ya kendi Column'unun son
+// çocuğudur ya da sabit genişlikli bir Box içindedir (yoksa sonraki kardeşleri görünmez olur; duman testinde görüldü).
+// env.width/height kutunun gerçek boyu (dp, yama): küçük ekranda hücreler ve yazılar küçülür.
 import type * as UI from '@expo/ui/jetpack-compose';
 import type * as M from '@expo/ui/jetpack-compose/modifiers';
 import { createWidget } from 'expo-widgets';
@@ -64,9 +67,9 @@ export type PrayerWidgetProps = {
   dark?: PrayerWidgetColors;
 };
 /** Geri sayım: Text'in kendisi; countdownTo yerel tarafta Chronometer'a çevrilir, çocuk yazı yalnız yedek */
-export type CountdownProps = { countdownTo: number; color: string; maxLines?: number; style?: { fontSize?: number; fontWeight?: 'bold' | 'normal' }; children?: string };
+export type CountdownProps = { countdownTo: number; color: string; maxLines?: number; style?: { fontSize?: number; fontWeight?: 'bold' | 'normal'; textAlign?: 'start' | 'center' | 'end' }; children?: string };
 
-function prayerLayout(props: PrayerWidgetProps, env: { colorScheme?: 'light' | 'dark' }) {
+function prayerLayout(props: PrayerWidgetProps, env: { colorScheme?: 'light' | 'dark'; width?: number; height?: number }) {
   'widget';
   const dk = props.mode === 'dark' || (props.mode !== 'light' && env.colorScheme === 'dark');
   let c = dk ? props.dark : props.light;
@@ -109,6 +112,12 @@ function prayerLayout(props: PrayerWidgetProps, env: { colorScheme?: 'light' | '
   const label = (props.left || '{p}').replace('{p}', names[pi]);
   const date = day.d + (day.h ? ' · ' + day.h : '');
   const when = day.t[pi] + (tomorrow && props.tomorrow ? ' · ' + props.tomorrow : '');
+  // Boyutlar kutunun genişliğine göre (küçük ekranlarda altı vakit sığsın)
+  const W = env.width && env.width > 0 ? env.width : 320;
+  const cellW = Math.max(36, Math.min(56, Math.floor((W - 28) / 6)));
+  const tSize = cellW >= 46 ? 15 : cellW >= 41 ? 14 : 12;
+  const nSize = cellW >= 44 ? 11 : 10;
+  const big = W >= 300 ? 32 : 28;
 
   // Altı vakit: sıradaki dolu hapta, geçenler soluk
   const cells = [];
@@ -119,9 +128,9 @@ function prayerLayout(props: PrayerWidgetProps, env: { colorScheme?: 'light' | '
       <Column
         key={'p' + k}
         horizontalAlignment="center"
-        modifiers={on ? [width(46), background(fill), cornerRadius(12), padding(0, 4, 0, 4)] : [width(46), padding(0, 4, 0, 4)]}>
-        <Text color={on ? onFill : c.muted} maxLines={1} style={{ fontSize: 11 }}>{names[k]}</Text>
-        <Text color={on ? onFill : past ? c.muted : c.ink} maxLines={1} style={{ fontSize: 15, fontWeight: 'bold' }}>{day.t[k]}</Text>
+        modifiers={on ? [width(cellW), background(fill), cornerRadius(12), padding(0, 4, 0, 4)] : [width(cellW), padding(0, 4, 0, 4)]}>
+        <Text color={on ? onFill : c.muted} maxLines={1} style={{ fontSize: nSize }}>{names[k]}</Text>
+        <Text color={on ? onFill : past ? c.muted : c.ink} maxLines={1} style={{ fontSize: tSize, fontWeight: 'bold' }}>{day.t[k]}</Text>
       </Column>,
     );
   }
@@ -134,20 +143,16 @@ function prayerLayout(props: PrayerWidgetProps, env: { colorScheme?: 'light' | '
         <Text color={c.muted} maxLines={1} style={{ fontSize: 12 }}>{date}</Text>
       </Row>
       <Spacer modifiers={[height(6)]} />
-      <Box modifiers={[fillMaxWidth()]}>
-        <Box contentAlignment="centerStart" modifiers={[fillMaxWidth()]}>
-          <Column>
-            <Text color={c.accent} maxLines={1} style={{ fontSize: 12, fontWeight: 'bold' }}>{label}</Text>
-            <Countdown countdownTo={target} color={c.ink} maxLines={1} style={{ fontSize: 34, fontWeight: 'bold' }}>{fallback}</Countdown>
-          </Column>
+      <Row verticalAlignment="center" modifiers={[fillMaxWidth()]}>
+        <Box contentAlignment="centerStart" modifiers={[width(Math.round(big * 4.3))]}>
+          <Countdown countdownTo={target} color={c.ink} maxLines={1} style={{ fontSize: big, fontWeight: 'bold', textAlign: 'start' }}>{fallback}</Countdown>
         </Box>
-        <Box contentAlignment="bottomEnd" modifiers={[fillMaxWidth()]}>
-          <Column horizontalAlignment="end">
-            <Text color={c.muted} maxLines={1} style={{ fontSize: 12 }}>{names[pi]}</Text>
-            <Text color={c.ink} maxLines={1} style={{ fontSize: 20, fontWeight: 'bold' }}>{when}</Text>
-          </Column>
-        </Box>
-      </Box>
+        <Spacer modifiers={[width(8)]} />
+        <Column>
+          <Text color={c.accent} maxLines={1} style={{ fontSize: 12, fontWeight: 'bold' }}>{label}</Text>
+          <Text color={c.ink} maxLines={1} style={{ fontSize: 15, fontWeight: 'bold' }}>{names[pi] + ' ' + when}</Text>
+        </Column>
+      </Row>
       <Spacer modifiers={[height(8)]} />
       <Row modifiers={[fillMaxWidth()]} horizontalAlignment="center">{cells}</Row>
     </Column>

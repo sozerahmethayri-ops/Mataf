@@ -34,7 +34,7 @@ import { dailyIndex, dayNumber } from '../src/services/daily';
 import { PRAYED_ACTION, prayedFromResponse } from '../src/services/prayedTask.types';
 import { DICTS } from '../src/i18n/strings';
 import { JUZ_STARTS, TOTAL_AYAH, cleanPlan, fromGlobal, hatimToday, juzOf, juzPos, readAtJuz, readFromMark, targetRead } from '../src/services/hatim';
-import { PAGE_START, pageOf } from '../src/data/quranPages';
+import { PAGE_START, fromGlobalAyah, pageAyahs, pageGlobalRange, pageOf } from '../src/data/quranPages';
 import { zikirToday } from '../src/services/zikirStats';
 import { CHECKLIST } from '../src/data/checklist';
 import { PHRASES } from '../src/data/phrases';
@@ -1067,6 +1067,29 @@ ok(shareLink({ lat: 21.4225, lng: 39.8262 }) === 'https://maps.google.com/?q=21.
   const vars = (x?: string) => (x?.match(/\{\w+\}/g) ?? []).sort().join();
   const bad = trKeys.filter((k) => vars(DICTS.tr[k as keyof typeof DICTS.tr]) !== vars(DICTS.ar[k as keyof typeof DICTS.ar]) || vars(DICTS.tr[k as keyof typeof DICTS.tr]) !== vars(DICTS.en[k as keyof typeof DICTS.en]));
   ok(bad.length === 0, `sözlük: {değişken}ler üç dilde aynı (farklı: ${bad.slice(0, 5).join(', ') || 'yok'})`);
+}
+
+// ── Mushaf sayfaları (sayfa sayfa okuma) ──
+{
+  const key = (x: [number, number]) => x.join(':');
+  const p1 = pageAyahs(1);
+  const p2 = pageAyahs(2);
+  const p604 = pageAyahs(604);
+  ok(p1.length === 7 && key(p1[0]) === '1:1' && key(p1[6]) === '1:7', 'mushaf: 1. sayfa Fâtiha 1–7');
+  ok(key(p2[0]) === '2:1' && key(p2[p2.length - 1]) === '2:5', `mushaf: 2. sayfa Bakara 1–5 (${key(p2[p2.length - 1])})`);
+  ok(key(p604[0]) === '112:1' && key(p604[p604.length - 1]) === '114:6' && p604.length === 15, 'mushaf: 604. sayfa İhlâs, Felak, Nâs');
+  let total = 0;
+  let order = true;
+  let prev = 0;
+  for (let p = 1; p <= 604; p++) {
+    const [g0, g1] = pageGlobalRange(p);
+    if (g0 !== prev + 1 || g1 < g0) order = false;
+    prev = g1;
+    total += pageAyahs(p).length;
+  }
+  ok(order && prev === 6236 && total === 6236, 'mushaf: 604 sayfa boşluksuz, 6236 âyet');
+  ok(key(fromGlobalAyah(8)) === '2:1' && key(fromGlobalAyah(6236)) === '114:6' && pageAyahs(pageOf(18, 10)).some((x) => key(x) === '18:10'),
+    'mushaf: genel numara → sûre:âyet; âyetin sayfası onu içerir');
 }
 
 mosqueChecks().then(transitChecks).then(() => process.exit(fails ? 1 : 0));

@@ -23,7 +23,7 @@ declare const padding: typeof M.padding;
 declare const width: typeof M.width;
 declare const height: typeof M.height;
 
-function listLayout(props: PrayerWidgetProps, env: { colorScheme?: 'light' | 'dark' }) {
+function listLayout(props: PrayerWidgetProps, env: { colorScheme?: 'light' | 'dark'; width?: number; height?: number }) {
   'widget';
   const dk = props.mode === 'dark' || (props.mode !== 'light' && env.colorScheme === 'dark');
   let c = dk ? props.dark : props.light;

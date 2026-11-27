@@ -2,6 +2,7 @@
 // Arapça metin: Tanzil (quran-uthmani). Meal hakları sahiplerine aittir; yayın öncesi lisansı kontrol edin.
 import type { Lang } from '@/i18n/strings';
 import { cachedJson } from './cache';
+import { pageAyahs } from '@/data/quranPages';
 import { offlineSurah } from './offline';
 import { globalAyah } from './quranIndex';
 
@@ -101,6 +102,34 @@ export async function getSurahTajweed(n: number): Promise<string[]> {
   if (off?.['quran-tajweed']) return off['quran-tajweed'];
   const r = await cachedJson<{ data: { ayahs: { text: string }[] } }>(`quran:tajweed:${n}`, `${API}/surah/${n}/quran-tajweed`, 90 * DAY);
   return r.data.data.ayahs.map((a) => a.text);
+}
+
+/** Mushaf sayfasındaki bir âyet: metin besmeleyle birlikte (sayfa çizimi ayırır); tecvidde işaretli metin */
+export type PageAyah = { s: number; a: number; text: string };
+/**
+ * Mushaf sayfası (Medine düzeni, 1–604): âyetler ve (ağdan geldiyse) sûrelerin Arapça adları. Çevrimdışı paket varsa
+ * oradan (ağ gerekmez), yoksa alquran.cloud /page uç noktası; sayfa cihazda saklanır.
+ */
+export async function getPageText(page: number, tajweed = false): Promise<{ ayahs: PageAyah[]; names: Record<number, string> }> {
+  const ed = tajweed ? 'quran-tajweed' : 'quran-uthmani';
+  const list = pageAyahs(page);
+  const off: Record<number, string[]> = {};
+  let offline = true;
+  for (const s of new Set(list.map(([s]) => s))) {
+    const o = offlineSurah(s, [ed]);
+    if (!o?.[ed]) { offline = false; break; }
+    off[s] = o[ed];
+  }
+  if (offline) return { ayahs: list.map(([s, a]) => ({ s, a, text: off[s][a - 1] ?? '' })), names: {} };
+  const r = await cachedJson<{ data: { ayahs: { numberInSurah: number; text: string; surah: { number: number; name: string } }[] } }>(
+    `quran:page:${page}:${ed}`, `${API}/page/${page}/${ed}`, 90 * DAY,
+  );
+  const names: Record<number, string> = {};
+  const ayahs = r.data.data.ayahs.map((x) => {
+    names[x.surah.number] = x.surah.name;
+    return { s: x.surah.number, a: x.numberInSurah, text: x.text };
+  });
+  return { ayahs, names };
 }
 
 /** Sûrenin ayet ayet ses adresleri (kâri ya da sesli meal). */

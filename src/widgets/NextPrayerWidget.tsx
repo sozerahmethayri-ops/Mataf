@@ -20,7 +20,7 @@ declare const padding: typeof M.padding;
 declare const width: typeof M.width;
 declare const height: typeof M.height;
 
-function nextLayout(props: PrayerWidgetProps, env: { colorScheme?: 'light' | 'dark' }) {
+function nextLayout(props: PrayerWidgetProps, env: { colorScheme?: 'light' | 'dark'; width?: number; height?: number }) {
   'widget';
   const dk = props.mode === 'dark' || (props.mode !== 'light' && env.colorScheme === 'dark');
   let c = dk ? props.dark : props.light;
@@ -57,6 +57,7 @@ function nextLayout(props: PrayerWidgetProps, env: { colorScheme?: 'light' | 'da
   const target = Number(day.a[pi]);
   const mins = Math.max(0, Math.ceil((target - now) / 60000));
   const fallback = Math.floor(mins / 60) + ':' + (mins % 60 < 10 ? '0' : '') + (mins % 60);
+  const big = env.width && env.width < 140 ? 26 : 30;
   // Ondan sonraki vakit (gün biterse ertesi günün imsakı)
   let ni = di;
   let nj = pi + 1;
@@ -71,12 +72,15 @@ function nextLayout(props: PrayerWidgetProps, env: { colorScheme?: 'light' | 'da
     <Column modifiers={root} verticalAlignment="center">
       <Text color={c.muted} maxLines={1} style={{ fontSize: 11 }}>{props.place || 'MATAF'}</Text>
       <Spacer modifiers={[height(2)]} />
-      <Row verticalAlignment="center">
-        <Text color={c.accent} maxLines={1} style={{ fontSize: 16, fontWeight: 'bold' }}>{names[pi]}</Text>
-        <Spacer modifiers={[width(6)]} />
-        <Text color={c.ink} maxLines={1} style={{ fontSize: 16, fontWeight: 'bold' }}>{day.t[pi] + (tomorrow && props.tomorrow ? ' · ' + props.tomorrow : '')}</Text>
-      </Row>
-      <Countdown countdownTo={target} color={c.ink} maxLines={1} style={{ fontSize: 30, fontWeight: 'bold' }}>{fallback}</Countdown>
+      {/* Sayaç kendi Column'unun son çocuğu (kalan alana yayılıp sonraki satırları gizlemesin) */}
+      <Column>
+        <Row verticalAlignment="center">
+          <Text color={c.accent} maxLines={1} style={{ fontSize: 16, fontWeight: 'bold' }}>{names[pi]}</Text>
+          <Spacer modifiers={[width(6)]} />
+          <Text color={c.ink} maxLines={1} style={{ fontSize: 16, fontWeight: 'bold' }}>{day.t[pi] + (tomorrow && props.tomorrow ? ' · ' + props.tomorrow : '')}</Text>
+        </Row>
+        <Countdown countdownTo={target} color={c.ink} maxLines={1} style={{ fontSize: big, fontWeight: 'bold' }}>{fallback}</Countdown>
+      </Column>
       <Spacer modifiers={[height(2)]} />
       <Text color={c.muted} maxLines={1} style={{ fontSize: 11 }}>{then}</Text>
       <Text color={c.muted} maxLines={1} style={{ fontSize: 11 }}>{day.h || day.d}</Text>
