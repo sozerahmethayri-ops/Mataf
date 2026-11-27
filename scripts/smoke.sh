@@ -145,7 +145,8 @@ open harita; step "33-harita-tema" 8
 adb logcat -d > smoke/logcat.txt
 grep -iE "expo.?widgets|glance|PrayerWidget|appwidget" smoke/logcat.txt | head -150 > smoke/widget-log.txt || true
 # Yalnız uygulamamızın çökmeleri (Google Play hizmetleri gibi sistem süreçleri hariç) + uygulamanın neden kapatıldığı
-{ grep -n -B1 -A40 -E "Process: $PKG" smoke/logcat.txt; grep -n -A20 -E "ReactNativeJS.*(Error|Exception)|JavascriptException" smoke/logcat.txt; grep -n -E "Killing [0-9]+:$PKG|$PKG.*has died|DeadSystemException" smoke/logcat.txt | head -20; } > smoke/crash.txt
+{ grep -n -B1 -A40 -E "Process: $PKG" smoke/logcat.txt; grep -n -A20 -E "ReactNativeJS.*(Error|Exception)|JavascriptException" smoke/logcat.txt; grep -n -E "Killing [0-9]+:$PKG|$PKG.*has died|DeadSystemException" smoke/logcat.txt | grep -v "due to from pid" | head -20; } > smoke/crash.txt
+# ("due to from pid": otobüs tarifi adımında betiğin bilerek yaptığı force-stop, çökme değil)
 [ -s smoke/crash.txt ] || echo "çökme kaydı yok" > smoke/crash.txt
 grep -E "ReactNativeJS|chromium" smoke/logcat.txt | grep -iE "maplibre|webgl|harita|map error|ssl" | head -60 > smoke/map-log.txt || true
 [ -s smoke/map-log.txt ] || echo "harita günlüğü boş" > smoke/map-log.txt

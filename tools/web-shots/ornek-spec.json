@@ -1,0 +1,9 @@
+[
+  { "name": "ana-gunduz", "route": "/", "here": "haram", "time": "2026-11-26T15:10:00+03:00", "wait": 3500 },
+  { "name": "ana-yatsi-sonrasi", "route": "/", "here": "haram", "time": "2026-11-26T19:40:00+03:00", "wait": 3500 },
+  { "name": "ana-koyu", "route": "/", "here": "nabawi", "city": "madinah", "theme": { "mode": "dark", "palette": "kabe", "text": 1, "arabic": 1, "home": "vakit", "map3d": true, "reduceMotion": false, "haptics": true, "swipeTabs": true }, "wait": 3500 },
+  { "name": "vakitler", "route": "/vakitler", "here": "haram", "wait": 3000, "actions": [["scroll", 420]] },
+  { "name": "otobus-tren-harem", "route": "/ulasim?to=21.4225,39.8262&name=Harem", "here": "tren", "wait": 4500, "actions": [["scroll", 230]] },
+  { "name": "metro-bagcilar", "route": "/ulasim", "here": "ist", "wait": 3500, "actions": [["fill", "Adres, otel, istasyon, yer…", "bagc", 2500], ["click_text", "Bağcılar Meydan", true, 3500], ["scroll", 230]] },
+  { "name": "ulasim-arapca", "route": "/ulasim", "here": "haram", "wait": 3500, "extra": "localStorage.setItem('mataf.lang','ar');", "actions": [["fill", "عنوان، فندق، محطة، مكان…", "aise", 2500], ["click_text", "Ayşe Camii (Ten'im)", true, 3500], ["scroll", 230]] }
+]

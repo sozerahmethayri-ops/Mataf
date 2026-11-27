@@ -152,13 +152,14 @@ src/
 supabase/         Veritabanı şeması
 docs/             Mimari, veri kaynakları, otomatik güncelleme
 scripts/          Mantık kontrolü (npm run check)
+tools/            Geliştirme araçları: web ekran görüntüsü (web-shots), Supabase kurallarını yerelde deneme
 ```
 
 ## Geliştirme komutları
 
 ```bash
 npm run typecheck   # TypeScript kontrolü
-npm run check       # 80'e yakın mantık testi: kapı kuralları, rota, tavaf sayacı, harita döndürme,
+npm run check       # mantık testleri (230'u aşkın): kapı kuralları, rota, tavaf sayacı, harita döndürme,
                     # tema kontrastı, ezan bildirim planı, ulaşım (Photon/OSRM/MOTIS) ayrıştırma
 npm run lint
 ```
