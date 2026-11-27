@@ -123,7 +123,8 @@ adb shell dumpsys appwidget > smoke/widget.txt 2>&1 || true
 # Vakit anında yenileme: uygulama sonraki vakitler için alarm kurdu mu?
 adb shell dumpsys alarm > smoke/alarm-all.txt 2>/dev/null || true
 grep -B2 -A4 "expo.modules.widgets.TICK" smoke/alarm-all.txt | head -60 > smoke/alarm.txt || true
-echo "vakit alarmı: $(grep -c 'expo.modules.widgets.TICK' smoke/alarm-all.txt)" >> smoke/status.txt
+# Yalnız bekleyen alarmlar (her biri bir "tag=" satırı); dumpsys'in istatistik satırları da TICK içerdiği için düz sayım 24'ü aşabiliyordu
+echo "vakit alarmı: $(grep -cF 'tag=*alarm*:expo.modules.widgets.TICK' smoke/alarm-all.txt)" >> smoke/status.txt
 adb shell monkey -p "$PKG" -c android.intent.category.LAUNCHER 1 >/dev/null 2>&1; sleep 6
 
 # Mekke otobüs tarifi (çevrimdışı Makkah Bus ağı): konum Haremeyn treni istasyonu, hedef Harem.
