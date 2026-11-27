@@ -10,7 +10,8 @@ import { DUA_LIB, isQuranRef } from '../src/data/duas';
 import { TAWAF_DHIKR, type DuaText } from '../src/data/tawaf';
 import { OVERPASS_ENDPOINTS, bearingDeg, distanceM, findMosques, parseOverpass, parsePhotonMosques, pickMosques, type El, type Fetcher } from '../src/services/mosques';
 import { PALETTES, colorsFor, contrast, type PaletteId } from '../src/constants/theme';
-import { WIDGET_DAYS, buildLogWidgetProps, buildWidgetProps, widgetNext, widgetPlace, widgetTicks } from '../src/services/widgetProps';
+import { WIDGET_DAYS, buildLogWidgetProps, buildWidgetProps, glassColors, widgetMode, widgetNext, widgetPlace, widgetTicks } from '../src/services/widgetProps';
+import { hijriText } from '../src/services/hijri';
 import { ARAFAT_AREA, HAC_PLACES, NAMIRA_MOSQUE } from '../src/data/osm/hacSites';
 import { MEMBER_COLORS, colorFor, freshness, inviteText, isValidCode, makeCode, normalizeCode, shouldSend, sortMembers, type GroupMember } from '../src/services/groupLogic';
 import { AREFE_DUA, CEMRE_TEKBIR, HAC_STEPS, MESAR_AYAH, TESRIK_TEKBIR } from '../src/data/hac';
@@ -322,6 +323,23 @@ function simulate(o: Sim, st0: LapState = initialLap()) {
   ok(n3?.day === 1 && n3.prayer === 0 && n3.tomorrow === Number(wd[1].s) > t3, 'küçük uygulama: gece → imsak, "yarın" etiketi gün sınırına göre');
   ok(widgetNext(wp, Number(wd[29].a[5]) + 1) === null, 'küçük uygulama: veri bitince güncelleme istenir');
   ok(wp.light?.accent === PALETTES.kabe.light.accent && wp.dark?.accent === PALETTES.kabe.dark.accent && wp.dark?.bg !== wp.light?.bg, 'küçük uygulama: tema renkleri');
+}
+
+// ── Küçük uygulama görünümü (0.22.0: koyu şeffaf, geri sayım, hicrî tarih) ──
+{
+  const base = { start: new Date(2026, 10, 27, 9, 0), timesFor: (d: Date) => prayerTimes(21.4225, 39.8262, 'UmmAlQura', d), fmt: (d: Date) => `${d.getHours()}:${String(d.getMinutes()).padStart(2, '0')}`,
+    dayLabel: (d: Date) => String(d.getDate()), place: 'Mekke', names: ['İmsak', 'Güneş', 'Öğle', 'İkindi', 'Akşam', 'Yatsı'], lang: 'tr' as const, palette: 'kabe' as PaletteId, mode: 'system' as const };
+  const g = buildWidgetProps({ ...base, hijriLabel: (d) => hijriText(d, 'tr') });
+  ok(g.mode === 'glass' && g.glass?.bg === '#0000009E' && g.glass.ink === '#FFFFFF' && g.glass.fill === PALETTES.kabe.light.accent && g.glass.onFill === PALETTES.kabe.light.onAccent,
+    'kutu görünümü: varsayılan koyu şeffaf, dolu hap açık temanın vurgusu');
+  ok(g.left === '{p} vaktine kalan' && g.remain === 'kaldı' && (g.days ?? []).every((d) => /^\d{1,2} \S.* \d{4}$/.test(d.h ?? '')), `kutu görünümü: geri sayım yazıları ve her günde hicrî tarih (${g.days?.[0]?.h})`);
+  ok(JSON.stringify(g).length < 14000, `kutu görünümü: veri küçük kalır (${JSON.stringify(g).length} bayt)`);
+  ok(widgetMode(undefined, 'dark') === 'glass' && widgetMode('theme', 'dark') === 'dark' && widgetMode('theme', 'system') === 'system' && widgetMode('light', 'dark') === 'light',
+    'kutu görünümü: seçim → çizim kipi');
+  ok(buildWidgetProps({ ...base, style: 'light' }).mode === 'light' && buildLogWidgetProps({ title: '', names: [], allDone: '', empty: '', palette: 'kabe', mode: 'dark', style: 'theme', log: {}, today: new Date() }).mode === 'dark',
+    'kutu görünümü: açık seçimi ve takip kutusunda tema');
+  const weak = (Object.keys(PALETTES) as PaletteId[]).filter((pid) => { const c = glassColors(pid); return contrast(c.fill ?? '', c.onFill ?? '') < 4.5; });
+  ok(weak.length === 0, `kutu görünümü: her palette dolu hap yazısı AA (zayıf: ${weak.join(', ') || 'yok'})`);
 }
 
 // ── Hac modu ──

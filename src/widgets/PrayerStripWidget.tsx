@@ -1,10 +1,12 @@
-// İnce (4×1) ana ekran küçük uygulaması: sıradaki vakit ve ondan sonraki, tek satırda.
-// PrayerWidget ile aynı veriyi alır; görünüm ayrı JS ortamında çizilir ('widget' yönergesi).
+// İnce şerit (4×1) ana ekran küçük uygulaması: tek satırda sıradaki vakit ve saniye saniye geri sayım.
+// PrayerWidget ile aynı veriyi alır; görünüm ayrı JS ortamında çizilir ('widget' yönergesi), bu yüzden gövde
+// dosyadaki başka değere erişemez. Görünüm ve geri sayım için PrayerWidget.tsx başındaki nota bakın.
 import type * as UI from '@expo/ui/jetpack-compose';
 import type * as M from '@expo/ui/jetpack-compose/modifiers';
 import { createWidget } from 'expo-widgets';
+import type { ReactElement } from 'react';
 
-import type { PrayerWidgetProps } from './PrayerWidget';
+import type { CountdownProps, PrayerWidgetProps } from './PrayerWidget';
 
 declare const Row: typeof UI.Row;
 declare const Text: typeof UI.Text;
@@ -17,16 +19,16 @@ declare const width: typeof M.width;
 
 function stripLayout(props: PrayerWidgetProps, env: { colorScheme?: 'light' | 'dark' }) {
   'widget';
-  const dk = props.mode === 'dark' || (props.mode !== 'light' && env.colorScheme === 'dark');
-  let c = dk ? props.dark : props.light;
+  let c = props.mode === 'glass' ? props.glass : undefined;
   if (!c) {
-    c = dk
-      ? { bg: '#17120E', ink: '#F6EFE7', muted: '#B3A393', accent: '#F7934F', tint: '#3A2214' }
-      : { bg: '#FBF7F1', ink: '#2A2018', muted: '#6F5D4C', accent: '#B4420F', tint: '#FBE4D3' };
+    const dk = props.mode === 'dark' || (props.mode !== 'light' && env.colorScheme === 'dark');
+    c = dk ? props.dark : props.light;
   }
+  if (!c) c = { bg: '#0000009E', ink: '#FFFFFF', muted: '#FFFFFFB8', accent: '#F7934F', tint: '#FFFFFF2E', fill: '#B4420F', onFill: '#FFFFFF' };
+  const Countdown = Text as unknown as (p: CountdownProps) => ReactElement;
   const days = props.days || [];
   const names = props.names && props.names.length === 6 ? props.names : ['İmsak', 'Güneş', 'Öğle', 'İkindi', 'Akşam', 'Yatsı'];
-  const root = [fillMaxSize(), background(c.bg), cornerRadius(20), padding(16, 0, 12, 0)];
+  const root = [fillMaxSize(), background(c.bg), cornerRadius(22), padding(16, 8, 16, 8)];
 
   const now = Date.now();
   let di = -1;
@@ -51,24 +53,21 @@ function stripLayout(props: PrayerWidgetProps, env: { colorScheme?: 'light' | 'd
   }
   const day = days[di];
   const tomorrow = Number(day.s) > now;
-  let ni = di;
-  let nj = pi + 1;
-  if (nj > 5) {
-    ni = di + 1;
-    nj = 0;
-  }
-  let then = '';
-  if (ni < days.length) then = (props.after ? props.after + ' ' : '') + names[nj] + ' ' + days[ni].t[nj];
-  // Yatsıdan sonra yan yazı yalnız "yarın" (tek satıra sığsın; gece "Sonra Güneş" gereksiz)
-  const side = tomorrow && props.tomorrow ? props.tomorrow : then;
+  const target = Number(day.a[pi]);
+  const mins = Math.max(0, Math.ceil((target - now) / 60000));
+  const fallback = Math.floor(mins / 60) + ':' + (mins % 60 < 10 ? '0' : '') + (mins % 60);
+  // Yatsıdan sonra saatin yanına "yarın" (tek satıra sığsın)
+  const when = day.t[pi] + (tomorrow && props.tomorrow ? ' ' + props.tomorrow : '');
 
   return (
     <Row modifiers={root} verticalAlignment="center">
       <Text color={c.accent} maxLines={1} style={{ fontSize: 17, fontWeight: 'bold' }}>{names[pi]}</Text>
       <Spacer modifiers={[width(6)]} />
-      <Text color={c.ink} maxLines={1} style={{ fontSize: 17, fontWeight: 'bold' }}>{day.t[pi]}</Text>
+      <Text color={c.ink} maxLines={1} style={{ fontSize: 17, fontWeight: 'bold' }}>{when}</Text>
       <Spacer modifiers={[width(14)]} />
-      <Text color={c.muted} maxLines={1} style={{ fontSize: 13 }}>{side}</Text>
+      <Countdown countdownTo={target} color={c.ink} maxLines={1} style={{ fontSize: 17, fontWeight: 'bold' }}>{fallback}</Countdown>
+      <Spacer modifiers={[width(4)]} />
+      <Text color={c.muted} maxLines={1} style={{ fontSize: 13 }}>{props.remain || ''}</Text>
     </Row>
   );
 }

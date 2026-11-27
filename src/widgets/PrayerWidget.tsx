@@ -8,10 +8,17 @@
 //
 // Vakitler 30 günlük olarak verilir; küçük uygulama her çizimde (Android en geç 30 dakikada bir yeniler)
 // "şimdi"yi kendisi bulur. Uygulama açılmasa da günler ilerledikçe doğru günü ve sıradaki vakti gösterir.
+//
+// Görünüm (0.22.0, proje sahibinin isteği: "Ezan Vakti Pro'ya benzesin"): varsayılan koyu şeffaf zemin (duvar
+// kâğıdı görünür), büyük ve saniye saniye işleyen geri sayım, miladi ve hicrî tarih, altı vakit yan yana ve
+// sıradaki dolu renkli hapta. Geri sayım Text'e verilen countdownTo ile yerelde Android Chronometer olur
+// (expo-widgets yaması, WidgetCountdown.kt); başlatıcı onu kendisi işletir, yenileme gerekmez.
 import type * as UI from '@expo/ui/jetpack-compose';
 import type * as M from '@expo/ui/jetpack-compose/modifiers';
 import { createWidget } from 'expo-widgets';
+import type { ReactElement } from 'react';
 
+declare const Box: typeof UI.Box;
 declare const Column: typeof UI.Column;
 declare const Row: typeof UI.Row;
 declare const Text: typeof UI.Text;
@@ -24,9 +31,15 @@ declare const padding: typeof M.padding;
 declare const width: typeof M.width;
 declare const height: typeof M.height;
 
-export type PrayerWidgetColors = { bg: string; ink: string; muted: string; accent: string; tint: string };
-/** Bir gün: s = günün başı (ms, dize), d = gün etiketi, t = 6 saat ("05:12"), a = 6 an (ms, dize). */
-export type PrayerWidgetDay = { s: string; d: string; t: string[]; a: string[] };
+/**
+ * bg zemin, ink yazı, muted soluk yazı, accent vurgu yazısı, tint hafif dolgu (boş daire);
+ * fill ve onFill: sıradaki vaktin dolu hapı ve üstündeki yazı (eski verilerde yok: accent ve bg).
+ */
+export type PrayerWidgetColors = { bg: string; ink: string; muted: string; accent: string; tint: string; fill?: string; onFill?: string };
+/** Bir gün: s = günün başı (ms, dize), d = gün etiketi, h = hicrî tarih, t = 6 saat ("05:12"), a = 6 an (ms, dize). */
+export type PrayerWidgetDay = { s: string; d: string; h?: string; t: string[]; a: string[] };
+/** glass: koyu şeffaf (varsayılan); system/light/dark: düz zemin */
+export type PrayerWidgetMode = 'system' | 'light' | 'dark' | 'glass';
 export type PrayerWidgetProps = {
   v?: number;
   place?: string;
@@ -38,27 +51,36 @@ export type PrayerWidgetProps = {
   tomorrow?: string;
   /** "Sonra" (küçük ve şerit küçük uygulamada bir sonraki vakit) */
   after?: string;
+  /** "{p} vaktine kalan" (geri sayımın üstü) */
+  left?: string;
+  /** "kaldı" (şeritte geri sayımın yanı) */
+  remain?: string;
   /** Veri bittiğinde: "Güncellemek için MATAF'ı açın" */
   stale?: string;
   /** Hiç veri yokken */
   empty?: string;
-  mode?: 'system' | 'light' | 'dark';
+  mode?: PrayerWidgetMode;
   light?: PrayerWidgetColors;
   dark?: PrayerWidgetColors;
+  glass?: PrayerWidgetColors;
 };
+/** Geri sayım: Text'in kendisi; countdownTo yerel tarafta Chronometer'a çevrilir, çocuk yazı yalnız yedek */
+export type CountdownProps = { countdownTo: number; color: string; maxLines?: number; style?: { fontSize?: number; fontWeight?: 'bold' | 'normal' }; children?: string };
 
 function prayerLayout(props: PrayerWidgetProps, env: { colorScheme?: 'light' | 'dark' }) {
   'widget';
-  const dk = props.mode === 'dark' || (props.mode !== 'light' && env.colorScheme === 'dark');
-  let c = dk ? props.dark : props.light;
+  let c = props.mode === 'glass' ? props.glass : undefined;
   if (!c) {
-    c = dk
-      ? { bg: '#17120E', ink: '#F6EFE7', muted: '#B3A393', accent: '#F7934F', tint: '#3A2214' }
-      : { bg: '#FBF7F1', ink: '#2A2018', muted: '#6F5D4C', accent: '#B4420F', tint: '#FBE4D3' };
+    const dk = props.mode === 'dark' || (props.mode !== 'light' && env.colorScheme === 'dark');
+    c = dk ? props.dark : props.light;
   }
+  if (!c) c = { bg: '#0000009E', ink: '#FFFFFF', muted: '#FFFFFFB8', accent: '#F7934F', tint: '#FFFFFF2E', fill: '#B4420F', onFill: '#FFFFFF' };
+  const fill = c.fill || c.accent;
+  const onFill = c.onFill || c.bg;
+  const Countdown = Text as unknown as (p: CountdownProps) => ReactElement;
   const days = props.days || [];
   const names = props.names && props.names.length === 6 ? props.names : ['İmsak', 'Güneş', 'Öğle', 'İkindi', 'Akşam', 'Yatsı'];
-  const root = [fillMaxSize(), background(c.bg), cornerRadius(22), padding(12, 10, 12, 10)];
+  const root = [fillMaxSize(), background(c.bg), cornerRadius(22), padding(14, 12, 14, 12)];
 
   // Sıradaki vakit: şimdiden sonraki ilk an (veri bittiyse "uygulamayı açın")
   const now = Date.now();
@@ -85,10 +107,14 @@ function prayerLayout(props: PrayerWidgetProps, env: { colorScheme?: 'light' | '
   }
   const day = days[di];
   const tomorrow = Number(day.s) > now;
-  const head = (props.place ? props.place + ' · ' : '') + day.d;
+  const target = Number(day.a[pi]);
+  const mins = Math.max(0, Math.ceil((target - now) / 60000));
+  const fallback = Math.floor(mins / 60) + ':' + (mins % 60 < 10 ? '0' : '') + (mins % 60);
+  const label = (props.left || '{p}').replace('{p}', names[pi]);
+  const date = day.d + (day.h ? ' · ' + day.h : '');
   const when = day.t[pi] + (tomorrow && props.tomorrow ? ' · ' + props.tomorrow : '');
 
-  // Altı vakit: sıradaki vurgulu, geçenler soluk
+  // Altı vakit: sıradaki dolu hapta, geçenler soluk
   const cells = [];
   for (let k = 0; k < day.t.length && k < 6; k++) {
     const on = k === pi;
@@ -97,21 +123,35 @@ function prayerLayout(props: PrayerWidgetProps, env: { colorScheme?: 'light' | '
       <Column
         key={'p' + k}
         horizontalAlignment="center"
-        modifiers={on ? [width(41), background(c.tint), cornerRadius(10), padding(0, 5, 0, 5)] : [width(41), padding(0, 5, 0, 5)]}>
-        <Text color={on ? c.accent : c.muted} maxLines={1} style={{ fontSize: 11 }}>{names[k]}</Text>
-        <Text color={on ? c.accent : past ? c.muted : c.ink} maxLines={1} style={{ fontSize: 14, fontWeight: 'bold' }}>{day.t[k]}</Text>
+        modifiers={on ? [width(46), background(fill), cornerRadius(12), padding(0, 4, 0, 4)] : [width(46), padding(0, 4, 0, 4)]}>
+        <Text color={on ? onFill : c.muted} maxLines={1} style={{ fontSize: 11 }}>{names[k]}</Text>
+        <Text color={on ? onFill : past ? c.muted : c.ink} maxLines={1} style={{ fontSize: 15, fontWeight: 'bold' }}>{day.t[k]}</Text>
       </Column>,
     );
   }
 
   return (
     <Column modifiers={root} verticalAlignment="center">
-      <Text color={c.muted} maxLines={1} style={{ fontSize: 12 }}>{head}</Text>
-      <Row verticalAlignment="center">
-        <Text color={c.accent} maxLines={1} style={{ fontSize: 22, fontWeight: 'bold' }}>{names[pi]}</Text>
+      <Row verticalAlignment="center" modifiers={[fillMaxWidth()]}>
+        <Text color={c.ink} maxLines={1} style={{ fontSize: 13, fontWeight: 'bold' }}>{props.place || 'MATAF'}</Text>
         <Spacer modifiers={[width(8)]} />
-        <Text color={c.ink} maxLines={1} style={{ fontSize: 22, fontWeight: 'bold' }}>{when}</Text>
+        <Text color={c.muted} maxLines={1} style={{ fontSize: 12 }}>{date}</Text>
       </Row>
+      <Spacer modifiers={[height(6)]} />
+      <Box modifiers={[fillMaxWidth()]}>
+        <Box contentAlignment="centerStart" modifiers={[fillMaxWidth()]}>
+          <Column>
+            <Text color={c.accent} maxLines={1} style={{ fontSize: 12, fontWeight: 'bold' }}>{label}</Text>
+            <Countdown countdownTo={target} color={c.ink} maxLines={1} style={{ fontSize: 34, fontWeight: 'bold' }}>{fallback}</Countdown>
+          </Column>
+        </Box>
+        <Box contentAlignment="bottomEnd" modifiers={[fillMaxWidth()]}>
+          <Column horizontalAlignment="end">
+            <Text color={c.muted} maxLines={1} style={{ fontSize: 12 }}>{names[pi]}</Text>
+            <Text color={c.ink} maxLines={1} style={{ fontSize: 20, fontWeight: 'bold' }}>{when}</Text>
+          </Column>
+        </Box>
+      </Box>
       <Spacer modifiers={[height(8)]} />
       <Row modifiers={[fillMaxWidth()]} horizontalAlignment="center">{cells}</Row>
     </Column>

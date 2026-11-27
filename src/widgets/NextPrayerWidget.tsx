@@ -1,30 +1,34 @@
-// Küçük (2×2) ana ekran küçük uygulaması: sıradaki namaz büyük yazıyla ve ondan sonraki vakit.
-// PrayerWidget ile aynı veriyi alır; görünüm ayrı JS ortamında çizilir ('widget' yönergesi), bu yüzden
+// Küçük (2×2) ana ekran küçük uygulaması: sıradaki namaz, saniye saniye geri sayım, ondan sonraki vakit ve
+// hicrî tarih. PrayerWidget ile aynı veriyi alır; görünüm ayrı JS ortamında çizilir ('widget' yönergesi), bu yüzden
 // gövde dosyadaki başka hiçbir değere erişemez ve derleyici yardımcısı gerektiren sözdizimi kullanmaz.
+// Görünüm ve geri sayım için PrayerWidget.tsx başındaki nota bakın.
 import type * as UI from '@expo/ui/jetpack-compose';
 import type * as M from '@expo/ui/jetpack-compose/modifiers';
 import { createWidget } from 'expo-widgets';
+import type { ReactElement } from 'react';
 
-import type { PrayerWidgetProps } from './PrayerWidget';
+import type { CountdownProps, PrayerWidgetProps } from './PrayerWidget';
 
 declare const Column: typeof UI.Column;
+declare const Row: typeof UI.Row;
 declare const Text: typeof UI.Text;
 declare const Spacer: typeof UI.Spacer;
 declare const fillMaxSize: typeof M.fillMaxSize;
 declare const background: typeof M.background;
 declare const cornerRadius: typeof M.cornerRadius;
 declare const padding: typeof M.padding;
+declare const width: typeof M.width;
 declare const height: typeof M.height;
 
 function nextLayout(props: PrayerWidgetProps, env: { colorScheme?: 'light' | 'dark' }) {
   'widget';
-  const dk = props.mode === 'dark' || (props.mode !== 'light' && env.colorScheme === 'dark');
-  let c = dk ? props.dark : props.light;
+  let c = props.mode === 'glass' ? props.glass : undefined;
   if (!c) {
-    c = dk
-      ? { bg: '#17120E', ink: '#F6EFE7', muted: '#B3A393', accent: '#F7934F', tint: '#3A2214' }
-      : { bg: '#FBF7F1', ink: '#2A2018', muted: '#6F5D4C', accent: '#B4420F', tint: '#FBE4D3' };
+    const dk = props.mode === 'dark' || (props.mode !== 'light' && env.colorScheme === 'dark');
+    c = dk ? props.dark : props.light;
   }
+  if (!c) c = { bg: '#0000009E', ink: '#FFFFFF', muted: '#FFFFFFB8', accent: '#F7934F', tint: '#FFFFFF2E', fill: '#B4420F', onFill: '#FFFFFF' };
+  const Countdown = Text as unknown as (p: CountdownProps) => ReactElement;
   const days = props.days || [];
   const names = props.names && props.names.length === 6 ? props.names : ['İmsak', 'Güneş', 'Öğle', 'İkindi', 'Akşam', 'Yatsı'];
   const root = [fillMaxSize(), background(c.bg), cornerRadius(22), padding(14, 10, 12, 10)];
@@ -53,6 +57,9 @@ function nextLayout(props: PrayerWidgetProps, env: { colorScheme?: 'light' | 'da
   }
   const day = days[di];
   const tomorrow = Number(day.s) > now;
+  const target = Number(day.a[pi]);
+  const mins = Math.max(0, Math.ceil((target - now) / 60000));
+  const fallback = Math.floor(mins / 60) + ':' + (mins % 60 < 10 ? '0' : '') + (mins % 60);
   // Ondan sonraki vakit (gün biterse ertesi günün imsakı)
   let ni = di;
   let nj = pi + 1;
@@ -65,12 +72,17 @@ function nextLayout(props: PrayerWidgetProps, env: { colorScheme?: 'light' | 'da
 
   return (
     <Column modifiers={root} verticalAlignment="center">
-      <Text color={c.muted} maxLines={1} style={{ fontSize: 12 }}>{props.place || 'MATAF'}</Text>
+      <Text color={c.muted} maxLines={1} style={{ fontSize: 11 }}>{props.place || 'MATAF'}</Text>
       <Spacer modifiers={[height(2)]} />
-      <Text color={c.accent} maxLines={1} style={{ fontSize: 18, fontWeight: 'bold' }}>{names[pi] + (tomorrow && props.tomorrow ? ' · ' + props.tomorrow : '')}</Text>
-      <Text color={c.ink} maxLines={1} style={{ fontSize: 34, fontWeight: 'bold' }}>{day.t[pi]}</Text>
+      <Row verticalAlignment="center">
+        <Text color={c.accent} maxLines={1} style={{ fontSize: 16, fontWeight: 'bold' }}>{names[pi]}</Text>
+        <Spacer modifiers={[width(6)]} />
+        <Text color={c.ink} maxLines={1} style={{ fontSize: 16, fontWeight: 'bold' }}>{day.t[pi] + (tomorrow && props.tomorrow ? ' · ' + props.tomorrow : '')}</Text>
+      </Row>
+      <Countdown countdownTo={target} color={c.ink} maxLines={1} style={{ fontSize: 30, fontWeight: 'bold' }}>{fallback}</Countdown>
       <Spacer modifiers={[height(2)]} />
-      <Text color={c.muted} maxLines={1} style={{ fontSize: 12 }}>{then}</Text>
+      <Text color={c.muted} maxLines={1} style={{ fontSize: 11 }}>{then}</Text>
+      <Text color={c.muted} maxLines={1} style={{ fontSize: 11 }}>{day.h || day.d}</Text>
     </Column>
   );
 }

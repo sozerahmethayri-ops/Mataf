@@ -1,34 +1,45 @@
 // "Ana ekrana vakit kutusu ekle": yalnız Android'de ve başlatıcı destekliyorsa görünür. Dokununca dört boy
-// açılır (küçük, orta, liste, şerit); seçilen boy için başlatıcının onay penceresi açılır.
+// açılır (küçük, orta, liste, şerit); seçilen boy için başlatıcının onay penceresi açılır. Altında kutuların
+// görünümü seçilir (koyu şeffaf, uygulamanın teması, açık, koyu); seçim bütün kutulara hemen yazılır.
 import { useCallback, useEffect, useState } from 'react';
 import { AppState, Pressable, Text, View } from 'react-native';
 
 import { Icon, type IconName } from '@/components/Icon';
-import { ListRow } from '@/components/ui';
+import { ListRow, SelectRow } from '@/components/ui';
 import { C, fs } from '@/constants/theme';
 import { pick, useI18n } from '@/i18n';
 import type { Lang } from '@/i18n/strings';
 import { askExactAlarm, exactAlarmGranted } from '@/services/adhanNotify';
+import { useTheme } from '@/services/ThemeContext';
+import { WIDGET_STYLES, type WidgetStyle } from '@/services/widgetProps';
 import { pinPrayerWidget, refreshWidgetTicks, widgetCount, widgetPinSupported, type WidgetName } from '@/services/widgetSync';
 
 type T3 = { tr: string; en: string; ar: string };
 const L = {
   title: { tr: 'Ana ekrana vakit kutusu ekle', en: 'Add prayer times to home screen', ar: 'أضف المواقيت إلى الشاشة الرئيسية' },
-  sub: { tr: 'Dört boy: küçük, orta, liste ve ince şerit', en: 'Four sizes: small, medium, list and slim strip', ar: 'أربعة أحجام: صغير ومتوسط وقائمة وشريط' },
+  sub: { tr: 'Dört boy · saniye saniye geri sayım ve hicrî tarihle', en: 'Four sizes · live countdown and Hijri date', ar: 'أربعة أحجام · عدّ تنازلي حي وتاريخ هجري' },
   exact: { tr: 'Kutu vakit girince birkaç dakika geç değişebilir. Tam vaktinde değişsin diye “Alarmlar ve hatırlatıcılar” iznini açın ›', en: 'The widget may switch a few minutes late. Tap to allow “Alarms & reminders” so it changes exactly on time ›', ar: 'قد تتغير الأداة متأخرة بضع دقائق. اضغط للسماح بـ«المنبهات والتذكيرات» لتتغير في الوقت تمامًا ›' },
   added: { tr: 'Ana ekranda {n} tane ✓ · başka boy eklemek için dokunun', en: '{n} on your home screen ✓ · tap to add another size', ar: '{n} على الشاشة ✓ · اضغط لإضافة حجم آخر' },
   manual: { tr: 'Olmadıysa: ana ekranda boş yere basılı tutun → Widget’lar → MATAF', en: 'If nothing happened: long-press the home screen → Widgets → MATAF', ar: 'إن لم يحدث شيء: اضغط مطولًا على الشاشة الرئيسية ← الأدوات ← MATAF' },
+  style: { tr: 'Kutu görünümü', en: 'Widget look', ar: 'مظهر الأداة' },
+};
+const STYLES: Record<WidgetStyle, { label: T3; sub: T3 }> = {
+  glass: { label: { tr: 'Koyu şeffaf', en: 'Dark see-through', ar: 'داكن شفاف' }, sub: { tr: 'Duvar kâğıdı görünür, beyaz yazı', en: 'Wallpaper shows through, white text', ar: 'تظهر الخلفية، نص أبيض' } },
+  theme: { label: { tr: 'Uygulamanın temasıyla', en: 'Same as the app', ar: 'مثل التطبيق' }, sub: { tr: 'Uygulama açıksa açık, koyuysa koyu', en: 'Light or dark, following the app', ar: 'فاتح أو داكن حسب التطبيق' } },
+  light: { label: { tr: 'Açık', en: 'Light', ar: 'فاتح' }, sub: { tr: 'Krem zemin', en: 'Cream background', ar: 'خلفية كريمية' } },
+  dark: { label: { tr: 'Koyu', en: 'Dark', ar: 'داكن' }, sub: { tr: 'Koyu zemin', en: 'Dark background', ar: 'خلفية داكنة' } },
 };
 const SIZES: { name: WidgetName; icon: IconName; title: T3; sub: T3 }[] = [
-  { name: 'NextPrayerWidget', icon: 'clock', title: { tr: 'Küçük · sıradaki vakit', en: 'Small · next prayer', ar: 'صغير · الصلاة التالية' }, sub: { tr: 'Kare · büyük saat, ardından gelen vakit', en: 'Square · large time and the one after', ar: 'مربع · وقت كبير والتي تليها' } },
-  { name: 'PrayerWidget', icon: 'grid', title: { tr: 'Orta · günün vakitleri', en: 'Medium · today’s times', ar: 'متوسط · مواقيت اليوم' }, sub: { tr: 'Geniş · sıradaki vakit ve altı vakit yan yana', en: 'Wide · next prayer and all six side by side', ar: 'عريض · التالية والمواقيت الستة' } },
-  { name: 'PrayerListWidget', icon: 'list', title: { tr: 'Liste · alt alta', en: 'List · stacked', ar: 'قائمة · عمودية' }, sub: { tr: 'Uzun · altı vakit alt alta, okuması en kolay', en: 'Tall · six times stacked, easiest to read', ar: 'طويل · المواقيت الستة عموديًا' } },
-  { name: 'PrayerStripWidget', icon: 'minus', title: { tr: 'İnce şerit', en: 'Slim strip', ar: 'شريط رفيع' }, sub: { tr: 'Tek satır · sıradaki ve sonraki vakit', en: 'One line · next and following prayer', ar: 'سطر واحد · التالية والتي تليها' } },
+  { name: 'NextPrayerWidget', icon: 'clock', title: { tr: 'Küçük · sıradaki vakit', en: 'Small · next prayer', ar: 'صغير · الصلاة التالية' }, sub: { tr: 'Kare · sıradaki vakit ve geri sayım', en: 'Square · next prayer and countdown', ar: 'مربع · الصلاة التالية والعد التنازلي' } },
+  { name: 'PrayerWidget', icon: 'grid', title: { tr: 'Orta · günün vakitleri', en: 'Medium · today’s times', ar: 'متوسط · مواقيت اليوم' }, sub: { tr: 'Geniş · geri sayım, tarih ve altı vakit yan yana', en: 'Wide · countdown, date and all six side by side', ar: 'عريض · العد التنازلي والتاريخ والمواقيت الستة' } },
+  { name: 'PrayerListWidget', icon: 'list', title: { tr: 'Liste · alt alta', en: 'List · stacked', ar: 'قائمة · عمودية' }, sub: { tr: 'Uzun · geri sayım ve altı vakit alt alta', en: 'Tall · countdown and six times stacked', ar: 'طويل · العد التنازلي والمواقيت الستة عموديًا' } },
+  { name: 'PrayerStripWidget', icon: 'minus', title: { tr: 'İnce şerit', en: 'Slim strip', ar: 'شريط رفيع' }, sub: { tr: 'Tek satır · sıradaki vakit ve geri sayım', en: 'One line · next prayer and countdown', ar: 'سطر واحد · التالية والعد التنازلي' } },
 ];
 
 export function WidgetPinRow() {
   const { lang } = useI18n();
   const lg = lang as Lang;
+  const { prefs, setTheme } = useTheme();
   const [supported] = useState(widgetPinSupported);
   const [count, setCount] = useState(widgetCount);
   const [open, setOpen] = useState(false);
@@ -71,6 +82,9 @@ export function WidgetPinRow() {
           ))}
         </View>
       )}
+      <SelectRow<WidgetStyle> title={pick(L.style, lg)} value={prefs.widget ?? 'glass'} onChange={(widget) => setTheme({ widget })}
+        left={<Icon name="palette" size={20} color={C.accent} />}
+        options={WIDGET_STYLES.map((v) => ({ value: v, label: pick(STYLES[v].label, lg), sub: pick(STYLES[v].sub, lg) }))} />
     </View>
   );
 }

@@ -1,15 +1,18 @@
-// Uzun (2×3) ana ekran küçük uygulaması: altı vakit alt alta, sıradaki vurgulu, geçenler soluk.
-// PrayerWidget ile aynı veriyi alır; görünüm ayrı JS ortamında çizilir ('widget' yönergesi).
-// Glance bir Column/Row içinde en çok 10 öğe çizer; fazlası sessizce kesilir. Bu yüzden altı satır
-// ayrı bir Column'da, aralarında Spacer olmadan durur (0.12.0'da Akşam ve Yatsı kesiliyordu).
+// Uzun (2×3) ana ekran küçük uygulaması: yer ve hicrî tarih, saniye saniye geri sayım, altı vakit alt alta
+// (sıradaki dolu renkli hapta). PrayerWidget ile aynı veriyi alır; görünüm ayrı JS ortamında çizilir ('widget'
+// yönergesi), bu yüzden gövde dosyadaki başka değere erişemez ve derleyici yardımcısı gerektiren sözdizimi
+// kullanmaz. Glance bir Column'da en çok 10 çocuk çizer: satırlar ayrı bir Column'da. Görünüm ve geri sayım için
+// PrayerWidget.tsx başındaki nota bakın.
 import type * as UI from '@expo/ui/jetpack-compose';
 import type * as M from '@expo/ui/jetpack-compose/modifiers';
 import { createWidget } from 'expo-widgets';
+import type { ReactElement } from 'react';
 
-import type { PrayerWidgetProps } from './PrayerWidget';
+import type { CountdownProps, PrayerWidgetProps } from './PrayerWidget';
 
 declare const Box: typeof UI.Box;
 declare const Column: typeof UI.Column;
+declare const Row: typeof UI.Row;
 declare const Text: typeof UI.Text;
 declare const Spacer: typeof UI.Spacer;
 declare const fillMaxSize: typeof M.fillMaxSize;
@@ -17,17 +20,20 @@ declare const fillMaxWidth: typeof M.fillMaxWidth;
 declare const background: typeof M.background;
 declare const cornerRadius: typeof M.cornerRadius;
 declare const padding: typeof M.padding;
+declare const width: typeof M.width;
 declare const height: typeof M.height;
 
 function listLayout(props: PrayerWidgetProps, env: { colorScheme?: 'light' | 'dark' }) {
   'widget';
-  const dk = props.mode === 'dark' || (props.mode !== 'light' && env.colorScheme === 'dark');
-  let c = dk ? props.dark : props.light;
+  let c = props.mode === 'glass' ? props.glass : undefined;
   if (!c) {
-    c = dk
-      ? { bg: '#17120E', ink: '#F6EFE7', muted: '#B3A393', accent: '#F7934F', tint: '#3A2214' }
-      : { bg: '#FBF7F1', ink: '#2A2018', muted: '#6F5D4C', accent: '#B4420F', tint: '#FBE4D3' };
+    const dk = props.mode === 'dark' || (props.mode !== 'light' && env.colorScheme === 'dark');
+    c = dk ? props.dark : props.light;
   }
+  if (!c) c = { bg: '#0000009E', ink: '#FFFFFF', muted: '#FFFFFFB8', accent: '#F7934F', tint: '#FFFFFF2E', fill: '#B4420F', onFill: '#FFFFFF' };
+  const fill = c.fill || c.accent;
+  const onFill = c.onFill || c.bg;
+  const Countdown = Text as unknown as (p: CountdownProps) => ReactElement;
   const days = props.days || [];
   const names = props.names && props.names.length === 6 ? props.names : ['İmsak', 'Güneş', 'Öğle', 'İkindi', 'Akşam', 'Yatsı'];
   const root = [fillMaxSize(), background(c.bg), cornerRadius(22), padding(10, 10, 10, 10)];
@@ -56,19 +62,22 @@ function listLayout(props: PrayerWidgetProps, env: { colorScheme?: 'light' | 'da
   }
   const day = days[di];
   const tomorrow = Number(day.s) > now;
-  const head = (props.place ? props.place + ' · ' : '') + (tomorrow && props.tomorrow ? props.tomorrow : day.d);
+  const target = Number(day.a[pi]);
+  const mins = Math.max(0, Math.ceil((target - now) / 60000));
+  const fallback = Math.floor(mins / 60) + ':' + (mins % 60 < 10 ? '0' : '') + (mins % 60);
+  const label = (props.left || '{p}').replace('{p}', names[pi]) + (tomorrow && props.tomorrow ? ' · ' + props.tomorrow : '');
 
   const rows = [];
   for (let k = 0; k < day.t.length && k < 6; k++) {
     const on = k === pi;
     const past = !tomorrow && k < pi;
-    const col = on ? c.accent : past ? c.muted : c.ink;
+    const col = on ? onFill : past ? c.muted : c.ink;
     rows.push(
-      <Box key={'r' + k} modifiers={on ? [fillMaxWidth(), height(28), background(c.tint), cornerRadius(10)] : [fillMaxWidth(), height(28)]}>
-        <Box contentAlignment="centerStart" modifiers={[fillMaxWidth(), height(28), padding(8, 0, 8, 0)]}>
+      <Box key={'r' + k} modifiers={on ? [fillMaxWidth(), height(25), background(fill), cornerRadius(10)] : [fillMaxWidth(), height(25)]}>
+        <Box contentAlignment="centerStart" modifiers={[fillMaxWidth(), height(25), padding(8, 0, 8, 0)]}>
           <Text color={col} maxLines={1} style={{ fontSize: 14, fontWeight: on ? 'bold' : 'normal' }}>{names[k]}</Text>
         </Box>
-        <Box contentAlignment="centerEnd" modifiers={[fillMaxWidth(), height(28), padding(8, 0, 8, 0)]}>
+        <Box contentAlignment="centerEnd" modifiers={[fillMaxWidth(), height(25), padding(8, 0, 8, 0)]}>
           <Text color={col} maxLines={1} style={{ fontSize: 15, fontWeight: 'bold' }}>{day.t[k]}</Text>
         </Box>
       </Box>,
@@ -77,7 +86,16 @@ function listLayout(props: PrayerWidgetProps, env: { colorScheme?: 'light' | 'da
 
   return (
     <Column modifiers={root} verticalAlignment="center">
-      <Text color={c.muted} maxLines={1} style={{ fontSize: 12 }}>{head}</Text>
+      <Row verticalAlignment="center" modifiers={[padding(4, 0, 4, 0)]}>
+        <Text color={c.ink} maxLines={1} style={{ fontSize: 13, fontWeight: 'bold' }}>{props.place || 'MATAF'}</Text>
+        <Spacer modifiers={[width(6)]} />
+        <Text color={c.muted} maxLines={1} style={{ fontSize: 11 }}>{day.h || day.d}</Text>
+      </Row>
+      <Spacer modifiers={[height(4)]} />
+      <Column modifiers={[padding(4, 0, 4, 0)]}>
+        <Text color={c.accent} maxLines={1} style={{ fontSize: 11, fontWeight: 'bold' }}>{label}</Text>
+        <Countdown countdownTo={target} color={c.ink} maxLines={1} style={{ fontSize: 26, fontWeight: 'bold' }}>{fallback}</Countdown>
+      </Column>
       <Spacer modifiers={[height(6)]} />
       <Column modifiers={[fillMaxWidth()]}>{rows}</Column>
     </Column>

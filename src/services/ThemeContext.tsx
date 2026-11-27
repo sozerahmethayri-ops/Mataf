@@ -8,6 +8,7 @@ import { useColorScheme, View } from 'react-native';
 
 import { C, applyTextScale, applyTheme, type PaletteId, type ThemeMode } from '@/constants/theme';
 import { usePersisted } from './usePersisted';
+import type { WidgetStyle } from './widgetProps';
 
 export type HomeId = 'vakit' | 'vakitler' | 'kuran' | 'harita' | 'tavaf' | 'zikir' | 'hadis';
 export type ThemePrefs = {
@@ -27,8 +28,10 @@ export type ThemePrefs = {
   haptics: boolean;
   /** Sekmeler arasında kaydırarak geçiş */
   swipeTabs: boolean;
+  /** Ana ekran kutularının görünümü (varsayılan koyu şeffaf, 0.22.0) */
+  widget: WidgetStyle;
 };
-const DEFAULTS: ThemePrefs = { mode: 'system', palette: 'kabe', text: 1, arabic: 1, home: 'vakit', map3d: true, reduceMotion: false, haptics: true, swipeTabs: true };
+const DEFAULTS: ThemePrefs = { mode: 'system', palette: 'kabe', text: 1, arabic: 1, home: 'vakit', map3d: true, reduceMotion: false, haptics: true, swipeTabs: true, widget: 'glass' };
 type Ctx = { prefs: ThemePrefs; dark: boolean; key: string; setTheme: (p: Partial<ThemePrefs>) => void };
 const ThemeCtx = createContext<Ctx | null>(null);
 

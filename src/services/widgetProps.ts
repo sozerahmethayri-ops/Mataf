@@ -2,7 +2,7 @@
 // Saf işlev (React Native'e bağlı değil): vakit hesabı ve biçimlendirme dışarıdan verilir; testlerde de çalışır.
 import { colorsFor, type Colors, type PaletteId, type ThemeMode } from '@/constants/theme';
 import type { Lang } from '@/i18n/strings';
-import type { PrayerWidgetColors, PrayerWidgetDay, PrayerWidgetProps } from '@/widgets/PrayerWidget';
+import type { PrayerWidgetColors, PrayerWidgetDay, PrayerWidgetMode, PrayerWidgetProps } from '@/widgets/PrayerWidget';
 import type { PrayerLogWidgetProps } from '@/widgets/PrayerLogWidget';
 import { dayKey, type PrayerLog } from './prayerLog';
 
@@ -14,6 +14,8 @@ const L = {
   next: { tr: 'Sıradaki:', en: 'Next:', ar: 'التالية:' },
   tomorrow: { tr: 'yarın', en: 'tomorrow', ar: 'غدًا' },
   after: { tr: 'Sonra', en: 'Then', ar: 'ثم' },
+  left: { tr: '{p} vaktine kalan', en: 'Time until {p}', ar: 'المتبقي على {p}' },
+  remain: { tr: 'kaldı', en: 'left', ar: 'متبقٍ' },
   stale: { tr: 'Güncellemek için MATAF’ı açın', en: 'Open MATAF to refresh', ar: 'افتح MATAF للتحديث' },
   empty: { tr: 'Vakitler için MATAF’ı bir kez açın', en: 'Open MATAF once to load prayer times', ar: 'افتح MATAF مرة لتحميل المواقيت' },
   makkah: { tr: 'Mekke', en: 'Makkah', ar: 'مكة' },
@@ -27,7 +29,23 @@ export function widgetPlace(label: string, lang: Lang) {
   return label;
 }
 
-const pickColors = (c: Colors): PrayerWidgetColors => ({ bg: c.bg, ink: c.ink, muted: c.muted, accent: c.accent, tint: c.accentTint });
+const pickColors = (c: Colors): PrayerWidgetColors => ({ bg: c.bg, ink: c.ink, muted: c.muted, accent: c.accent, tint: c.accentTint, fill: c.accent, onFill: c.onAccent });
+
+/**
+ * Kutu görünümü (Ayarlar ve Vakitler → kutu satırı): glass = koyu şeffaf, duvar kâğıdı görünür (varsayılan, 0.22.0);
+ * theme = uygulamanın açık/koyu teması; light ve dark sabit.
+ */
+export type WidgetStyle = 'glass' | 'theme' | 'light' | 'dark';
+export const WIDGET_STYLES: WidgetStyle[] = ['glass', 'theme', 'light', 'dark'];
+export const widgetMode = (style: WidgetStyle | undefined, theme: ThemeMode): PrayerWidgetMode =>
+  style === 'glass' || style === undefined ? 'glass' : style === 'theme' ? theme : style;
+
+/** Koyu şeffaf: %62 siyah zemin, beyaz yazı; vurgu yazısı koyu temanın, dolu hap açık temanın vurgusu (beyaz yazıyla AA) */
+export function glassColors(palette: PaletteId): PrayerWidgetColors {
+  const l = colorsFor(false, palette);
+  const d = colorsFor(true, palette);
+  return { bg: '#0000009E', ink: '#FFFFFF', muted: '#FFFFFFB8', accent: d.accent, tint: '#FFFFFF2E', fill: l.accent, onFill: l.onAccent };
+}
 
 export type WidgetPropsInput = {
   /** Bugün (saat önemsiz) */
@@ -38,12 +56,16 @@ export type WidgetPropsInput = {
   fmt: (d: Date) => string;
   /** "25 Kasım Çar" */
   dayLabel: (d: Date) => string;
+  /** "17 Cemâziyelâhir 1448" (verilmezse yazılmaz) */
+  hijriLabel?: (d: Date) => string;
   place: string;
   /** 6 kısa vakit adı (İmsak … Yatsı) */
   names: string[];
   lang: Lang;
   palette: PaletteId;
   mode: ThemeMode;
+  /** Kutu görünümü (verilmezse koyu şeffaf) */
+  style?: WidgetStyle;
   days?: number;
 };
 
@@ -56,6 +78,7 @@ export function buildWidgetProps(o: WidgetPropsInput): PrayerWidgetProps {
     days.push({
       s: String(d0.getTime()),
       d: o.dayLabel(d0),
+      ...(o.hijriLabel ? { h: o.hijriLabel(d0) } : null),
       t: WIDGET_KEYS.map((k) => o.fmt(tt[k])),
       a: WIDGET_KEYS.map((k) => String(tt[k].getTime())),
     });
@@ -68,11 +91,14 @@ export function buildWidgetProps(o: WidgetPropsInput): PrayerWidgetProps {
     next: L.next[o.lang],
     tomorrow: L.tomorrow[o.lang],
     after: L.after[o.lang],
+    left: L.left[o.lang],
+    remain: L.remain[o.lang],
     stale: L.stale[o.lang],
     empty: L.empty[o.lang],
-    mode: o.mode,
+    mode: widgetMode(o.style, o.mode),
     light: pickColors(colorsFor(false, o.palette)),
     dark: pickColors(colorsFor(true, o.palette)),
+    glass: glassColors(o.palette),
   };
 }
 
@@ -105,6 +131,7 @@ export type LogWidgetContext = {
   hatim?: string;
   palette: PaletteId;
   mode: ThemeMode;
+  style?: WidgetStyle;
 };
 
 /** Son üç günün işaretleri (bugün, dün, önceki gün); küçük uygulama bugünü kendisi seçer */
@@ -122,8 +149,9 @@ export function buildLogWidgetProps(o: LogWidgetContext & { log: PrayerLog; toda
     allDone: o.allDone,
     hatim: o.hatim,
     empty: o.empty,
-    mode: o.mode,
+    mode: widgetMode(o.style, o.mode),
     light: pickColors(colorsFor(false, o.palette)),
     dark: pickColors(colorsFor(true, o.palette)),
+    glass: glassColors(o.palette),
   };
 }
