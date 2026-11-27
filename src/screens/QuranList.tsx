@@ -25,9 +25,11 @@ const L = {
   done: { tr: 'tamamlandı', en: 'done', ar: 'مكتمل' },
   ayah: { tr: '{n}. ayet', en: 'verse {n}', ar: 'الآية {n}' },
   search: { tr: 'Sûre ara…', en: 'Search surah…', ar: 'ابحث عن سورة…' },
+  mushaf: { tr: 'Mushaf · sayfa sayfa, sağa sola çevirerek', en: 'Mushaf · page by page, swipe to turn', ar: 'المصحف · صفحة صفحة بالسحب' },
+  mushafSub: { tr: 'Kaldığınız yer: sayfa {p}', en: 'Where you left off: page {p}', ar: 'آخر موضع: صفحة {p}' },
 } satisfies Record<string, ML>;
 
-function Marks({ items, lang, list, onRemove }: { items: Bookmark[]; lang: 'tr' | 'en' | 'ar'; list: SurahMeta[] | null; onRemove: (id: string) => void }) {
+function Marks({ items, lang, list, lastPage, onRemove }: { items: Bookmark[]; lang: 'tr' | 'en' | 'ar'; list: SurahMeta[] | null; lastPage: number; onRemove: (id: string) => void }) {
   return (
     <View style={{ gap: 8, marginBottom: 14 }}>
       <Text style={[T.section, { marginTop: 4 }]}>{pick(L.marks, lang)}</Text>
@@ -57,6 +59,14 @@ function Marks({ items, lang, list, onRemove }: { items: Bookmark[]; lang: 'tr' 
         );
       })}
       <Text style={T.small}>{pick(L.hint, lang)}</Text>
+      <Pressable onPress={() => router.push({ pathname: '/mushaf', params: { p: String(lastPage) } })} accessibilityRole="button" style={({ pressed }) => ({ minHeight: 52, flexDirection: 'row', alignItems: 'center', gap: 8, opacity: pressed ? 0.7 : 1 })}>
+        <Icon name="book" size={18} color={C.accent} />
+        <View style={{ flex: 1 }}>
+          <Text style={{ fontSize: fs(15), fontWeight: '700', color: C.accent }}>{pick(L.mushaf, lang)}</Text>
+          <Text style={T.small}>{pick(L.mushafSub, lang).replace('{p}', String(lastPage))}</Text>
+        </View>
+        <Icon name="chevron" size={16} color={C.muted} />
+      </Pressable>
       <Pressable onPress={() => router.push('/hatim')} accessibilityRole="button" style={({ pressed }) => ({ minHeight: 44, flexDirection: 'row', alignItems: 'center', gap: 8, opacity: pressed ? 0.7 : 1 })}>
         <Icon name="bookmark" size={18} color={C.accent} />
         <Text style={{ flex: 1, fontSize: fs(15), fontWeight: '700', color: C.accent }}>{lang === 'en' ? 'Khatm plan: a daily portion' : lang === 'ar' ? 'خطة الختمة: ورد يومي' : 'Hatim planı: her gün bir bölüm'}</Text>
@@ -73,7 +83,7 @@ function Marks({ items, lang, list, onRemove }: { items: Bookmark[]; lang: 'tr' 
 
 export default function QuranList() {
   const { t, lang } = useI18n();
-  const { bookmarks, removeBookmark } = useQuranPrefs();
+  const { prefs, bookmarks, removeBookmark } = useQuranPrefs();
   const [list, setList] = useState<SurahMeta[] | null>(null);
   const [offline, setOffline] = useState(false);
   const [q, setQ] = useState('');
@@ -103,7 +113,7 @@ export default function QuranList() {
           data={filtered}
           keyExtractor={(s) => String(s.number)}
           contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 24 }}
-          ListHeaderComponent={q ? undefined : <Marks items={bookmarks} lang={lang} list={list} onRemove={removeBookmark} />}
+          ListHeaderComponent={q ? undefined : <Marks items={bookmarks} lang={lang} list={list} lastPage={prefs.page ?? 1} onRemove={removeBookmark} />}
           renderItem={({ item: s }) => (
             <Pressable onPress={() => router.push({ pathname: '/kuran/[sure]', params: { sure: String(s.number) } })}
               style={{ minHeight: 60, flexDirection: 'row', alignItems: 'center', gap: 12, borderBottomWidth: 1, borderBottomColor: C.border }}>

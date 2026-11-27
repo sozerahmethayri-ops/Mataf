@@ -2,6 +2,7 @@
 // Biçim: [kural[metin]  ya da  [kural:sayı[metin]  — kural tek harf (h, l, n, p, m, o, q, c, f, w, i, a, u, d, b, g, s).
 // Tanınmayan ya da yarım kalan işaret metne karışmasın diye temizlenir (en kötü durumda renksiz metin).
 // React'sız; testleri scripts/check-logic.ts'te.
+import { startsWithBasmala } from './basmala';
 
 export type RuleId = 'h' | 's' | 'l' | 'n' | 'p' | 'm' | 'q' | 'o' | 'c' | 'f' | 'w' | 'i' | 'a' | 'u' | 'd' | 'b' | 'g';
 export type Seg = { t: string; r?: RuleId };
@@ -54,7 +55,7 @@ export function dropWords(segs: Seg[], n: number): Seg[] {
 /** 1. âyetin başındaki besmeleyi ayırır (Fâtiha ve Tevbe hariç); Uthmani metindeki stripBasmala ile aynı kural. */
 export function stripTajweedBasmala(surah: number, ayah: number, segs: Seg[]): Seg[] {
   if (surah === 1 || surah === 9 || ayah !== 1) return segs;
-  const words = plainOf(segs).split(' ');
-  if (words.length > 4 && words[0].includes('سْمِ') && words[3].includes('رَّحِيمِ')) return dropWords(segs, 4);
+  const words = plainOf(segs).split(' ').filter(Boolean);
+  if (words.length > 4 && startsWithBasmala(words)) return dropWords(segs, 4);
   return segs;
 }

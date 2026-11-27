@@ -8,7 +8,7 @@ import type * as UI from '@expo/ui/jetpack-compose';
 import type * as M from '@expo/ui/jetpack-compose/modifiers';
 import { createWidget } from 'expo-widgets';
 
-import type { PrayerWidgetColors } from './PrayerWidget';
+import type { PrayerWidgetColors, PrayerWidgetMode } from './PrayerWidget';
 
 declare const Box: typeof UI.Box;
 declare const Column: typeof UI.Column;
@@ -37,20 +37,19 @@ export type PrayerLogWidgetProps = {
   /** "Hatim %49" (hatim planı varsa) */
   hatim?: string;
   empty?: string;
-  mode?: 'system' | 'light' | 'dark';
+  mode?: PrayerWidgetMode;
   light?: PrayerWidgetColors;
   dark?: PrayerWidgetColors;
 };
 
 function logLayout(props: PrayerLogWidgetProps, env: { colorScheme?: 'light' | 'dark' }) {
   'widget';
+  // Görünüm vakit kutularıyla aynı (PrayerWidget.tsx): paletin koyu ya da açık tonu, zemin şeffaf olabilir
   const dk = props.mode === 'dark' || (props.mode !== 'light' && env.colorScheme === 'dark');
   let c = dk ? props.dark : props.light;
-  if (!c) {
-    c = dk
-      ? { bg: '#17120E', ink: '#F6EFE7', muted: '#B3A393', accent: '#F7934F', tint: '#3A2214' }
-      : { bg: '#FBF7F1', ink: '#2A2018', muted: '#6F5D4C', accent: '#B4420F', tint: '#FBE4D3' };
-  }
+  if (!c) c = { bg: '#17120E99', ink: '#F6EFE7', muted: '#B3A393', accent: '#F7934F', tint: '#3A2214', fill: '#F7934F', onFill: '#1F0F05' };
+  const fill = c.fill || c.accent;
+  const onFill = c.onFill || c.bg;
   const root = [fillMaxSize(), background(c.bg), cornerRadius(22), padding(14, 10, 14, 10)];
   const days = props.days || [];
   if (days.length === 0) {
@@ -77,8 +76,8 @@ function logLayout(props: PrayerLogWidgetProps, env: { colorScheme?: 'light' | '
     const on = ((mask >> k) & 1) === 1;
     cells.push(
       <Column key={'n' + k} horizontalAlignment="center" modifiers={[width(52), padding(0, 2, 0, 2)]}>
-        <Box contentAlignment="center" modifiers={[width(30), height(30), background(on ? c.accent : c.tint), cornerRadius(15)]}>
-          <Text color={c.bg} maxLines={1} style={{ fontSize: 16, fontWeight: 'bold' }}>{on ? '✓' : ' '}</Text>
+        <Box contentAlignment="center" modifiers={[width(30), height(30), background(on ? fill : c.tint), cornerRadius(15)]}>
+          <Text color={onFill} maxLines={1} style={{ fontSize: 16, fontWeight: 'bold' }}>{on ? '✓' : ' '}</Text>
         </Box>
         <Spacer modifiers={[height(3)]} />
         <Text color={on ? c.ink : c.muted} maxLines={1} style={{ fontSize: 11 }}>{names[k]}</Text>

@@ -6,6 +6,7 @@ import { useEffect, useState } from 'react';
 import { QURAN_FONTS, quranFont, type QuranFont, type QuranFontId } from '@/data/quranFonts';
 
 const FILES: Record<Exclude<QuranFontId, 'system'>, number> = {
+  madina: require('../../assets/fonts/MatafMadina.ttf'),
   amiri: require('@expo-google-fonts/amiri-quran/400Regular/AmiriQuran_400Regular.ttf'),
   scheherazade: require('@expo-google-fonts/scheherazade-new/400Regular/ScheherazadeNew_400Regular.ttf'),
   naskh: require('@expo-google-fonts/noto-naskh-arabic/400Regular/NotoNaskhArabic_400Regular.ttf'),

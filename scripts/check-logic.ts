@@ -10,7 +10,8 @@ import { DUA_LIB, isQuranRef } from '../src/data/duas';
 import { TAWAF_DHIKR, type DuaText } from '../src/data/tawaf';
 import { OVERPASS_ENDPOINTS, bearingDeg, distanceM, findMosques, parseOverpass, parsePhotonMosques, pickMosques, type El, type Fetcher } from '../src/services/mosques';
 import { PALETTES, colorsFor, contrast, type PaletteId } from '../src/constants/theme';
-import { WIDGET_DAYS, buildLogWidgetProps, buildWidgetProps, widgetNext, widgetPlace, widgetTicks } from '../src/services/widgetProps';
+import { WIDGET_DAYS, buildLogWidgetProps, buildWidgetProps, widgetMode, widgetNext, withAlpha, widgetPlace, widgetTicks } from '../src/services/widgetProps';
+import { hijriText } from '../src/services/hijri';
 import { ARAFAT_AREA, HAC_PLACES, NAMIRA_MOSQUE } from '../src/data/osm/hacSites';
 import { MEMBER_COLORS, colorFor, freshness, inviteText, isValidCode, makeCode, normalizeCode, shouldSend, sortMembers, type GroupMember } from '../src/services/groupLogic';
 import { AREFE_DUA, CEMRE_TEKBIR, HAC_STEPS, MESAR_AYAH, TESRIK_TEKBIR } from '../src/data/hac';
@@ -30,17 +31,18 @@ import { UMRE_STEPS, IHRAM_RULES } from '../src/data/umre';
 import { zikirStats } from '../src/services/zikirStats';
 import { FULL_DAY, countDay, countDays, dayKey, isDone, lastDays as logDays, prune, sanitize, streak, toggle } from '../src/services/prayerLog';
 import { dailyIndex, dayNumber } from '../src/services/daily';
+import { stripBasmala } from '../src/services/basmala';
 import { PRAYED_ACTION, prayedFromResponse } from '../src/services/prayedTask.types';
 import { DICTS } from '../src/i18n/strings';
 import { JUZ_STARTS, TOTAL_AYAH, cleanPlan, fromGlobal, hatimToday, juzOf, juzPos, readAtJuz, readFromMark, targetRead } from '../src/services/hatim';
-import { PAGE_START, pageOf } from '../src/data/quranPages';
+import { PAGE_START, fromGlobalAyah, pageAyahs, pageGlobalRange, pageOf } from '../src/data/quranPages';
 import { zikirToday } from '../src/services/zikirStats';
 import { CHECKLIST } from '../src/data/checklist';
 import { PHRASES } from '../src/data/phrases';
 import { dropWords, parseTajweed, plainOf, stripTajweedBasmala } from '../src/services/tajweed';
 import { SAJDAH, isSajdah, stripSajdahSign } from '../src/data/sajdah';
 import { OTHER_RULES, TAJWEED_RULES } from '../src/data/tajweed';
-import { QURAN_FONTS, lineFor, quranFont } from '../src/data/quranFonts';
+import { QURAN_FONTS, ayahMark, lineFor, quranFont } from '../src/data/quranFonts';
 // Node tür tanımları projede yok; dosya varlığına bakmak için düz require
 const { existsSync } = require('fs') as { existsSync: (path: string) => boolean };
 import { allTextDuas } from '../src/data/duas';
@@ -322,6 +324,32 @@ function simulate(o: Sim, st0: LapState = initialLap()) {
   ok(n3?.day === 1 && n3.prayer === 0 && n3.tomorrow === Number(wd[1].s) > t3, 'küçük uygulama: gece → imsak, "yarın" etiketi gün sınırına göre');
   ok(widgetNext(wp, Number(wd[29].a[5]) + 1) === null, 'küçük uygulama: veri bitince güncelleme istenir');
   ok(wp.light?.accent === PALETTES.kabe.light.accent && wp.dark?.accent === PALETTES.kabe.dark.accent && wp.dark?.bg !== wp.light?.bg, 'küçük uygulama: tema renkleri');
+}
+
+// ── Küçük uygulama görünümü (0.22.0: palet tonları, şeffaflık, geri sayım, hicrî tarih) ──
+{
+  const base = { start: new Date(2026, 10, 27, 9, 0), timesFor: (d: Date) => prayerTimes(21.4225, 39.8262, 'UmmAlQura', d), fmt: (d: Date) => `${d.getHours()}:${String(d.getMinutes()).padStart(2, '0')}`,
+    dayLabel: (d: Date) => String(d.getDate()), place: 'Mekke', names: ['İmsak', 'Güneş', 'Öğle', 'İkindi', 'Akşam', 'Yatsı'], lang: 'tr' as const, palette: 'kabe' as PaletteId, mode: 'system' as const };
+  const g = buildWidgetProps({ ...base, hijriLabel: (d) => hijriText(d, 'tr') });
+  const kd = colorsFor(true, 'kabe');
+  ok(g.mode === 'dark' && g.dark?.bg === kd.bg + '99' && g.dark.fill === kd.accent && g.dark.onFill === kd.onAccent,
+    `kutu görünümü: varsayılan koyu, %40 şeffaf zemin (${g.dark?.bg}), dolu hap paletin vurgusu`);
+  ok(withAlpha('#17120E', 1) === '#17120EFF' && withAlpha('#FBF7F1', 0.2) === '#FBF7F133' && withAlpha('#123456', 0) === '#12345600', 'kutu görünümü: saydamlık #RRGGBBAA');
+  const z = buildWidgetProps({ ...base, palette: 'zumrut', style: 'light', clear: 0 });
+  ok(z.mode === 'light' && z.light?.bg === colorsFor(false, 'zumrut').bg + 'FF' && z.light.accent === colorsFor(false, 'zumrut').accent && z.dark?.bg !== g.dark?.bg,
+    'kutu görünümü: açık seçimi, opak zemin, palet tonları');
+  ok(g.left === '{p} vaktine kalan' && g.remain === 'kaldı' && (g.days ?? []).every((d) => /^\d{1,2} \S.* \d{4}$/.test(d.h ?? '')), `kutu görünümü: geri sayım yazıları ve her günde hicrî tarih (${g.days?.[0]?.h})`);
+  ok(JSON.stringify(g).length < 14000, `kutu görünümü: veri küçük kalır (${JSON.stringify(g).length} bayt)`);
+  ok(widgetMode(undefined, 'dark') === 'dark' && widgetMode('theme', 'light') === 'light' && widgetMode('theme', 'system') === 'system' && widgetMode('light', 'dark') === 'light',
+    'kutu görünümü: seçim → çizim kipi');
+  ok(buildLogWidgetProps({ title: '', names: [], allDone: '', empty: '', palette: 'gul', mode: 'dark', style: 'theme', clear: 60, log: {}, today: new Date() }).dark?.bg === colorsFor(true, 'gul').bg + '66',
+    'kutu görünümü: takip kutusunda tema ve şeffaflık');
+  const weak: string[] = [];
+  for (const dark of [false, true]) for (const pid of Object.keys(PALETTES) as PaletteId[]) {
+    const c = colorsFor(dark, pid);
+    if (contrast(c.accent, c.onAccent) < 4.5) weak.push(`${pid}/${dark ? 'koyu' : 'açık'}`);
+  }
+  ok(weak.length === 0, `kutu görünümü: her palette dolu hap yazısı AA (zayıf: ${weak.join(', ') || 'yok'})`);
 }
 
 // ── Hac modu ──
@@ -988,9 +1016,11 @@ ok(shareLink({ lat: 21.4225, lng: 39.8262 }) === 'https://maps.google.com/?q=21.
 {
   const ids = QURAN_FONTS.map((f) => f.id);
   const pkg: Record<string, string> = { AmiriQuran: 'amiri-quran', ScheherazadeNew: 'scheherazade-new', NotoNaskhArabic: 'noto-naskh-arabic', Lateef: 'lateef' };
-  const files = QURAN_FONTS.filter((f) => f.family).map((f) => `node_modules/@expo-google-fonts/${pkg[f.family as string]}/400Regular/${f.family}_400Regular.ttf`);
-  ok(new Set(ids).size === ids.length && ids[0] === 'system' && quranFont('yok').id === 'system' && files.length === 4 && files.every((p2) => existsSync(p2)),
-    `Kur’an hatları: ${ids.length} seçenek, yazı dosyaları paketlerde`);
+  const files = QURAN_FONTS.filter((f) => f.family).map((f) => (f.family === 'MatafMadina' ? 'assets/fonts/MatafMadina.ttf' : `node_modules/@expo-google-fonts/${pkg[f.family as string]}/400Regular/${f.family}_400Regular.ttf`));
+  ok(new Set(ids).size === ids.length && ids[0] === 'system' && files.length === 5 && files.every((p2) => existsSync(p2)) && existsSync('assets/fonts/MatafMadina-OFL.txt'),
+    `Kur’an hatları: ${ids.length} seçenek, yazı dosyaları ve lisans yerinde`);
+  ok(quranFont(undefined).id === 'madina' && quranFont('yok').id === 'madina' && quranFont('system').id === 'system', 'Kur’an hatları: seçilmediyse Medine Mushafı, cihaz yazısı yalnız seçilince');
+  ok(ayahMark(quranFont('madina'), 286) === '\u06DD٢٨٦' && ayahMark(quranFont('amiri'), 7) === '\uFD3F٧\uFD3E', 'Kur’an hatları: âyet sonu Medine hattında ۝, diğerlerinde ﴿﴾');
   ok(lineFor(quranFont('amiri'), 24, 40) === 60 && lineFor(quranFont('system'), 24, 40) === 40 && QURAN_FONTS.every((f) => f.id === 'system' || f.minLine >= 1.45),
     'Kur’an hatları: satır yüksekliği yazının doğal yüksekliğinden kısa olmaz');
 }
@@ -1040,6 +1070,42 @@ ok(shareLink({ lat: 21.4225, lng: 39.8262 }) === 'https://maps.google.com/?q=21.
   const vars = (x?: string) => (x?.match(/\{\w+\}/g) ?? []).sort().join();
   const bad = trKeys.filter((k) => vars(DICTS.tr[k as keyof typeof DICTS.tr]) !== vars(DICTS.ar[k as keyof typeof DICTS.ar]) || vars(DICTS.tr[k as keyof typeof DICTS.tr]) !== vars(DICTS.en[k as keyof typeof DICTS.en]));
   ok(bad.length === 0, `sözlük: {değişken}ler üç dilde aynı (farklı: ${bad.slice(0, 5).join(', ') || 'yok'})`);
+}
+
+// ── Mushaf sayfaları (sayfa sayfa okuma) ──
+{
+  const key = (x: [number, number]) => x.join(':');
+  const p1 = pageAyahs(1);
+  const p2 = pageAyahs(2);
+  const p604 = pageAyahs(604);
+  ok(p1.length === 7 && key(p1[0]) === '1:1' && key(p1[6]) === '1:7', 'mushaf: 1. sayfa Fâtiha 1–7');
+  ok(key(p2[0]) === '2:1' && key(p2[p2.length - 1]) === '2:5', `mushaf: 2. sayfa Bakara 1–5 (${key(p2[p2.length - 1])})`);
+  ok(key(p604[0]) === '112:1' && key(p604[p604.length - 1]) === '114:6' && p604.length === 15, 'mushaf: 604. sayfa İhlâs, Felak, Nâs');
+  let total = 0;
+  let order = true;
+  let prev = 0;
+  for (let p = 1; p <= 604; p++) {
+    const [g0, g1] = pageGlobalRange(p);
+    if (g0 !== prev + 1 || g1 < g0) order = false;
+    prev = g1;
+    total += pageAyahs(p).length;
+  }
+  ok(order && prev === 6236 && total === 6236, 'mushaf: 604 sayfa boşluksuz, 6236 âyet');
+  ok(key(fromGlobalAyah(8)) === '2:1' && key(fromGlobalAyah(6236)) === '114:6' && pageAyahs(pageOf(18, 10)).some((x) => key(x) === '18:10'),
+    'mushaf: genel numara → sûre:âyet; âyetin sayfası onu içerir');
+}
+
+// ── Besmele ayırma (sûre ve sayfa uçları; hareke sırasından bağımsız) ──
+{
+  const alm = 'الٓمٓ';
+  const b1 = 'بِسْمِ ٱللَّهِ ٱلرَّحْمَٰنِ ٱلرَّحِيمِ';
+  // Aynı besmele: şedde ile fetha ters sırada, tatvilli rahmân ve başta BOM
+  const b2 = '\uFEFFبِسْمِ ٱللَّهِ ٱلر\u064E\u0651حْمَـٰنِ ٱلر\u064E\u0651حِيمِ';
+  ok(stripBasmala(2, 1, `${b1} ${alm}`) === alm && stripBasmala(2, 1, `${b2}  ${alm}`) === alm, 'besmele: 1. âyetin başındaki besmele ayrılır (hareke sırası, tatvil, BOM fark etmez)');
+  ok(stripBasmala(1, 1, b1) === b1 && stripBasmala(9, 1, 'بَرَآءَةٌ مِّنَ ٱللَّهِ') === 'بَرَآءَةٌ مِّنَ ٱللَّهِ' && stripBasmala(2, 2, `${b1} ${alm}`) === `${b1} ${alm}`,
+    'besmele: Fâtiha, Tevbe ve 2. âyet dokunulmaz');
+  const neml30 = 'إِنَّهُۥ مِن سُلَيْمَٰنَ وَإِنَّهُۥ بِسْمِ ٱللَّهِ ٱلرَّحْمَٰنِ ٱلرَّحِيمِ';
+  ok(stripBasmala(27, 30, neml30) === neml30, 'besmele: Neml 30 (âyet içindeki besmele) bozulmaz');
 }
 
 mosqueChecks().then(transitChecks).then(() => process.exit(fails ? 1 : 0));

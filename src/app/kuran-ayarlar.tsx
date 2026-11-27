@@ -5,7 +5,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Icon } from '@/components/Icon';
 import { Header, SectionTitle, Segmented, T } from '@/components/ui';
 import { C, fs, fsAr } from '@/constants/theme';
-import { QURAN_FONTS, lineFor } from '@/data/quranFonts';
+import { QURAN_FONTS, lineFor, quranFont } from '@/data/quranFonts';
 import { LANG_NAMES, MEAL_AUDIO, RECITERS, TAFSIRS } from '@/data/quranEditions';
 import type { ML } from '@/data/sites';
 import { pick, useI18n } from '@/i18n';
@@ -59,7 +59,7 @@ export default function QuranSettings() {
   const [tafLang, setTafLang] = useState<string>(tafCurrent);
   // Hat önizlemesi: bütün yazı tipleri yüklenir (uygulamanın içinde, internet gerekmez)
   const fontsReady = useAllQuranFonts();
-  const fontNow = prefs.font ?? 'system';
+  const fontNow = quranFont(prefs.font).id;
 
   return (
     <ScrollView style={{ flex: 1, backgroundColor: C.bg }} contentContainerStyle={{ padding: 16, paddingTop: insets.top + 8, paddingBottom: insets.bottom + 32, gap: 10 }}>

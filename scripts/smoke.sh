@@ -119,6 +119,13 @@ for wname in NextPrayerWidget PrayerListWidget PrayerStripWidget PrayerLogWidget
   echo "$wname eklendi: $ok2" >> smoke/status.txt
   adb shell input keyevent KEYCODE_HOME; sleep 6; shot "$n-widget-$wname"; n=$((n + 1))
 done
+# Başlatıcı Ana ekran tuşunda her zaman kutunun konduğu sayfayı açmıyor: ilk sayfadan başlayıp sayfaları tek tek çek
+adb shell input keyevent KEYCODE_HOME; sleep 2; adb shell input keyevent KEYCODE_HOME; sleep 3
+shot "48-ana-ekran-0"
+for p in 1 2 3 4; do
+  adb shell input swipe $(( W * 85 / 100 )) $(( H / 2 )) $(( W * 15 / 100 )) $(( H / 2 )) 250; sleep 4
+  shot "48-ana-ekran-$p"
+done
 adb shell dumpsys appwidget > smoke/widget.txt 2>&1 || true
 # Vakit anında yenileme: uygulama sonraki vakitler için alarm kurdu mu?
 adb shell dumpsys alarm > smoke/alarm-all.txt 2>/dev/null || true
@@ -138,6 +145,11 @@ adb shell am force-stop "$PKG"; sleep 1
 open "ulasim?to=21.4225,39.8262&name=Harem"; step "36-otobus-tarifi" 14
 adb shell input swipe $(( W / 2 )) $(( H * 70 / 100 )) $(( W / 2 )) $(( H * 35 / 100 )) 400; step "37-otobus-adimlar" 3
 adb emu geo fix 39.82625 21.42295 || true; sleep 2
+
+# Mushaf sayfa sayfa (0.22.0): 2. sayfa açılır; parmak soldan sağa kayınca sonraki sayfa (3) gelmeli
+open "mushaf?p=2"; step "38-mushaf-2" 10
+adb shell input swipe $(( W * 15 / 100 )) $(( H / 2 )) $(( W * 85 / 100 )) $(( H / 2 )) 250
+step "39-mushaf-cevir" 8
 
 # Tema değiştirme (koyu/açık) sonrası uygulama açık kalmalı: Ayarlar'da tema satırına dokun
 open ayarlar; sleep 5

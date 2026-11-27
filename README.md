@@ -2,6 +2,8 @@
 
 Mekke ve Medine'deki ziyaretçiler için iOS ve Android uygulaması:
 
+- **Mushaf sayfa sayfa, Medine hattı, dönen 3B harita, yeni kutular (0.22.0)** — Mushaf artık kâğıt mushaf gibi sayfa sayfa: 604 sayfa, parmağı soldan sağa kaydırınca sonraki sayfa gelir; tecvid renkleri açılıp kapanır, kaldığınız sayfa hatırlanır (Kur'an listesinde “Mushaf · sayfa sayfa”). Yeni hat “Medine Mushafı” varsayılan oldu (DigitalKhatt, açık lisans): Medine mushafının yazısı, âyet sonlarında numaralı daire; cihazın yazısı bazı telefonlarda harekeleri bozuyordu, isteyen Okuma ayarlarından yine seçebilir. Okuma ekranında yazı büyütme ve küçültme artık takılmıyor. 3B Harem haritası döndürülebiliyor: sol alttaki ↺ ↻ ile 45°'lik adımlarla, pusulaya basınca kuzey yukarı; daha çok uzaklaştırılabiliyor, açılışta daha geniş alan görünüyor ve yakınlaştırma daha akıcı.
+- **Yeni kutu görünümü (0.22.0)** — Ana ekran kutuları yenilendi. Sıradaki vakte kalan süre büyük ve saniye saniye işleyen bir sayaçla gösteriliyor (“Akşam vaktine kalan 01:23:45”); üstte yer, miladi ve hicrî tarih; altı vakit yan yana, sıradaki renkli dolu hapta. İnce şerit tek satırda “Akşam 17:37 01:23:45 kaldı” gösterir (dar kutuda yalnız sayaç); yatsıdan sonra saatin yanında küçük “yarın”. Kutular seçtiğiniz renk paletinin tonlarını taşır: Vakitler ya da Ayarlar'daki kutu satırından renk (koyu, açık ya da uygulamanın teması) ve şeffaflık (yok, %20–80) seçilir; varsayılan koyu ve %40 şeffaf, duvar kâğıdı görünür. Namaz takibi kutusu da aynı görünümde.
 - **Namaz takibi kutusu daha okunaklı (0.21.1)** — Kutudaki vakit işaretleri büyüdü: kılınan vakit vurgu renginde dolu daire içinde ✓, kılınmayan açık renkli daire; önceki ○ işareti telefonda çok küçük görünüyordu. Acil durum numaraları ve temsilcilik telefonları yeniden denetlendi, değişiklik yok.
 - **Arapça düzen (0.21.0)** — Web sürümünde (iPhone) Arapça seçilince sayfa artık sağdan sola: satırlar, sekmeler ve alt çubuk dönüyor; önceden yalnız yazı sağa yaslanıyordu. Liste okları ve geri düğmesi Arapçada ters yöne bakıyor (telefonda da). Arapça arayüzde İngilizce kalan 93 metin (kıble, yönlendirme, kapı bildirimleri, Ravza, arama, ayarlar…) Arapçaya çevrildi; Kur'an listesinde Mekkî/Medenî ve âyet sayısı, ayraçlarda sûre adı ve âyet numarası seçili dilde.
 - **“Kıldım” uygulamayı açmadan (0.20.0)** — Android'de vakit bildirimindeki “Kıldım”a dokununca uygulama artık açılmıyor: vakit Namaz takibine işleniyor, bildirim kapanıyor, ana ekrandaki namaz takibi kutusu da güncelleniyor. Uygulama kapalıyken de çalışır. Bildirimler ekranındaki deneme bildiriminde de “Kıldım” görünür; dokununca yalnız bildirim kapanır, namaz işlenmez.
@@ -63,7 +65,7 @@ Mekke ve Medine'deki ziyaretçiler için iOS ve Android uygulaması:
 - **Ravza rehberi** — ziyaret saatleri, Nusuk izni, resmî 360° sanal tur bağlantısı.
 - **Türkçe, İngilizce, Arapça** (Arapça sağdan sola).
 
-> Durum: **0.21.1 — geliştirme sürümü.** Bina biçimleri ve kapı yerleri OpenStreetMap'ten gelir (doğruluğu bu veri kadardır); mescit içi hizmet noktaları örnektir. Ayrıntı: [docs/VERI-KAYNAKLARI.md](docs/VERI-KAYNAKLARI.md), [scripts/osm-3d.md](scripts/osm-3d.md).
+> Durum: **0.22.0 — geliştirme sürümü.** Bina biçimleri ve kapı yerleri OpenStreetMap'ten gelir (doğruluğu bu veri kadardır); mescit içi hizmet noktaları örnektir. Ayrıntı: [docs/VERI-KAYNAKLARI.md](docs/VERI-KAYNAKLARI.md), [scripts/osm-3d.md](scripts/osm-3d.md).
 
 ## Hızlı başlangıç
 

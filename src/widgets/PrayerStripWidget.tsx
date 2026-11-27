@@ -1,11 +1,14 @@
-// İnce (4×1) ana ekran küçük uygulaması: sıradaki vakit ve ondan sonraki, tek satırda.
-// PrayerWidget ile aynı veriyi alır; görünüm ayrı JS ortamında çizilir ('widget' yönergesi).
+// İnce şerit (4×1) ana ekran küçük uygulaması: tek satırda sıradaki vakit ve saniye saniye geri sayım.
+// PrayerWidget ile aynı veriyi alır; görünüm ayrı JS ortamında çizilir ('widget' yönergesi), bu yüzden gövde
+// dosyadaki başka değere erişemez. Görünüm ve geri sayım için PrayerWidget.tsx başındaki nota bakın.
 import type * as UI from '@expo/ui/jetpack-compose';
 import type * as M from '@expo/ui/jetpack-compose/modifiers';
 import { createWidget } from 'expo-widgets';
+import type { ReactElement } from 'react';
 
-import type { PrayerWidgetProps } from './PrayerWidget';
+import type { CountdownProps, PrayerWidgetProps } from './PrayerWidget';
 
+declare const Box: typeof UI.Box;
 declare const Row: typeof UI.Row;
 declare const Text: typeof UI.Text;
 declare const Spacer: typeof UI.Spacer;
@@ -15,18 +18,15 @@ declare const cornerRadius: typeof M.cornerRadius;
 declare const padding: typeof M.padding;
 declare const width: typeof M.width;
 
-function stripLayout(props: PrayerWidgetProps, env: { colorScheme?: 'light' | 'dark' }) {
+function stripLayout(props: PrayerWidgetProps, env: { colorScheme?: 'light' | 'dark'; width?: number; height?: number }) {
   'widget';
   const dk = props.mode === 'dark' || (props.mode !== 'light' && env.colorScheme === 'dark');
   let c = dk ? props.dark : props.light;
-  if (!c) {
-    c = dk
-      ? { bg: '#17120E', ink: '#F6EFE7', muted: '#B3A393', accent: '#F7934F', tint: '#3A2214' }
-      : { bg: '#FBF7F1', ink: '#2A2018', muted: '#6F5D4C', accent: '#B4420F', tint: '#FBE4D3' };
-  }
+  if (!c) c = { bg: '#17120E99', ink: '#F6EFE7', muted: '#B3A393', accent: '#F7934F', tint: '#3A2214', fill: '#F7934F', onFill: '#1F0F05' };
+  const Countdown = Text as unknown as (p: CountdownProps) => ReactElement;
   const days = props.days || [];
   const names = props.names && props.names.length === 6 ? props.names : ['İmsak', 'Güneş', 'Öğle', 'İkindi', 'Akşam', 'Yatsı'];
-  const root = [fillMaxSize(), background(c.bg), cornerRadius(20), padding(16, 0, 12, 0)];
+  const root = [fillMaxSize(), background(c.bg), cornerRadius(22), padding(16, 8, 16, 8)];
 
   const now = Date.now();
   let di = -1;
@@ -51,24 +51,30 @@ function stripLayout(props: PrayerWidgetProps, env: { colorScheme?: 'light' | 'd
   }
   const day = days[di];
   const tomorrow = Number(day.s) > now;
-  let ni = di;
-  let nj = pi + 1;
-  if (nj > 5) {
-    ni = di + 1;
-    nj = 0;
-  }
-  let then = '';
-  if (ni < days.length) then = (props.after ? props.after + ' ' : '') + names[nj] + ' ' + days[ni].t[nj];
-  // Yatsıdan sonra yan yazı yalnız "yarın" (tek satıra sığsın; gece "Sonra Güneş" gereksiz)
-  const side = tomorrow && props.tomorrow ? props.tomorrow : then;
+  const target = Number(day.a[pi]);
+  const mins = Math.max(0, Math.ceil((target - now) / 60000));
+  const fallback = Math.floor(mins / 60) + ':' + (mins % 60 < 10 ? '0' : '') + (mins % 60);
+  // Yatsıdan sonra saatin yanına küçük "yarın". Glance satırı sığmayan son çocuğu sıfıra sıkıştırır: dar kutuda
+  // (ör. küçük ekranda 4×1) "kaldı" hiç yazılmaz. Genişlik kabaca harf sayısından (17 sp kalın ≈ 9 dp/harf).
+  const tmr = tomorrow && props.tomorrow ? props.tomorrow : '';
+  const remain = props.remain || '';
+  const need = 32 + (names[pi].length + day.t[pi].length) * 9 + 6 + (tmr ? 4 + tmr.length * 7 : 0) + 10 + 74 + 4 + remain.length * 7;
+  const showRemain = remain !== '' && (!env.width || need <= env.width);
 
   return (
     <Row modifiers={root} verticalAlignment="center">
       <Text color={c.accent} maxLines={1} style={{ fontSize: 17, fontWeight: 'bold' }}>{names[pi]}</Text>
       <Spacer modifiers={[width(6)]} />
       <Text color={c.ink} maxLines={1} style={{ fontSize: 17, fontWeight: 'bold' }}>{day.t[pi]}</Text>
-      <Spacer modifiers={[width(14)]} />
-      <Text color={c.muted} maxLines={1} style={{ fontSize: 13 }}>{side}</Text>
+      {tmr ? <Spacer modifiers={[width(4)]} /> : null}
+      {tmr ? <Text color={c.muted} maxLines={1} style={{ fontSize: 12 }}>{tmr}</Text> : null}
+      <Spacer modifiers={[width(10)]} />
+      {/* Sayaç kabın kalan alanına yayılır: sabit genişlikli kapta, sağa yaslı */}
+      <Box contentAlignment="centerEnd" modifiers={[width(74)]}>
+        <Countdown countdownTo={target} color={c.ink} maxLines={1} style={{ fontSize: 16, fontWeight: 'bold', textAlign: 'end' }}>{fallback}</Countdown>
+      </Box>
+      {showRemain ? <Spacer modifiers={[width(4)]} /> : null}
+      {showRemain ? <Text color={c.muted} maxLines={1} style={{ fontSize: 13 }}>{remain}</Text> : null}
     </Row>
   );
 }

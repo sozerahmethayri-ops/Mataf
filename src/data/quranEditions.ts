@@ -108,6 +108,8 @@ export type QuranPrefs = {
   zoom?: number;
   /** Kur'an hattı (yazı tipi): data/quranFonts.ts */
   font?: QuranFontId;
+  /** Mushaf görünümünde en son açılan sayfa (1–604) */
+  page?: number;
 };
 export type QuranView = 'ar+meal' | 'ar' | 'meal' | 'mushaf' | 'tecvid';
 

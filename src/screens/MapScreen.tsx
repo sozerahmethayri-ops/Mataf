@@ -31,7 +31,8 @@ export default function MapScreen() {
   const [preview, setPreview] = useState(false);
   const [size, setSize] = useState({ w: 390, h: 600 });
   const [zoom, setZoom] = useState(1);
-  const [rot, setRot] = useState(-35); // harita dönüşü (°); 0 = kuzey yukarı
+  const [rot, setRot] = useState(-35); // harita dönüşü (°, saat yönü); 0 = kuzey yukarı
+  const turn = (d: number) => setRot((r) => normRot(r + d));
   const [recenter, setRecenter] = useState(0);
   const [sheetH, setSheetH] = useState(150);
   const { prefs } = useTheme();
@@ -57,7 +58,9 @@ export default function MapScreen() {
   const nearestGate = GATES.filter((g) => g.city === city).sort((a, b) => dist(a.pos, user) - dist(b.pos, user))[0];
   // Üstteki arama + çipler ve alttaki panel haritayı kaplar; harita kalan alana sığdırılır.
   const topH = insets.top + 8 + 52 + 10 + 40 + 6;
-  const ctrl = { w: 44, h: 44 + 8 + 44 * 2 + 8 + 44 + 8 + 44, right: 12, bottom: sheetH + 12 };
+  const ctrl = { w: 44, h: 44 + 8 + 44 * 2 + 1 + 8 + 44, right: 12, bottom: sheetH + 12 };
+  // Döndürme: sol altta ↺ pusula ↻ (ölçek çubuğunun üstünde)
+  const rotBar = { w: 44 * 3 + 8, h: 44, left: 12, bottom: sheetH + 58 };
   const ll = (p: Pt) => { const q = toLatLng(city, p); return { lat: q.latitude, lng: q.longitude }; };
   const mapUser = showRoute ? (demo ? ll(user) : fix ? { lat: fix.lat, lng: fix.lng } : null) : null;
   // Katman verisi kullanıcının yakınından (şehirdeyse), değilse mescidin çevresinden
@@ -77,7 +80,9 @@ export default function MapScreen() {
   const routePts = plan?.points && plan.points.length > 1 ? plan.points.map(ll) : [];
   const fitTo = [...basePins, ...routePts, ...(hacFit ? lyr.pins.filter((p) => p.id.startsWith('L:hac:')) : [])];
   // Bakî seçiliyse mezarlığın batı yarısı da çerçeveye girsin (yalnız giriş kapısı değil)
-  const fit = [...(city === 'makkah' ? MAKKAH_CORE : MADINAH_CORE), ...(plan?.points ?? []), dest.pos, ...(dest.id === 'baqi' ? ([[340, -70], [340, 130]] as Pt[]) : [])];
+  // Geniş görünüm (0.22.0): Mekke'de Saat Kulesi'nin eteği, Medine'de Bakî'nin batı yarısı da çerçevede
+  const wide: Pt[] = city === 'makkah' ? [[-66, 430]] : [[340, -70], [340, 130]];
+  const fit = [...(city === 'makkah' ? MAKKAH_CORE : MADINAH_CORE), ...wide, ...(plan?.points ?? []), dest.pos];
 
   return (
     <View style={{ flex: 1, backgroundColor: C.mapGround }} onLayout={(e) => setSize({ w: e.nativeEvent.layout.width, h: e.nativeEvent.layout.height })}>
@@ -89,10 +94,10 @@ export default function MapScreen() {
           zoom={zoom}
           fit={fit}
           viewport={{ top: topH, bottom: sheetH, left: 0, right: 0 }}
-          avoid={[{ x: size.w - ctrl.right - ctrl.w, y: size.h - ctrl.bottom - ctrl.h, w: ctrl.w, h: ctrl.h }]}
+          avoid={[{ x: size.w - ctrl.right - ctrl.w, y: size.h - ctrl.bottom - ctrl.h, w: ctrl.w, h: ctrl.h }, { x: rotBar.left, y: size.h - rotBar.bottom - rotBar.h, w: rotBar.w, h: rotBar.h }]}
           recenterKey={recenter}
           rotDeg={rot}
-          onTransform={(sc, dr) => { setZoom((z) => Math.min(8, Math.max(0.6, z * sc))); setRot((r) => r + dr); }}
+          onTransform={(sc, dr) => { setZoom((z) => Math.min(8, Math.max(0.35, z * sc))); turn(dr); }}
           route={plan?.points}
           user={showRoute ? user : undefined}
           dest={dest.pos}
@@ -166,18 +171,22 @@ export default function MapScreen() {
         <View style={[{ width: ctrl.w, borderRadius: ctrl.w / 2, backgroundColor: C.bg, overflow: 'hidden' }, shadow]}>
           <IconBtn name="plus" label={t('map.zoomIn')} tint={C.bg} onPress={() => setZoom((z) => Math.min(8, z * 1.4))} />
           <View style={{ height: 1, marginHorizontal: 10, backgroundColor: C.border }} />
-          <IconBtn name="minus" label={t('map.zoomOut')} tint={C.bg} onPress={() => setZoom((z) => Math.max(0.7, z / 1.4))} />
+          <IconBtn name="minus" label={t('map.zoomOut')} tint={C.bg} onPress={() => setZoom((z) => Math.max(0.35, z / 1.4))} />
         </View>
-        )}
-        {is3d && (
-        <CompassBtn rot={rot} label={lang === 'en' ? 'Rotate north up' : lang === 'ar' ? 'اتجاه الشمال للأعلى' : 'Kuzeyi yukarı al'}
-          onPress={() => setRot((r) => (Math.abs(((r % 360) + 360) % 360) < 1 ? -35 : 0))} />
         )}
         {!is3d && (
           <IconBtn name="layers" label={lang === 'en' ? 'Layers' : lang === 'ar' ? 'الطبقات' : 'Katmanlar'} tint={layersOpen ? C.ink : C.bg} color={layersOpen ? C.onInk : C.ink} elevated onPress={() => setLayersOpen((v) => !v)} />
         )}
         <IconBtn name="locate" label={t('map.recenter')} tint={C.bg} color={C.user} elevated onPress={() => { setZoom(1); setRecenter((n) => n + 1); }} />
       </View>
+      {is3d && (
+        <View style={[{ position: 'absolute', left: rotBar.left, bottom: rotBar.bottom, flexDirection: 'row', alignItems: 'center', gap: 4, padding: 0, borderRadius: 22, backgroundColor: C.bg }, shadow]}>
+          <IconBtn name="rotl" label={lang === 'en' ? 'Rotate left' : lang === 'ar' ? 'تدوير لليسار' : 'Sola döndür'} tint={C.bg} onPress={() => turn(-45)} />
+          <CompassBtn rot={rot} label={lang === 'en' ? 'North up' : lang === 'ar' ? 'الشمال للأعلى' : 'Kuzeyi yukarı al'}
+            onPress={() => setRot((r) => (Math.abs(normRot(r)) < 1 ? -35 : 0))} />
+          <IconBtn name="rotr" label={lang === 'en' ? 'Rotate right' : lang === 'ar' ? 'تدوير لليمين' : 'Sağa döndür'} tint={C.bg} onPress={() => turn(45)} />
+        </View>
+      )}
       {!is3d && layersOpen && (
         <View style={{ position: 'absolute', right: ctrl.right + ctrl.w + 8, bottom: ctrl.bottom }}>
           <LayersPanel lg={lang as 'tr' | 'en' | 'ar'} layers={lyr.layers} onChange={lyr.setLayers} available={lyr.available} hasHotel={lyr.hasHotel} onClose={() => setLayersOpen(false)} />
@@ -225,6 +234,9 @@ export default function MapScreen() {
     </View>
   );
 }
+
+/** Dönüşü -180…180 aralığına getirir (sahne önbelleği aynı açıyı tek anahtarla tutsun) */
+const normRot = (r: number) => ((((Math.round(r) + 180) % 360) + 360) % 360) - 180;
 
 /** Pusula: iğne haritadaki kuzeyi gösterir; dokununca kuzey yukarı / eğik görünüm arasında geçer. */
 function CompassBtn({ rot, label, onPress }: { rot: number; label: string; onPress: () => void }) {
