@@ -13,8 +13,8 @@ import { buildWidgetProps, widgetPlace, widgetTicks } from './widgetProps';
 import type { WidgetSyncInput } from './widgetSync';
 
 type Snap = { updateSnapshot(props: object): void };
-/** Dört boy: orta (4×2), küçük (2×2), liste (2×3), şerit (4×1) */
-export const WIDGET_NAMES = ['PrayerWidget', 'NextPrayerWidget', 'PrayerListWidget', 'PrayerStripWidget'] as const;
+/** Dört vakit boyu: orta (4×2), küçük (2×2), liste (2×3), şerit (4×1); beşincisi namaz takibi (4×2, logWidget.android.ts) */
+export const WIDGET_NAMES = ['PrayerWidget', 'NextPrayerWidget', 'PrayerListWidget', 'PrayerStripWidget', 'PrayerLogWidget'] as const;
 export type WidgetName = (typeof WIDGET_NAMES)[number];
 let loading: Promise<Snap[]> | null = null;
 function loadWidgets() {

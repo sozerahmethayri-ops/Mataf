@@ -3,6 +3,8 @@
 import { colorsFor, type Colors, type PaletteId, type ThemeMode } from '@/constants/theme';
 import type { Lang } from '@/i18n/strings';
 import type { PrayerWidgetColors, PrayerWidgetDay, PrayerWidgetProps } from '@/widgets/PrayerWidget';
+import type { PrayerLogWidgetProps } from '@/widgets/PrayerLogWidget';
+import { dayKey, type PrayerLog } from './prayerLog';
 
 export const WIDGET_DAYS = 30;
 export const WIDGET_KEYS = ['fajr', 'sunrise', 'dhuhr', 'asr', 'maghrib', 'isha'] as const;
@@ -91,4 +93,37 @@ export function widgetNext(p: PrayerWidgetProps, now: number) {
     for (let j = 0; j < days[i].a.length; j++) if (Number(days[i].a[j]) > now) return { day: i, prayer: j, tomorrow: Number(days[i].s) > now };
   }
   return null;
+}
+
+// ── Namaz takibi küçük uygulaması ──
+/** Dil ve tema: ana sayfa açılınca kurulur; işaret değişince kayıtla birlikte kullanılır */
+export type LogWidgetContext = {
+  title: string;
+  names: string[];
+  allDone: string;
+  empty: string;
+  hatim?: string;
+  palette: PaletteId;
+  mode: ThemeMode;
+};
+
+/** Son üç günün işaretleri (bugün, dün, önceki gün); küçük uygulama bugünü kendisi seçer */
+export function buildLogWidgetProps(o: LogWidgetContext & { log: PrayerLog; today: Date }): PrayerLogWidgetProps {
+  const days = [];
+  for (let i = 0; i < 3; i++) {
+    const k = dayKey(new Date(o.today.getFullYear(), o.today.getMonth(), o.today.getDate() - i, 12));
+    days.push({ k, m: o.log[k] ?? 0 });
+  }
+  return {
+    v: 1,
+    title: o.title,
+    names: o.names,
+    days,
+    allDone: o.allDone,
+    hatim: o.hatim,
+    empty: o.empty,
+    mode: o.mode,
+    light: pickColors(colorsFor(false, o.palette)),
+    dark: pickColors(colorsFor(true, o.palette)),
+  };
 }

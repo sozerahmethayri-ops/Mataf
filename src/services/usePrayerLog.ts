@@ -3,6 +3,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useCallback, useEffect, useState } from 'react';
 
+import { pushLogWidget } from './logWidget';
 import { LOG_KEY, isDone, prune, sanitize, toggle, type LogPrayer, type PrayerLog } from './prayerLog';
 
 /** '1' ise ana sayfadaki kart gizli */
@@ -39,6 +40,7 @@ export async function markPrayed(day: string, p: LogPrayer) {
   const log = prune(toggle(state.log, day, p), new Date());
   emit({ ...state, log });
   await AsyncStorage.setItem(LOG_KEY, JSON.stringify(log)).catch(() => {});
+  pushLogWidget(log);
 }
 
 export function usePrayerLog() {
@@ -54,6 +56,8 @@ export function usePrayerLog() {
     const log = prune(toggle(state.log, day, p), new Date());
     emit({ ...state, log });
     AsyncStorage.setItem(LOG_KEY, JSON.stringify(log)).catch(() => {});
+    // Ana ekran küçük uygulaması da hemen güncellensin (Android)
+    pushLogWidget(log);
   }, []);
   const setHidden = useCallback((hidden: boolean) => {
     emit({ ...state, hidden });

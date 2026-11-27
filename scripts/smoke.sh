@@ -105,7 +105,7 @@ shot "43-widget-dokun"
 # Diğer boylar: küçük (2×2), liste (2×3), şerit (4×1). Başlatıcı her birini yer bulduğu sayfaya koyar
 # ve Ana ekran tuşu o sayfayı açar; her eklemeden sonra o sayfanın görüntüsü alınır.
 n=44
-for wname in NextPrayerWidget PrayerListWidget PrayerStripWidget; do
+for wname in NextPrayerWidget PrayerListWidget PrayerStripWidget PrayerLogWidget; do
   open "vakitler?widget=$wname"; sleep 6
   ok2=0
   if tapText "Add to home screen|ADD TO HOME SCREEN|Add automatically|ADD AUTOMATICALLY|Add|ADD|Ekle|EKLE|Ana ekrana ekle"; then sleep 4; fi

@@ -25,6 +25,7 @@ import { sceneKind } from '@/services/skyScene';
 import { kmTo } from '@/services/location';
 import { usePrayerPlace, type PlaceId } from '@/services/prayerPlace';
 import { useUpdate } from '@/services/update';
+import { useLogWidgetSync } from '@/services/useLogWidgetSync';
 import { usePrayerWidgetSync } from '@/services/widgetSync';
 
 type Lang = 'tr' | 'en' | 'ar';
@@ -87,6 +88,7 @@ export default function HomePrayer() {
   const insets = useSafeAreaInsets();
   const { place, setPlace, loc, method, label, denied, waiting } = usePrayerPlace(lang);
   usePrayerWidgetSync({ loc, method, label, waiting });
+  useLogWidgetSync(lg);
   const [now, setNow] = useState(new Date());
   useEffect(() => { const id = setInterval(() => setNow(new Date()), 20000); return () => clearInterval(id); }, []);
 

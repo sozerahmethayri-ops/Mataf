@@ -26,7 +26,7 @@ Projenin kararları ve çalışma kuralları burada; bir karar değişince bu do
 
 ## Komutlar
 - `npm install`: postinstall `patches/expo-widgets+58.0.29.patch`'i uygular.
-- Her değişiklikten sonra üçü de temiz olmalı: `npm run typecheck`, `npm run lint`, `npm run check` (280 test, her satır `OK`). CI typecheck ve check çalıştırır.
+- Her değişiklikten sonra üçü de temiz olmalı: `npm run typecheck`, `npm run lint`, `npm run check` (281 test, her satır `OK`). CI typecheck ve check çalıştırır.
 - `npx expo start`: Expo Go'da kutular, özel ezan sesleri ve tam zamanlı alarm yok; yerel davranışı APK ya da duman testinde gör.
 - Web görüntüsü: `npx expo export -p web --output-dir /tmp/web`, sonra `python3 tools/web-shots/shoot.py /tmp/web /tmp/shots tools/web-shots/ornek-spec.json`. Spec biçimi dosyanın başında.
 - Emülatör (duman testi, ~25 dk): `gh workflow run android-smoke.yml -R sozerahmethayri-ops/Mataf --ref main`. Sonuçlar "smoke-latest" sürüm sayfasında: `crash.txt`, `status.txt`, `screen-*.png`, `logcat.txt`, `widget-log.txt`, `alarm.txt`. Akış `scripts/smoke.sh`'te.
@@ -72,7 +72,7 @@ Platforma özel dosyalar: `X.web.tsx`, `X.android.ts`, `X.types.ts`.
 3. README: değişiklik günlüğünün başına bir madde; "Durum" satırında sürüm.
 4. Commit: Türkçe, ilk satır `0.13.5: kısa özet`, altında madde madde ne ve neden. `main`'e gönder.
 5. "Android APK" iş akışı bitince `https://github.com/sozerahmethayri-ops/Mataf/releases/download/apk-latest/version.json` yeni sürümü gösterir. Uygulama buna 6 saatte bir bakar, yeni sürümde "İndir" şeridi çıkarır.
-6. Yerel davranış değiştiyse (kutular, bildirim, yama, izin, derin bağlantı) duman testini çalıştır. Bitti sayılması için: `crash.txt` "çökme kaydı yok" ile başlar; `status.txt`'te dört "eklendi: 1" satırı ve "vakit alarmı: 24" var; ilgili `screen-*.png` gözle doğru.
+6. Yerel davranış değiştiyse (kutular, bildirim, yama, izin, derin bağlantı) duman testini çalıştır. Bitti sayılması için: `crash.txt` "çökme kaydı yok" ile başlar; `status.txt`'te beş "eklendi: 1" satırı ve "vakit alarmı: 24" var; ilgili `screen-*.png` gözle doğru.
 
 ## Tasarım kuralları
 ### Renkler (`src/constants/theme.ts`)
@@ -103,7 +103,7 @@ Platforma özel dosyalar: `X.web.tsx`, `X.android.ts`, `X.types.ts`.
 - Palet ekranın her yerinde hissedilir (0.15.0, proje sahibinin isteği): zemin, yüzey, çizgi ve yazı paletin tonunu taşır; simgeler, bölüm başlıkları, seçili çip ve sekme, ilerleme çubukları vurgu renginde. Renkli zeminli kart yalnız anlam taşıyınca (durum renkleri, uyarı, seçili, bugünkü adım, cuma).
 - Ana sayfa: üstte resimli, hareketli gökyüzü (Mekke'de Kâbe, Saat Kulesi ve tavaf eden kalabalık; Medine'de Yeşil Kubbe; başka yerde cami). Gökyüzü rengi güneşin yüksekliğine göre değişir, güneş ve ay gerçek yerinde durur. Animasyon yerel sürücüyle, yalnız ekran öndeyken ve "Hareketleri azalt" kapalıyken.
 - Harita: etiketler çakışmaz (yer yoksa gizlenir), hedef etiketi hep görünür; Saat Kulesi yarı saydam; ölçek çubuğu; "© OpenStreetMap" atfı.
-- Kutular: krem ve kum zemin; sıradaki vakit vurgu renginde ve açık zeminde, geçenler soluk. Adlarda hücre sayısı yok (başlatıcıya göre değişir): kare, geniş, uzun, tek satır.
+- Kutular: krem ve kum zemin; sıradaki vakit vurgu renginde ve açık zeminde, geçenler soluk. Adlarda hücre sayısı yok (başlatıcıya göre değişir): kare, geniş, uzun, tek satır, namaz takibi.
 - İlk ekran taslakları: https://claude.ai/artifact/ANqaTkraeKbHq1RJ6kE4yA. Oradaki beyaz zemin ve #C2410C eskidir; geçerli olan bu bölüm.
 
 ## Mimari kararlar
@@ -123,13 +123,13 @@ Platforma özel dosyalar: `X.web.tsx`, `X.android.ts`, `X.types.ts`.
 14. **Veriden bilinçli sapmalar:** OSM'de turuncu işaretli kubbeler mermer tonunda; Yeşil Kubbe kasnak + sivri kubbe (~26 m); Medine çatısındaki 27 sürgülü kubbe çizilmez (yerleri bilinmiyor). Ana kapılar: Mekke 1, 79, 62, 45, 100; Medine 1, 41, 37, 20–22, 7–9, 33–35.
 15. **Doğrulama üç katlı:** saf mantık testleri (Node), web ekran görüntüsü (Playwright), emülatör duman testi (API 34). Gerçek cihaz denemesi henüz yapılmadı.
 
-## Tamamlanan özellikler (0.18.0)
+## Tamamlanan özellikler (0.19.0)
 Sürüm sırasıyla ayrıntı README.md'nin başında.
 - **Ana sayfa ve vakitler:** resimli gökyüzü, geri sayım, altı vakit, hicrî tarih, yaklaşan mübarek gün, teşrik tekbiri; Vakitler ekranı (haftalık tablo, güneş ve ay bilgisi); hesaplama yöntemi; ana sayfa seçimi (sade vakit, Kur'an, harita, tavaf, zikir, hadis). `screens/HomePrayer.tsx`, `PrayerTimes.tsx`, `services/prayer.ts`.
 - **Her gün dönülen yerler (0.14.0):** namaz takibi (ana sayfada bugünkü beş vakit tek dokunuşla; ekranda son 7 gün, seri, kaza bağlantısı; kayıt telefonda, yedeğe girer), günün duası (kaynaklı kısa dualardan güne göre). `app/namaz-takibi.tsx`, `components/PrayerLogCard.tsx`, `DailyDuaCard.tsx`, `services/prayerLog.ts`, `usePrayerLog.ts`, `daily.ts`.
 - **Bağlılık (0.15.0):** hatim planı (30–180 gün, bölüm cüze göre eşit, Hatim ayracından; ana sayfa kartı, yatsıdan sonra hatırlatma), cuma kartı ve hatırlatması (Kehf), günlük zikir hedefi (ana sayfada), son 7 günün özeti (namaz, zikir, hatim), ezan bildiriminde "Kıldım" düğmesi (uygulamayı açar, vakti işler), hac-umre hazırlık listesi, temel Arapça ifadeler (göster, dinlet). `app/hatim.tsx`, `hazirlik.tsx`, `arapca.tsx`, `components/HatimCard.tsx`, `ZikirCard.tsx`, `FridayCard.tsx`, `services/hatim.ts`, `sharedPersisted.ts`, `data/checklist.ts`, `phrases.ts`.
 - **Bildirimler:** ezandan önce ve vaktinde; 4 ses ve kendi kaydın; mübarek gün ve hac hatırlatmaları; tam zamanlı alarm uyarısı. `app/bildirimler.tsx`, `services/adhanPlan.ts`, `adhanNotify.ts`.
-- **Ana ekran kutuları (Android):** kare, geniş, uzun, tek satır; Vakitler ve Ayarlar'dan eklenir; `mataf://vakitler?widget=<Ad>`.
+- **Ana ekran kutuları (Android):** kare, geniş, uzun, tek satır; Vakitler ve Ayarlar'dan eklenir; `mataf://vakitler?widget=<Ad>`. Namaz takibi kutusu (0.19.0, `PrayerLogWidget`): bugün kılınan vakitler ✓/○, "3/5" ya da "Beş vakit tamam", hatim planı varsa "Hatim %N"; işaret değişince uygulama yazar (`services/logWidget.android.ts`, `useLogWidgetSync.ts`), "bugün"ü kutu kendisi bulur (yeni gün boş başlar); Namaz takibi ekranından eklenir.
 - **Harem haritası ve navigasyon:** gerçek ölçekli 3D (OSM) ve 2D gerçek harita, katmanlar, kapı bildirimleri ve onayları, kapalı kapıya göre rota, adım adım yönlendirme. `screens/MapScreen.tsx`, `scene/`, `app/kapilar.tsx`, `bildir.tsx`, `navigasyon.tsx`.
 - **Hac ve umre:** umre rehberi (7 adım), hac rehberi (tür seçimi, gün gün), cemerat sayacı ve atış vakti, hac yerleri haritası (Arafat, Mina, Harem içinde mi), tavaf asistanı (3D, GPS sayacı, sesli rehber), sa'y sayacı, tekerlekli sandalye ve araba bilgisi. `app/umre.tsx`, `hac.tsx`, `cemerat.tsx`, `hac-harita.tsx`, `tavaf.tsx`, `say.tsx`, `erisim.tsx`.
 - **Ulaşım:** yürüme ve araç (OSRM); toplu taşıma adım adım (İstanbul raylı ve Mekke otobüsü çevrimdışı, gerisi Transitous); taksi ve şoföre gösterme kartı; Haremeyn treni; `mataf://ulasim?to=enlem,boylam&name=Ad`. `app/(tabs)/ulasim.tsx`, `services/transport.ts`, `railRouter.ts`, `transitText.ts`, `app/tren.tsx`.
@@ -139,8 +139,8 @@ Sürüm sırasıyla ayrıntı README.md'nin başında.
 - **Genel:** ilk açılış, TR/EN/AR, açık/koyu tema ve 5 palet, yazı ölçeği, çevrimdışı paket, yedek ve geri yükleme, güncelleme uyarısı, hata ekranı ve kaydı, uygulamayı paylaşma, web sürümü.
 
 ## Şu anki durum
-- Sürüm 0.18.0 (versionCode 28). CI, APK ve web yeşil. APK: https://github.com/sozerahmethayri-ops/Mataf/releases/download/apk-latest/mataf.apk; web: https://sozerahmethayri-ops.github.io/Mataf/.
-- Doğrulandı: 280 mantık testi; web görüntüleri; emülatörde çökme yok, dört kutu eklendi ve çizildi, 24 vakit alarmı kurulu, Mekke otobüs tarifi (7A) doğru.
+- Sürüm 0.19.0 (versionCode 29). CI, APK ve web yeşil. APK: https://github.com/sozerahmethayri-ops/Mataf/releases/download/apk-latest/mataf.apk; web: https://sozerahmethayri-ops.github.io/Mataf/.
+- Doğrulandı: 281 mantık testi; web görüntüleri; emülatörde çökme yok, dört kutu eklendi ve çizildi, 24 vakit alarmı kurulu, Mekke otobüs tarifi (7A) doğru.
 - Doğrulanmadı: gerçek telefon, Mekke ve Medine'de saha, Samsung ve Xiaomi başlatıcıları.
 - Proje sahibinden beklenenler: Supabase URL ve Publishable key (GitHub secrets'a), sahada deneme, hoca kontrolü (gözden geçirme belgesi: https://claude.ai/artifact/BZSU1wpF6vLspLDwDCGiGc), dağıtım izni olan bir ezan kaydı.
 - Sürüm sürüm ayrıntılı notlar: claude.ai'deki "MATAF uygulama" projesinde `eksikler-ve-yol-haritasi.md`.
@@ -149,7 +149,7 @@ Sürüm sırasıyla ayrıntı README.md'nin başında.
 1. Saha denemesi: haritanın akıcılığı ve Suudi mobil ağında açılış süresi; tavaf ve sa'y sayacı (zemin, 1. kat, çatı); Arafat ve Mina sınır denetimi; kutular Samsung ve Xiaomi'de; bildirimlerin pil tasarrufunda gelmesi; Mekke otobüs sürelerinin Makkah Bus uygulamasıyla karşılaştırılması; çevrimdışı paketin boyutu ve süresi.
 2. Supabase'i bağla (canlı kapı bildirimleri, aile konumu): `docs/SUPABASE.md`.
 3. Dinî metinleri hocanın düzeltmeleriyle güncelle (tecvid kuralları sayfası ve secde notu dahil).
-4. Bağlılık (ilke: suçlama yok, yarış ve sıralama yok, veri telefonda): namaz takibi kutusu (Android, Glance; duman testiyle); "Kıldım" düğmesinin uygulamayı açmadan işlemesi (arka plan görevi); hatim ilerlemesi için kutu; Kur'an dışı günlük içerik (hadis) seçeneği.
+4. Bağlılık (ilke: suçlama yok, yarış ve sıralama yok, veri telefonda): "Kıldım" düğmesinin uygulamayı açmadan işlemesi (arka plan görevi); Kur'an dışı günlük içerik (hadis) seçeneği.
 5. Ezan sesi: izinli kayıt; uygulama kapalıyken tam ezan için ön plan servisi.
 6. Toplu taşıma: Medine otobüs verisi; İstanbul vapurları (OSM'de durak üyeleri eksik); sefer saatli veri (GTFS); kullanıcı artarsa kendi MOTIS sunucusu.
 7. Kur'an dışı tavaf ve sa'y dualarına kâri kaydı (şimdi cihaz sesi okuyor).

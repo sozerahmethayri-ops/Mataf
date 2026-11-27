@@ -17,6 +17,7 @@ import { LOG_PRAYERS, countDays, dayKey, isDone, lastDays, streak } from '@/serv
 import { useQuranPrefs } from '@/services/QuranPrefs';
 import { zikirStats, type ZikirLogItem } from '@/services/zikirStats';
 import { usePrayerLog } from '@/services/usePrayerLog';
+import { pinPrayerWidget, widgetPinSupported } from '@/services/widgetSync';
 
 type Lang = 'tr' | 'en' | 'ar';
 const L = {
@@ -39,6 +40,8 @@ const L = {
   kaza: { tr: 'Kaza namazı takibi', en: 'Missed prayers (qada)', ar: 'قضاء الصلوات' },
   kazaSub: { tr: 'Kılamadığınız namazları kaza edin ve sayın', en: 'Make up the prayers you missed and keep count', ar: 'اقضِ ما فاتك من الصلوات وعُدَّه' },
   showHome: { tr: 'Ana sayfada göster', en: 'Show on the home screen', ar: 'إظهار في الصفحة الرئيسية' },
+  pin: { tr: 'Telefonun ana ekranına ekle', en: 'Add to your phone’s home screen', ar: 'أضف إلى الشاشة الرئيسية للهاتف' },
+  pinSub: { tr: 'Bugünkü vakitler kutuda görünür; dokununca uygulama açılır.', en: 'Today’s prayers appear in a widget; tap it to open the app.', ar: 'تظهر صلوات اليوم في أداة؛ اضغط لفتح التطبيق.' },
 };
 
 /** 'YYYY-MM-DD' → yerel öğle (ayrıştırma motorundan bağımsız) */
@@ -146,6 +149,9 @@ export default function PrayerLogScreen() {
         <Text style={{ flex: 1, fontSize: fs(15), fontWeight: '600', color: C.ink }}>{pick(L.showHome, lg)}</Text>
         <Toggle value={!hidden} onChange={(v) => setHidden(!v)} label={pick(L.showHome, lg)} />
       </View>
+      {widgetPinSupported() && (
+        <ListRow title={pick(L.pin, lg)} subtitle={pick(L.pinSub, lg)} onPress={() => pinPrayerWidget('PrayerLogWidget')} left={<Icon name="plus" size={20} color={C.accent} />} />
+      )}
     </Screen>
   );
 }

@@ -2,7 +2,7 @@
   "expo": {
     "name": "MATAF",
     "slug": "mataf",
-    "version": "0.18.0",
+    "version": "0.19.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "mataf",
@@ -36,7 +36,7 @@
       "blockedPermissions": [
         "android.permission.RECORD_AUDIO"
       ],
-      "versionCode": 28
+      "versionCode": 29
     },
     "web": {
       "output": "single",
@@ -143,6 +143,20 @@
                 "targetCellHeight": 1,
                 "resizeMode": "horizontal",
                 "initialLayout": "./src/widgets/PrayerStripWidget.tsx"
+              },
+              "ios": null
+            },
+            {
+              "name": "PrayerLogWidget",
+              "displayName": "MATAF · Namaz takibi",
+              "description": "Bugün kıldığınız vakitler ve hatim",
+              "android": {
+                "minWidth": 250,
+                "minHeight": 110,
+                "targetCellWidth": 4,
+                "targetCellHeight": 2,
+                "resizeMode": "both",
+                "initialLayout": "./src/widgets/PrayerLogWidget.tsx"
               },
               "ios": null
             }

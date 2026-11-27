@@ -10,7 +10,7 @@ import { DUA_LIB, isQuranRef } from '../src/data/duas';
 import { TAWAF_DHIKR, type DuaText } from '../src/data/tawaf';
 import { OVERPASS_ENDPOINTS, bearingDeg, distanceM, findMosques, parseOverpass, parsePhotonMosques, pickMosques, type El, type Fetcher } from '../src/services/mosques';
 import { PALETTES, colorsFor, contrast, type PaletteId } from '../src/constants/theme';
-import { WIDGET_DAYS, buildWidgetProps, widgetNext, widgetPlace, widgetTicks } from '../src/services/widgetProps';
+import { WIDGET_DAYS, buildLogWidgetProps, buildWidgetProps, widgetNext, widgetPlace, widgetTicks } from '../src/services/widgetProps';
 import { ARAFAT_AREA, HAC_PLACES, NAMIRA_MOSQUE } from '../src/data/osm/hacSites';
 import { MEMBER_COLORS, colorFor, freshness, inviteText, isValidCode, makeCode, normalizeCode, shouldSend, sortMembers, type GroupMember } from '../src/services/groupLogic';
 import { AREFE_DUA, CEMRE_TEKBIR, HAC_STEPS, MESAR_AYAH, TESRIK_TEKBIR } from '../src/data/hac';
@@ -1001,6 +1001,14 @@ ok(shareLink({ lat: 21.4225, lng: 39.8262 }) === 'https://maps.google.com/?q=21.
   ok(JUZ_STARTS.map(([s2, a2]) => pageOf(s2, a2)).join() === '1,22,42,62,82,102,121,142,162,182,201,222,242,262,282,302,322,342,362,382,402,422,442,462,482,502,522,542,562,582',
     'sayfalar: cüz başlarının sayfaları Medine düzeninde');
   ok(juzOf(2, 141) === 1 && juzOf(2, 142) === 2 && juzOf(114, 6) === 30 && juzOf(1, 1) === 1, 'sayfalar: âyetin cüzü');
+}
+
+// ── Namaz takibi küçük uygulaması ──
+{
+  const lp = buildLogWidgetProps({ title: 'Bugünkü namazlarım', names: ['Sabah', 'Öğle', 'İkindi', 'Akşam', 'Yatsı'], allDone: 'Beş vakit tamam', empty: '-', palette: 'zumrut', mode: 'system',
+    log: { '2026-11-27': 3, '2026-11-26': 31, '2026-11-01': 31 }, today: new Date(2026, 10, 27, 9) });
+  ok(lp.days?.map((d) => `${d.k}:${d.m}`).join() === '2026-11-27:3,2026-11-26:31,2026-11-25:0' && lp.names?.length === 5 && !!lp.light?.accent && lp.dark?.bg !== lp.light?.bg,
+    'takip kutusu: son üç gün, beş ad, palet renkleri');
 }
 
 mosqueChecks().then(transitChecks).then(() => process.exit(fails ? 1 : 0));
