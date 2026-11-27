@@ -11,7 +11,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { AR_DIGITS, MarkSheet, QL, TajweedLegend, nextZoom } from '@/components/QuranParts';
 import { Btn, Header, IconBtn, T } from '@/components/ui';
 import { C, fs, fsAr, isDark } from '@/constants/theme';
-import { lineFor } from '@/data/quranFonts';
+import { ayahMark, lineFor } from '@/data/quranFonts';
 import { PAGE_COUNT, pageAyahs, pageOf } from '@/data/quranPages';
 import { SAJDAH_SIGN, isSajdah, stripSajdahSign } from '@/data/sajdah';
 import { ruleColor } from '@/data/tajweed';
@@ -178,7 +178,7 @@ const MushafPage = memo(function MushafPage({ page, width, z, font, tajweed, dar
                               })
                               : stripSajdahSign(stripBasmala(x.s, x.a, x.text))}
                             {sj ? <Text style={{ color: C.green, fontWeight: '700' }} accessibilityLabel={pick(L.sajdah, lang)}>{` ${SAJDAH_SIGN}`}</Text> : null}
-                            <Text style={{ color: C.accent, fontWeight: '700', fontSize: size * 0.88 }}>{` ﴿${AR_DIGITS(x.a)}﴾ `}</Text>
+                            <Text style={{ color: C.accent, fontWeight: qf.id === 'madina' ? undefined : '700', fontSize: qf.id === 'madina' ? size : size * 0.88 }}>{` ${ayahMark(qf, x.a)} `}</Text>
                           </Text>
                         );
                       })}

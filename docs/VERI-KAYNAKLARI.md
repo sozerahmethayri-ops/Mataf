@@ -79,12 +79,13 @@
 
 | Yazı tipi | Paket | Lisans |
 |---|---|---|
+| MATAF Madina: DigitalKhatt New Madina'nın değiştirilmiş sürümü (© Amine Anane, Tarteel Inc.; github.com/DigitalKhatt/madinafont) | `assets/fonts/MatafMadina.ttf` (+ `MatafMadina-OFL.txt`) | SIL Open Font License 1.1 |
 | Amiri Quran (Khaled Hosny) | `@expo-google-fonts/amiri-quran` | SIL Open Font License 1.1 |
 | Scheherazade New (SIL International) | `@expo-google-fonts/scheherazade-new` | SIL Open Font License 1.1 |
 | Noto Naskh Arabic (Google) | `@expo-google-fonts/noto-naskh-arabic` | SIL Open Font License 1.1 |
 | Lateef (SIL International) | `@expo-google-fonts/lateef` | SIL Open Font License 1.1 |
 
-Seçim ölçütü: Uthmani metnin bütün Kur'an işaretlerini (U+06D6–U+06ED, ﴿﴾, ۩) çizmesi; fontTools ile ölçüldü. Reem Kufi, Aref Ruqaa ve Noto Nastaliq Urdu 19–23 işaret eksik olduğu için alınmadı. OFL yazı tiplerinin yazılımla dağıtılmasına izin verir; dosyalar değiştirilmeden paketlerden kullanılır.
+Seçim ölçütü: Uthmani metnin bütün Kur'an işaretlerini (U+06D6–U+06ED, ﴿﴾, ۩) çizmesi; fontTools ile ölçüldü. Reem Kufi, Aref Ruqaa ve Noto Nastaliq Urdu 19–23 işaret eksik olduğu için alınmadı. OFL yazı tiplerinin yazılımla dağıtılmasına izin verir; paket yazıları değiştirilmeden kullanılır. MATAF Madina (0.22.0, varsayılan): Medine mushafı hattı; değişken CFF2 dosyası Android'de güvenli olsun diye varsayılan örneğiyle sabit TrueType'a çevrildi, kelime arası 0,10 em'den 0,26 em'e açıldı (sade dizgide kelimeler yapışıyordu), ad değişti; üretim `tools/fonts/digitalkhatt_ttf.py`, lisans dosyası yanında. Kur'an metninde kullanılan işaretlerden yalnız U+06EA ve U+06EB (Kur'an'da birer yer) yok; telefon onları yedek yazıyla çizer. Diyanet'in mushaf yazısı ve King Fahd (KFGQPC) yazıları serbest lisanslı değil (yazılı izin gerekir); kullanılmadı.
 
 ## Mushaf sayfa numaraları
 

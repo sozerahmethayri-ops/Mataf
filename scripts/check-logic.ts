@@ -41,7 +41,7 @@ import { PHRASES } from '../src/data/phrases';
 import { dropWords, parseTajweed, plainOf, stripTajweedBasmala } from '../src/services/tajweed';
 import { SAJDAH, isSajdah, stripSajdahSign } from '../src/data/sajdah';
 import { OTHER_RULES, TAJWEED_RULES } from '../src/data/tajweed';
-import { QURAN_FONTS, lineFor, quranFont } from '../src/data/quranFonts';
+import { QURAN_FONTS, ayahMark, lineFor, quranFont } from '../src/data/quranFonts';
 // Node tür tanımları projede yok; dosya varlığına bakmak için düz require
 const { existsSync } = require('fs') as { existsSync: (path: string) => boolean };
 import { allTextDuas } from '../src/data/duas';
@@ -1015,9 +1015,11 @@ ok(shareLink({ lat: 21.4225, lng: 39.8262 }) === 'https://maps.google.com/?q=21.
 {
   const ids = QURAN_FONTS.map((f) => f.id);
   const pkg: Record<string, string> = { AmiriQuran: 'amiri-quran', ScheherazadeNew: 'scheherazade-new', NotoNaskhArabic: 'noto-naskh-arabic', Lateef: 'lateef' };
-  const files = QURAN_FONTS.filter((f) => f.family).map((f) => `node_modules/@expo-google-fonts/${pkg[f.family as string]}/400Regular/${f.family}_400Regular.ttf`);
-  ok(new Set(ids).size === ids.length && ids[0] === 'system' && quranFont('yok').id === 'system' && files.length === 4 && files.every((p2) => existsSync(p2)),
-    `Kur’an hatları: ${ids.length} seçenek, yazı dosyaları paketlerde`);
+  const files = QURAN_FONTS.filter((f) => f.family).map((f) => (f.family === 'MatafMadina' ? 'assets/fonts/MatafMadina.ttf' : `node_modules/@expo-google-fonts/${pkg[f.family as string]}/400Regular/${f.family}_400Regular.ttf`));
+  ok(new Set(ids).size === ids.length && ids[0] === 'system' && files.length === 5 && files.every((p2) => existsSync(p2)) && existsSync('assets/fonts/MatafMadina-OFL.txt'),
+    `Kur’an hatları: ${ids.length} seçenek, yazı dosyaları ve lisans yerinde`);
+  ok(quranFont(undefined).id === 'madina' && quranFont('yok').id === 'madina' && quranFont('system').id === 'system', 'Kur’an hatları: seçilmediyse Medine Mushafı, cihaz yazısı yalnız seçilince');
+  ok(ayahMark(quranFont('madina'), 286) === '\u06DD٢٨٦' && ayahMark(quranFont('amiri'), 7) === '\uFD3F٧\uFD3E', 'Kur’an hatları: âyet sonu Medine hattında ۝, diğerlerinde ﴿﴾');
   ok(lineFor(quranFont('amiri'), 24, 40) === 60 && lineFor(quranFont('system'), 24, 40) === 40 && QURAN_FONTS.every((f) => f.id === 'system' || f.minLine >= 1.45),
     'Kur’an hatları: satır yüksekliği yazının doğal yüksekliğinden kısa olmaz');
 }
