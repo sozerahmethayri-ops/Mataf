@@ -73,7 +73,7 @@ Platforma özel dosyalar: `X.web.tsx`, `X.android.ts`, `X.types.ts`. Giriş `ind
 3. README: değişiklik günlüğünün başına bir madde; "Durum" satırında sürüm.
 4. Commit: Türkçe, ilk satır `0.13.5: kısa özet`, altında madde madde ne ve neden. `main`'e gönder.
 5. "Android APK" iş akışı bitince `https://github.com/sozerahmethayri-ops/Mataf/releases/download/apk-latest/version.json` yeni sürümü gösterir. Uygulama buna 6 saatte bir bakar, yeni sürümde "İndir" şeridi çıkarır.
-6. Yerel davranış değiştiyse (kutular, bildirim, yama, izin, derin bağlantı) duman testini çalıştır. Bitti sayılması için: `crash.txt` "çökme kaydı yok" ile başlar; `status.txt`'te beş "eklendi: 1" satırı, "vakit alarmı: 24 (farklı an: 24)" ve "kıldım: süreç kapatıldı evet, bildirim önce 1, düğme 1, sonra 0, görev 1" var; ilgili `screen-*.png` gözle doğru.
+6. Yerel davranış değiştiyse (kutular, bildirim, yama, izin, derin bağlantı) duman testini çalıştır. Bitti sayılması için: `crash.txt` "çökme kaydı yok" ile başlar; `status.txt`'te beş "eklendi: 1" satırı, "vakit alarmı: 24 (farklı an: 24)" (0.21.0'da bir kez 34 çıktı, yeniden üretilemedi; tekrarlarsa `alarm-all.txt` ve `alarm-sections.txt`'e bak) ve "kıldım: süreç kapatıldı evet, bildirim önce 1, düğme 1, sonra 0, görev 1" var; ilgili `screen-*.png` gözle doğru.
 
 ## Tasarım kuralları
 ### Renkler (`src/constants/theme.ts`)
@@ -141,7 +141,7 @@ Sürüm sırasıyla ayrıntı README.md'nin başında.
 
 ## Şu anki durum
 - Sürüm 0.21.1 (versionCode 32). CI, APK ve web yeşil. APK: https://github.com/sozerahmethayri-ops/Mataf/releases/download/apk-latest/mataf.apk; web: https://sozerahmethayri-ops.github.io/Mataf/.
-- Doğrulandı: 291 mantık testi; web görüntüleri (Arapça sağdan sola dahil); emülatörde çökme yok, beş kutu eklendi ve çizildi (namaz takibi kutusu 0.19.0), 24 vakit alarmı kurulu, Mekke otobüs tarifi (7A) doğru.
+- Doğrulandı: 291 mantık testi; web görüntüleri (Arapça sağdan sola dahil); emülatörde çökme yok, beş kutu eklendi ve çizildi (namaz takibi kutusu 0.19.0, daireler 0.21.1), 24 vakit alarmı kurulu (24 farklı an), bildirimdeki "Kıldım" uygulama kapalıyken arka planda işliyor (deneme bildirimi kapandı, görev çalıştı; 0.20.0), Mekke otobüs tarifi (7A) doğru.
 - Doğrulanmadı: gerçek telefon, Mekke ve Medine'de saha, Samsung ve Xiaomi başlatıcıları.
 - Proje sahibinden beklenenler: Supabase URL ve Publishable key (GitHub secrets'a), sahada deneme, hoca kontrolü (gözden geçirme belgesi: https://claude.ai/artifact/BZSU1wpF6vLspLDwDCGiGc), dağıtım izni olan bir ezan kaydı.
 - Sürüm sürüm ayrıntılı notlar: claude.ai'deki "MATAF uygulama" projesinde `eksikler-ve-yol-haritasi.md`.
