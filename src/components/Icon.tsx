@@ -1,5 +1,7 @@
 import Svg, { Circle, Path } from 'react-native-svg';
 
+import { useLayoutRtl } from '@/i18n';
+
 const P: Record<string, string> = {
   map: 'M9 4 3 6v14l6-2 6 2 6-2V4l-6 2-6-2zM9 4v14M15 6v14',
   gate: 'M6 21V9a6 6 0 0 1 12 0v12M3 21h18M14 14h.01',
@@ -99,9 +101,14 @@ const CIRCLES: Record<string, [number, number, number][]> = {
 
 export type IconName = keyof typeof P;
 
+/** Sağdan sola düzende aynalanan yön simgeleri (liste oku, geri). Dönüş okları (left, right) aynalanmaz: sol hep soldur. */
+const MIRROR = new Set<string>(['chevron', 'back']);
+
 export function Icon({ name, size = 20, color = '#17181C', width = 2, fill = 'none' }: { name: IconName; size?: number; color?: string; width?: number; fill?: string }) {
+  const flip = useLayoutRtl() && MIRROR.has(name);
   return (
-    <Svg width={size} height={size} viewBox="0 0 24 24" fill={fill} stroke={color} strokeWidth={width} strokeLinecap="round" strokeLinejoin="round">
+    <Svg width={size} height={size} viewBox="0 0 24 24" fill={fill} stroke={color} strokeWidth={width} strokeLinecap="round" strokeLinejoin="round"
+      style={flip ? { transform: [{ scaleX: -1 }] } : undefined}>
       {(CIRCLES[name] ?? []).map(([cx, cy, r], i) => <Circle key={i} cx={cx} cy={cy} r={r} />)}
       <Path d={P[name]} />
     </Svg>

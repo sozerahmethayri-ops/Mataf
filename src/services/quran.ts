@@ -38,7 +38,7 @@ export const FATIHA: Ayah[] = [
 
 export function surahName(n: number, lang: Lang, meta?: SurahMeta) {
   if (lang === 'tr' && SURAH_TR.length === 114) return SURAH_TR[n - 1];
-  if (lang === 'ar' && meta) return meta.name;
+  if (lang === 'ar' && meta?.name) return meta.name;
   return meta?.englishName ?? SURAH_TR[n - 1];
 }
 

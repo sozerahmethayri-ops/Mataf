@@ -2,8 +2,10 @@
 // Ana sayfa ortadadır; bütün sekmeler aynı görünür (öne çıkan yuvarlak düğme şablon gibi duruyordu, 0.13.5).
 // Harita ve Ulaşım sekmelerinde kaydırma kapalıdır (haritayı sürüklemek sekme değiştirmesin).
 // Ayarlar → "Sekmeler arasında kaydır" ile tamamen kapatılabilir.
+// Web'de Arapça: sayfa yönü <html dir="rtl"> ile döner (i18n), ama sekme kaydırıcısı yönü bilmez (ExpoRoot yön vermez,
+// sayfalar boş görünüyordu). Kaydırıcı soldan sağa kalır; sayfaların içi ve alt çubuk sağdan sola, kaydırarak geçiş kapalı.
 import { TopTabs, type MaterialTopTabBarProps } from 'expo-router/js-top-tabs';
-import { Pressable, Text, View } from 'react-native';
+import { Platform, Pressable, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Icon, type IconName } from '@/components/Icon';
@@ -13,10 +15,10 @@ import { useTheme } from '@/services/ThemeContext';
 
 const ICONS: Record<string, IconName> = { harita: 'map', kuran: 'book', index: 'home', ulasim: 'bus', menu: 'grid' };
 
-function BottomBar({ state, descriptors, emitter, navigateToTab }: MaterialTopTabBarProps) {
+function BottomBar({ state, descriptors, emitter, navigateToTab, webRtl }: MaterialTopTabBarProps & { webRtl: boolean }) {
   const insets = useSafeAreaInsets();
   return (
-    <View style={{ flexDirection: 'row', backgroundColor: C.bg, borderTopWidth: 1, borderTopColor: C.border, paddingBottom: Math.max(insets.bottom, 6), paddingTop: 6 }}>
+    <View style={{ direction: webRtl ? 'rtl' : undefined, flexDirection: 'row', backgroundColor: C.bg, borderTopWidth: 1, borderTopColor: C.border, paddingBottom: Math.max(insets.bottom, 6), paddingTop: 6 }}>
       {state.routes.map((route, i) => {
         const on = state.index === i;
         const { options } = descriptors[route.key];
@@ -41,15 +43,17 @@ function BottomBar({ state, descriptors, emitter, navigateToTab }: MaterialTopTa
 export const unstable_settings = { initialRouteName: 'index' };
 
 export default function TabLayout() {
-  const { t, lang } = useI18n();
+  const { t, lang, rtl } = useI18n();
   const { prefs } = useTheme();
+  const webRtl = Platform.OS === 'web' && rtl;
   const home = lang === 'ar' ? 'الرئيسية' : lang === 'en' ? 'Home' : 'Ana sayfa';
   const menu = lang === 'ar' ? 'القائمة' : lang === 'en' ? 'Menu' : 'Menü';
   return (
     <TopTabs
       tabBarPosition="bottom"
-      tabBar={(p) => <BottomBar {...p} />}
-      screenOptions={{ swipeEnabled: prefs.swipeTabs, lazy: true, animationEnabled: !prefs.reduceMotion, sceneStyle: { backgroundColor: C.bg } }}>
+      style={webRtl ? { direction: 'ltr' } : undefined}
+      tabBar={(p) => <BottomBar {...p} webRtl={webRtl} />}
+      screenOptions={{ swipeEnabled: prefs.swipeTabs && !webRtl, lazy: true, animationEnabled: !prefs.reduceMotion, sceneStyle: { backgroundColor: C.bg, direction: webRtl ? 'rtl' : undefined } }}>
       <TopTabs.Screen name="harita" options={{ title: t('tab.map'), swipeEnabled: false }} />
       <TopTabs.Screen name="kuran" options={{ title: t('tab.quran') }} />
       <TopTabs.Screen name="index" options={{ title: home }} />

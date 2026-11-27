@@ -13,15 +13,21 @@ import { pick, useI18n } from '@/i18n';
 import { SURAH_TR, listSurahs, surahName, type SurahMeta } from '@/services/quran';
 import { useQuranPrefs, type Bookmark } from '@/services/QuranPrefs';
 
+/** Sûrenin indiği yer */
+const REV = {
+  meccan: { tr: 'Mekkî', en: 'Meccan', ar: 'مكية' },
+  medinan: { tr: 'Medenî', en: 'Medinan', ar: 'مدنية' },
+};
 const L = {
   marks: { tr: 'Ayraçlar', en: 'Bookmarks', ar: 'العلامات' },
   hint: { tr: 'Okurken ayetin altındaki “Ayraç” ile yeni ayraç ekleyin. Her ayraç kendi yerini ayrı hatırlar.', en: 'Add more with “Bookmark” under any verse. Each bookmark keeps its own place.', ar: 'أضف علامات أخرى من زر «علامة» تحت أي آية. تحفظ كل علامة موضعها.' },
   go: { tr: 'Devam et', en: 'Continue', ar: 'تابع' },
   done: { tr: 'tamamlandı', en: 'done', ar: 'مكتمل' },
+  ayah: { tr: '{n}. ayet', en: 'verse {n}', ar: 'الآية {n}' },
   search: { tr: 'Sûre ara…', en: 'Search surah…', ar: 'ابحث عن سورة…' },
 } satisfies Record<string, ML>;
 
-function Marks({ items, lang, onRemove }: { items: Bookmark[]; lang: 'tr' | 'en' | 'ar'; onRemove: (id: string) => void }) {
+function Marks({ items, lang, list, onRemove }: { items: Bookmark[]; lang: 'tr' | 'en' | 'ar'; list: SurahMeta[] | null; onRemove: (id: string) => void }) {
   return (
     <View style={{ gap: 8, marginBottom: 14 }}>
       <Text style={[T.section, { marginTop: 4 }]}>{pick(L.marks, lang)}</Text>
@@ -29,12 +35,12 @@ function Marks({ items, lang, onRemove }: { items: Bookmark[]; lang: 'tr' | 'en'
         const pct = Math.round(quranProgress(b.surah, b.ayah) * 100);
         return (
           <Pressable key={b.id} onPress={() => router.push({ pathname: '/kuran/[sure]', params: { sure: String(b.surah), b: b.id, a: String(b.ayah) } })}
-            accessibilityRole="button" accessibilityLabel={`${b.name}, ${surahName(b.surah, lang)} ${b.ayah}`}
+            accessibilityRole="button" accessibilityLabel={`${b.name}, ${surahName(b.surah, lang, list?.[b.surah - 1])} ${b.ayah}`}
             style={({ pressed }) => ({ flexDirection: 'row', alignItems: 'center', gap: 12, padding: 12, borderRadius: 16, backgroundColor: b.hatim ? C.greenTint : C.surface, opacity: pressed ? 0.8 : 1 })}>
             <Icon name="bookmark" size={20} color={b.hatim ? C.green : C.accent} />
             <View style={{ flex: 1, gap: 4 }}>
               <Text style={{ fontSize: fs(15), fontWeight: '700', color: C.ink }}>{b.name}</Text>
-              <Text style={T.small}>{surahName(b.surah, lang)} · {b.ayah}. ayet · {lang === 'en' ? 'p.' : lang === 'ar' ? 'ص' : 's.'} {pageOf(b.surah, b.ayah)}{b.hatim ? ` · %${pct} ${pick(L.done, lang)}` : ''}</Text>
+              <Text style={T.small}>{surahName(b.surah, lang, list?.[b.surah - 1])} · {pick(L.ayah, lang).replace('{n}', String(b.ayah))} · {lang === 'en' ? 'p.' : lang === 'ar' ? 'ص' : 's.'} {pageOf(b.surah, b.ayah)}{b.hatim ? ` · %${pct} ${pick(L.done, lang)}` : ''}</Text>
               {b.hatim && (
                 <View style={{ height: 4, borderRadius: 2, backgroundColor: C.border, overflow: 'hidden' }}>
                   <View style={{ width: `${Math.max(1, pct)}%`, height: 4, backgroundColor: C.green }} />
@@ -97,7 +103,7 @@ export default function QuranList() {
           data={filtered}
           keyExtractor={(s) => String(s.number)}
           contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 24 }}
-          ListHeaderComponent={q ? undefined : <Marks items={bookmarks} lang={lang} onRemove={removeBookmark} />}
+          ListHeaderComponent={q ? undefined : <Marks items={bookmarks} lang={lang} list={list} onRemove={removeBookmark} />}
           renderItem={({ item: s }) => (
             <Pressable onPress={() => router.push({ pathname: '/kuran/[sure]', params: { sure: String(s.number) } })}
               style={{ minHeight: 60, flexDirection: 'row', alignItems: 'center', gap: 12, borderBottomWidth: 1, borderBottomColor: C.border }}>
@@ -106,7 +112,7 @@ export default function QuranList() {
               </View>
               <View style={{ flex: 1 }}>
                 <Text style={{ fontSize: fs(15), fontWeight: '600', color: C.ink }}>{surahName(s.number, lang, s)}</Text>
-                {s.numberOfAyahs ? <Text style={T.small}>{s.revelationType === 'Meccan' ? 'Mekkî' : 'Medenî'} · {t('quran.ayahs', { n: s.numberOfAyahs })} · {lang === 'en' ? 'p.' : lang === 'ar' ? 'ص' : 's.'} {pageOf(s.number, 1)}</Text> : null}
+                {s.numberOfAyahs ? <Text style={T.small}>{pick(s.revelationType === 'Meccan' ? REV.meccan : REV.medinan, lang)} · {t('quran.ayahs', { n: s.numberOfAyahs })} · {lang === 'en' ? 'p.' : lang === 'ar' ? 'ص' : 's.'} {pageOf(s.number, 1)}</Text> : null}
               </View>
               {s.name ? <Text style={{ fontSize: fs(20), color: C.ink }}>{s.name}</Text> : null}
             </Pressable>

@@ -1,7 +1,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { getLocales } from 'expo-localization';
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
-import { I18nManager } from 'react-native';
+import { I18nManager, Platform } from 'react-native';
 
 import { DICTS, FALLBACK, LANGS, type Key, type Lang } from './strings';
 
@@ -38,6 +38,14 @@ export function I18nProvider({ children }: { children: React.ReactNode }) {
     I18nManager.forceRTL(rtl);
   }, []);
 
+  // Web: I18nManager bir şey yapmaz; yön sayfanın dir özniteliğiyle döner (satırlar ve hizalama sağdan sola)
+  useEffect(() => {
+    if (Platform.OS !== 'web' || typeof document === 'undefined') return;
+    const rtl = LANGS.find((x) => x.code === lang)?.rtl ?? false;
+    document.documentElement.dir = rtl ? 'rtl' : 'ltr';
+    document.documentElement.lang = lang;
+  }, [lang]);
+
   const t = useCallback(
     (key: Key, vars?: Record<string, string | number>) => {
       let s = DICTS[lang][key] ?? DICTS.en[key] ?? FALLBACK[key] ?? key;
@@ -58,6 +66,15 @@ export function useI18n() {
   const ctx = useContext(I18nContext);
   if (!ctx) throw new Error('useI18n must be used inside I18nProvider');
   return ctx;
+}
+
+/**
+ * Düzen sağdan sola mı? Telefonda I18nManager (dil değişince yeniden başlatmadan sonra döner), web'de seçili dil
+ * (sayfa yönü hemen döner). Sağlayıcı dışında da çalışır (soldan sağa sayar).
+ */
+export function useLayoutRtl() {
+  const ctx = useContext(I18nContext);
+  return Platform.OS === 'web' ? !!ctx?.rtl : I18nManager.isRTL;
 }
 
 /** Çok dilli içerik alanından (ör. kapı adı) uygun dili seçer. */

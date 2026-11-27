@@ -31,6 +31,7 @@ import { zikirStats } from '../src/services/zikirStats';
 import { FULL_DAY, countDay, countDays, dayKey, isDone, lastDays as logDays, prune, sanitize, streak, toggle } from '../src/services/prayerLog';
 import { dailyIndex, dayNumber } from '../src/services/daily';
 import { PRAYED_ACTION, prayedFromResponse } from '../src/services/prayedTask.types';
+import { DICTS } from '../src/i18n/strings';
 import { JUZ_STARTS, TOTAL_AYAH, cleanPlan, fromGlobal, hatimToday, juzOf, juzPos, readAtJuz, readFromMark, targetRead } from '../src/services/hatim';
 import { PAGE_START, pageOf } from '../src/data/quranPages';
 import { zikirToday } from '../src/services/zikirStats';
@@ -1029,6 +1030,16 @@ ok(shareLink({ lat: 21.4225, lng: 39.8262 }) === 'https://maps.google.com/?q=21.
   ok(prayedFromResponse({ ...req({ data: {} }), actionIdentifier: 'expo.modules.notifications.actions.DEFAULT' }) === null
     && prayedFromResponse(null) === null && prayedFromResponse({ actionIdentifier: PRAYED_ACTION, notification: null }) === null,
     'kıldım: başka düğme ve eksik yanıt yok sayılır');
+}
+
+// ── Ortak metinler: her anahtarın üç dilde karşılığı var (eksik Arapça anahtar İngilizceye düşüyordu) ──
+{
+  const trKeys = Object.keys(DICTS.tr);
+  const miss = (l: 'en' | 'ar') => trKeys.filter((k) => !(DICTS[l] as Record<string, string | undefined>)[k]?.trim());
+  ok(miss('en').length === 0 && miss('ar').length === 0, `sözlük: en ve ar eksiksiz (eksik: ${[...miss('en'), ...miss('ar')].slice(0, 5).join(', ') || 'yok'})`);
+  const vars = (x?: string) => (x?.match(/\{\w+\}/g) ?? []).sort().join();
+  const bad = trKeys.filter((k) => vars(DICTS.tr[k as keyof typeof DICTS.tr]) !== vars(DICTS.ar[k as keyof typeof DICTS.ar]) || vars(DICTS.tr[k as keyof typeof DICTS.tr]) !== vars(DICTS.en[k as keyof typeof DICTS.en]));
+  ok(bad.length === 0, `sözlük: {değişken}ler üç dilde aynı (farklı: ${bad.slice(0, 5).join(', ') || 'yok'})`);
 }
 
 mosqueChecks().then(transitChecks).then(() => process.exit(fails ? 1 : 0));
