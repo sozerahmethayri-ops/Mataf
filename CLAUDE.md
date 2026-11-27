@@ -176,7 +176,7 @@ Sürüm sırasıyla ayrıntı README.md'nin başında.
 - APK hata ayıklama anahtarıyla imzalı; Play Store'a yüklenemez.
 - Harem 3D modeli OSM kadar doğru; mescit içi hizmet noktaları örnek veri.
 - Tecvid renkleri alquran.cloud `quran-tajweed` işaretlemesine dayanır (`[kural[metin]`); bulut oturumundan servis açılmadığı için gerçek metinle görülmedi, telefonda bakılmalı. Ayrıştırıcı tanınmayan işareti renksiz bırakır.
-- GitHub'da kullanılmayan `probe` ve `smoke-run` dalları duruyor (bulut oturumundan silinemedi); elle silinebilir.
+- GitHub'da kullanılmayan `probe`, `smoke-run` ve `widget-test` (0.22.0 deneme dalı, `main`'e tek commit olarak alındı) dalları duruyor; bulut oturumundan silinemedi, elle silinebilir.
 
 ## Ortam notları
 - Kullanıcının ağından Overpass açılmıyor; OSM sorgusu `osm-fetch.yml` ile GitHub'da çalışır.
