@@ -30,7 +30,8 @@ import { UMRE_STEPS, IHRAM_RULES } from '../src/data/umre';
 import { zikirStats } from '../src/services/zikirStats';
 import { FULL_DAY, countDay, countDays, dayKey, isDone, lastDays as logDays, prune, sanitize, streak, toggle } from '../src/services/prayerLog';
 import { dailyIndex, dayNumber } from '../src/services/daily';
-import { JUZ_STARTS, TOTAL_AYAH, cleanPlan, fromGlobal, hatimToday, juzPos, readAtJuz, readFromMark, targetRead } from '../src/services/hatim';
+import { JUZ_STARTS, TOTAL_AYAH, cleanPlan, fromGlobal, hatimToday, juzOf, juzPos, readAtJuz, readFromMark, targetRead } from '../src/services/hatim';
+import { PAGE_START, pageOf } from '../src/data/quranPages';
 import { zikirToday } from '../src/services/zikirStats';
 import { CHECKLIST } from '../src/data/checklist';
 import { PHRASES } from '../src/data/phrases';
@@ -938,7 +939,7 @@ ok(shareLink({ lat: 21.4225, lng: 39.8262 }) === 'https://maps.google.com/?q=21.
   const plan = { start: '2026-11-27', days: 30, from: 0 };
   const d0 = new Date(2026, 10, 27, 20);
   const t0 = hatimToday(plan, 0, d0);
-  ok(t0.day === 1 && t0.left === readFromMark(2, 142) && Math.abs(t0.juzLeft - 1) < 0.01 && t0.pagesLeft === 20 && t0.from.join() === '1,1' && t0.to.join() === '2,141', `hatim: 30 günlük planda ilk gün ≈ 1 cüz (${t0.juzLeft.toFixed(2)} cüz, ${t0.pagesLeft} sayfa)`);
+  ok(t0.day === 1 && t0.left === readFromMark(2, 142) && Math.abs(t0.juzLeft - 1) < 0.01 && t0.pagesLeft === 21 && t0.pageFrom === 1 && t0.pageTo === 21 && t0.from.join() === '1,1' && t0.to.join() === '2,141', `hatim: 30 günlük planda ilk gün ≈ 1 cüz (${t0.juzLeft.toFixed(2)} cüz, ${t0.pagesLeft} sayfa)`);
   ok([0, 1, 7.5, 15, 29.25].every((j) => Math.abs(juzPos(readAtJuz(j)) - j) < 0.02), 'hatim: cüz konumu ↔ âyet sayısı karşılıklı');
   ok(targetRead(plan, new Date(2026, 11, 26, 12)) === TOTAL_AYAH && targetRead(plan, new Date(2027, 0, 30)) === TOTAL_AYAH, 'hatim: son gün ve sonrasında hedef Mushaf sonu');
   const done = hatimToday(plan, t0.target + 10, d0);
@@ -990,6 +991,16 @@ ok(shareLink({ lat: 21.4225, lng: 39.8262 }) === 'https://maps.google.com/?q=21.
     `Kur’an hatları: ${ids.length} seçenek, yazı dosyaları paketlerde`);
   ok(lineFor(quranFont('amiri'), 24, 40) === 60 && lineFor(quranFont('system'), 24, 40) === 40 && QURAN_FONTS.every((f) => f.id === 'system' || f.minLine >= 1.45),
     'Kur’an hatları: satır yüksekliği yazının doğal yüksekliğinden kısa olmaz');
+}
+
+// ── Mushaf sayfaları ──
+{
+  ok(PAGE_START.length === 604 && PAGE_START[0] === 1 && PAGE_START.every((x, i) => i === 0 || x > PAGE_START[i - 1]) && PAGE_START[603] <= 6236, 'sayfalar: 604 sayfa başı, sıralı');
+  ok(pageOf(1, 1) === 1 && pageOf(2, 1) === 2 && pageOf(2, 142) === 22 && pageOf(18, 45) === 298 && pageOf(78, 1) === 582 && pageOf(112, 1) === 604 && pageOf(114, 6) === 604,
+    'sayfalar: bilinen sayfalar (Bakara 1 = 2, Bakara 142 = 22, Nebe 1 = 582, Nâs = 604)');
+  ok(JUZ_STARTS.map(([s2, a2]) => pageOf(s2, a2)).join() === '1,22,42,62,82,102,121,142,162,182,201,222,242,262,282,302,322,342,362,382,402,422,442,462,482,502,522,542,562,582',
+    'sayfalar: cüz başlarının sayfaları Medine düzeninde');
+  ok(juzOf(2, 141) === 1 && juzOf(2, 142) === 2 && juzOf(114, 6) === 30 && juzOf(1, 1) === 1, 'sayfalar: âyetin cüzü');
 }
 
 mosqueChecks().then(transitChecks).then(() => process.exit(fails ? 1 : 0));

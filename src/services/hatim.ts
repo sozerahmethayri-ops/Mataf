@@ -1,6 +1,7 @@
 // Hatim planı: bitiş gününe göre günlük bölüm. Konum, Mushaf baştan okunmuş âyet sayısıdır (0–6236); Hatim ayracı
 // (okurken görünen ilk âyet) bunu verir. Bölümler cüz ve yaklaşık sayfa olarak gösterilir (1 cüz ≈ 20 sayfa).
 // React'sız; testleri scripts/check-logic.ts'te.
+import { pageOfGlobal } from '@/data/quranPages';
 import { globalAyah, surahLength } from './quranIndex';
 
 export const TOTAL_AYAH = 6236;
@@ -44,6 +45,9 @@ export function juzPos(read: number) {
   return k + (r - a) / (b - a);
 }
 
+/** Âyetin cüzü (1–30) */
+export const juzOf = (surah: number, ayah: number) => Math.min(30, Math.floor(juzPos(globalAyah(surah, ayah) - 1)) + 1);
+
 /** Okunan kısım (0–1), sayfa esaslı: cüz konumu / 30. Âyet sayısıyla ölçmek Bakara'nın uzun âyetlerinde az gösteriyordu. */
 export const readShare = (read: number) => juzPos(read) / 30;
 
@@ -75,11 +79,16 @@ export function hatimToday(plan: HatimPlan, read: number, today: Date) {
   const target = targetRead(plan, today);
   const left = Math.max(0, target - read);
   const juzLeft = Math.max(0, juzPos(target) - juzPos(read));
+  // Medine Mushafı sayfaları: bölümün ilk ve son sayfası (kesin)
+  const pageFrom = pageOfGlobal(Math.min(TOTAL_AYAH, read + 1));
+  const pageTo = pageOfGlobal(Math.max(1, target));
   return {
     target,
     left,
     juzLeft,
-    pagesLeft: Math.max(left > 0 ? 1 : 0, Math.round(juzLeft * 20)),
+    pagesLeft: left > 0 ? pageTo - pageFrom + 1 : 0,
+    pageFrom,
+    pageTo,
     from: fromGlobal(read + 1),
     to: fromGlobal(target),
     day: Math.max(0, planDay(plan, today)) + 1,

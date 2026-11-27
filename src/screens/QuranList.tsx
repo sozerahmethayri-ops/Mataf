@@ -7,6 +7,7 @@ import { Icon } from '@/components/Icon';
 import { Header, T } from '@/components/ui';
 import { C, fs } from '@/constants/theme';
 import { quranProgress } from '@/data/quranEditions';
+import { pageOf } from '@/data/quranPages';
 import type { ML } from '@/data/sites';
 import { pick, useI18n } from '@/i18n';
 import { SURAH_TR, listSurahs, surahName, type SurahMeta } from '@/services/quran';
@@ -33,7 +34,7 @@ function Marks({ items, lang, onRemove }: { items: Bookmark[]; lang: 'tr' | 'en'
             <Icon name="bookmark" size={20} color={b.hatim ? C.green : C.accent} />
             <View style={{ flex: 1, gap: 4 }}>
               <Text style={{ fontSize: fs(15), fontWeight: '700', color: C.ink }}>{b.name}</Text>
-              <Text style={T.small}>{surahName(b.surah, lang)} · {b.ayah}. ayet{b.hatim ? ` · %${pct} ${pick(L.done, lang)}` : ''}</Text>
+              <Text style={T.small}>{surahName(b.surah, lang)} · {b.ayah}. ayet · {lang === 'en' ? 'p.' : lang === 'ar' ? 'ص' : 's.'} {pageOf(b.surah, b.ayah)}{b.hatim ? ` · %${pct} ${pick(L.done, lang)}` : ''}</Text>
               {b.hatim && (
                 <View style={{ height: 4, borderRadius: 2, backgroundColor: C.border, overflow: 'hidden' }}>
                   <View style={{ width: `${Math.max(1, pct)}%`, height: 4, backgroundColor: C.green }} />
@@ -105,7 +106,7 @@ export default function QuranList() {
               </View>
               <View style={{ flex: 1 }}>
                 <Text style={{ fontSize: fs(15), fontWeight: '600', color: C.ink }}>{surahName(s.number, lang, s)}</Text>
-                {s.numberOfAyahs ? <Text style={T.small}>{s.revelationType === 'Meccan' ? 'Mekkî' : 'Medenî'} · {t('quran.ayahs', { n: s.numberOfAyahs })}</Text> : null}
+                {s.numberOfAyahs ? <Text style={T.small}>{s.revelationType === 'Meccan' ? 'Mekkî' : 'Medenî'} · {t('quran.ayahs', { n: s.numberOfAyahs })} · {lang === 'en' ? 'p.' : lang === 'ar' ? 'ص' : 's.'} {pageOf(s.number, 1)}</Text> : null}
               </View>
               {s.name ? <Text style={{ fontSize: fs(20), color: C.ink }}>{s.name}</Text> : null}
             </Pressable>

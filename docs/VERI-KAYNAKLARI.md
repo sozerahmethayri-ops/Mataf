@@ -85,3 +85,7 @@
 | Lateef (SIL International) | `@expo-google-fonts/lateef` | SIL Open Font License 1.1 |
 
 Seçim ölçütü: Uthmani metnin bütün Kur'an işaretlerini (U+06D6–U+06ED, ﴿﴾, ۩) çizmesi; fontTools ile ölçüldü. Reem Kufi, Aref Ruqaa ve Noto Nastaliq Urdu 19–23 işaret eksik olduğu için alınmadı. OFL yazı tiplerinin yazılımla dağıtılmasına izin verir; dosyalar değiştirilmeden paketlerden kullanılır.
+
+## Mushaf sayfa numaraları
+
+Medine Mushafı (Hafs) düzeni, 604 sayfa: her sayfanın ilk âyeti `src/data/quranPages.ts`'te. Kaynak: [quran-meta](https://github.com/quran-center/quran-meta) 7.0.0 (MIT, Huseyn Guliyev). Paketin kodu çalıştırılmadan dosyasından okundu; bilinen sayfalarla denetlendi (Bakara 1 = s. 2, Bakara 142 = s. 22, Kehf 45 = s. 298, Nebe 1 = s. 582, İhlâs 1 = s. 604). Türkiye baskılarının (ör. Hafız Osman hattı) sayfa düzeni bundan farklı olabilir.

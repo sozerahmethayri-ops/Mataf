@@ -5,7 +5,7 @@ import { router } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { Platform, ScrollView, Text, View } from 'react-native';
 
-import { HL, place, portionText } from '@/components/HatimCard';
+import { HL, pageRange, place, portionText } from '@/components/HatimCard';
 import { Btn, Chip, Header, Screen, SectionTitle, Segmented, T, Toggle } from '@/components/ui';
 import { C, fs } from '@/constants/theme';
 import { pick, useI18n } from '@/i18n';
@@ -127,7 +127,7 @@ export default function HatimScreen() {
             ) : s.left > 0 ? (
               <>
                 <Text style={{ fontSize: fs(17), fontWeight: '700', color: C.ink }}>{pick(HL.today, lg)}: {place(s.from, lg)} → {place(s.to, lg)}</Text>
-                <Text style={{ fontSize: fs(14), color: C.muted }}>{portionText(s.juzLeft, s.pagesLeft, lg)}</Text>
+                <Text style={{ fontSize: fs(14), color: C.muted }}>{pageRange(s.pageFrom, s.pageTo, lg)} · {portionText(s.juzLeft, s.pagesLeft, lg)}</Text>
               </>
             ) : (
               <Text style={{ fontSize: fs(17), fontWeight: '700', color: C.accent }}>{pick(HL.done, lg)}</Text>

@@ -10,12 +10,15 @@ import { C, fs, fsAr, isDark, shadow } from '@/constants/theme';
 import { MEAL_AUDIO, RECITERS, TRANSLIT, type QuranView } from '@/data/quranEditions';
 import { SAJDAH_NOTE, SAJDAH_SIGN, isSajdah, stripSajdahSign, surahHasSajdah } from '@/data/sajdah';
 import { lineFor } from '@/data/quranFonts';
+import { pageOf } from '@/data/quranPages';
 import { TAJWEED_RULES, ruleColor } from '@/data/tajweed';
 import type { ML } from '@/data/sites';
 import { pick, useI18n } from '@/i18n';
 import type { Lang } from '@/i18n/strings';
 import { getSurahAudio, getSurahTajweed, getSurahText, surahName, type FullAyah } from '@/services/quran';
 import { useQuranPrefs, type Bookmark } from '@/services/QuranPrefs';
+import { juzOf } from '@/services/hatim';
+import { surahLength } from '@/services/quranIndex';
 import { useAsync } from '@/services/useAsync';
 import { parseTajweed, stripTajweedBasmala } from '@/services/tajweed';
 import { useQuranFont } from '@/services/useQuranFont';
@@ -38,6 +41,8 @@ const L = {
   zoomOut: { tr: 'Yazıyı küçült', en: 'Smaller text', ar: 'تصغير الخط' },
   sajdah: { tr: 'Secde âyeti', en: 'Verse of prostration', ar: 'آية سجدة' },
   rules: { tr: 'Tecvid kuralları', en: 'Tajweed rules', ar: 'أحكام التجويد' },
+  pageMark: { tr: 'Sayfa {p} · {j}. cüz', en: 'Page {p} · Juz {j}', ar: 'صفحة {p} · الجزء {j}' },
+  sub: { tr: '{n}. sûre · s. {p}', en: 'Surah {n} · p. {p}', ar: 'السورة {n} · ص {p}' },
   tjErr: { tr: 'Tecvidli metin indirilemedi; düz metin gösteriliyor.', en: 'The tajweed text could not be loaded; showing plain text.', ar: 'تعذّر تحميل نص التجويد؛ يُعرض النص العادي.' },
   mark: { tr: 'Ayraç', en: 'Bookmark', ar: 'علامة' },
   markTitle: { tr: 'Bu ayete ayraç koy', en: 'Bookmark this verse', ar: 'ضع علامة على هذه الآية' },
@@ -48,7 +53,6 @@ const L = {
 } satisfies Record<string, ML>;
 
 const AR_DIGITS = (n: number) => String(n).replace(/\d/g, (d) => '٠١٢٣٤٥٦٧٨٩'[Number(d)]);
-const CHUNK = 8; // mushaf görünümünde bir satır grubu
 /** Okuma ekranı yazı büyütme basamakları */
 const ZOOMS = [0.8, 0.9, 1, 1.15, 1.3, 1.5, 1.75, 2];
 
@@ -90,13 +94,25 @@ export default function SurahReader() {
   const queue = useRef<{ ar: string[]; meal: string[]; idx: number; phase: Phase; mode: typeof prefs.mode } | null>(null);
   const list = useRef<FlatList<FullAyah>>(null);
   const mlist = useRef<FlatList<FullAyah[]>>(null);
+  // Mushaf: her öğe bir Mushaf sayfası (Medine düzeni, 604 sayfa); sayfa başında numara ve cüz
   const chunks = useMemo(() => {
     const out: FullAyah[][] = [];
-    for (let i = 0; i < (ayahs?.length ?? 0); i += CHUNK) out.push(ayahs!.slice(i, i + CHUNK));
+    let cur = -1;
+    for (const ay of ayahs ?? []) {
+      const p = pageOf(n, ay.n);
+      if (p !== cur) {
+        out.push([]);
+        cur = p;
+      }
+      out[out.length - 1].push(ay);
+    }
     return out;
-  }, [ayahs]);
+  }, [ayahs, n]);
+  const d = (x: number) => (lang === 'ar' ? AR_DIGITS(x) : String(x));
+  const p1 = pageOf(n, 1);
+  const p2 = pageOf(n, surahLength(n));
   const scrollToAyah = (k: number, animated = true) => {
-    if (mushafLike) mlist.current?.scrollToIndex({ index: Math.floor((k - 1) / CHUNK), viewPosition: 0.1, animated });
+    if (mushafLike) mlist.current?.scrollToIndex({ index: Math.max(0, chunks.findIndex((c) => c[0].n <= k && c[c.length - 1].n >= k)), viewPosition: 0.1, animated });
     else list.current?.scrollToIndex({ index: k - 1, viewPosition: 0.1, animated });
   };
   // Ayraçtan açıldıysa kaldığı ayete git
@@ -179,7 +195,7 @@ export default function SurahReader() {
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: C.bg }} edges={['top', 'left', 'right', 'bottom']}>
       <View style={{ paddingHorizontal: 16 }}>
-        <Header back title={surahName(n, lang)} subtitle={lang === 'tr' ? `${n}. sûre` : `Surah ${n}`}
+        <Header back title={surahName(n, lang)} subtitle={pick(L.sub, lang).replace('{n}', d(n)).replace('{p}', p1 === p2 ? d(p1) : `${d(p1)}–${d(p2)}`)}
           right={
             <View style={{ flexDirection: 'row', gap: 6 }}>
               <IconBtn name="minus" label={pick(L.zoomOut, lang)} onPress={() => zoomBy(-1)} />
@@ -233,24 +249,27 @@ mushafLike ? (
             </View>
           }
           renderItem={({ item: c }) => (
-            // direction: web'de paragraf sağdan sola olsun (writingDirection yalnız iOS'ta işler); yoksa satır başına düşen âyet numarası sola kayıyor
-            <Text style={{ fontFamily: qff, fontSize: arSize(24), lineHeight: arLine(arSize(24), fsAr(54) * z), color: C.ink, textAlign: 'justify', writingDirection: 'rtl', direction: 'rtl' }}>
-              {c.map((ay) => {
-                const idx = ay.n - 1;
-                const on = now?.idx === idx;
-                const sj = isSajdah(n, ay.n);
-                const segs = view === 'tecvid' ? tj?.[idx] : undefined;
-                return (
-                  <Text key={ay.n} onPress={() => setMarkFor(ay.n)} onLongPress={() => start(idx)}
-                    style={on ? { backgroundColor: C.accentTint } : sj ? { backgroundColor: C.greenTint } : undefined}>
-                    {segs ? segs.map((sg, k) => { const tx = k === segs.length - 1 ? stripSajdahSign(sg.t) : sg.t; return sg.r ? <Text key={k} style={{ color: ruleColor(sg.r, dark) }}>{tx}</Text> : tx; }) : stripSajdahSign(ay.ar)}
-                    {sj ? <Text style={{ color: C.green, fontWeight: '700' }} accessibilityLabel={pick(L.sajdah, lang)}>{` ${SAJDAH_SIGN}`}</Text> : null}
-                    {/* Âyet sonu: süslü parantez içinde Arapça rakam, palet renginde */}
-                    <Text style={{ color: C.accent, fontWeight: '700', fontSize: arSize(21) }}>{` \uFD3F${AR_DIGITS(ay.n)}\uFD3E `}</Text>
-                  </Text>
-                );
-              })}
-            </Text>
+            <View>
+              <PageMark page={pageOf(n, c[0].n)} juz={juzOf(n, c[0].n)} lang={lang} />
+              {/* direction: web'de paragraf sağdan sola olsun (writingDirection yalnız iOS'ta işler); yoksa satır başına düşen âyet numarası sola kayıyor */}
+              <Text style={{ fontFamily: qff, fontSize: arSize(24), lineHeight: arLine(arSize(24), fsAr(54) * z), color: C.ink, textAlign: 'justify', writingDirection: 'rtl', direction: 'rtl' }}>
+                {c.map((ay) => {
+                  const idx = ay.n - 1;
+                  const on = now?.idx === idx;
+                  const sj = isSajdah(n, ay.n);
+                  const segs = view === 'tecvid' ? tj?.[idx] : undefined;
+                  return (
+                    <Text key={ay.n} onPress={() => setMarkFor(ay.n)} onLongPress={() => start(idx)}
+                      style={on ? { backgroundColor: C.accentTint } : sj ? { backgroundColor: C.greenTint } : undefined}>
+                      {segs ? segs.map((sg, k) => { const tx = k === segs.length - 1 ? stripSajdahSign(sg.t) : sg.t; return sg.r ? <Text key={k} style={{ color: ruleColor(sg.r, dark) }}>{tx}</Text> : tx; }) : stripSajdahSign(ay.ar)}
+                      {sj ? <Text style={{ color: C.green, fontWeight: '700' }} accessibilityLabel={pick(L.sajdah, lang)}>{` ${SAJDAH_SIGN}`}</Text> : null}
+                      {/* Âyet sonu: süslü parantez içinde Arapça rakam, palet renginde */}
+                      <Text style={{ color: C.accent, fontWeight: '700', fontSize: arSize(21) }}>{` \uFD3F${AR_DIGITS(ay.n)}\uFD3E `}</Text>
+                    </Text>
+                  );
+                })}
+              </Text>
+            </View>
           )}
           ListFooterComponent={
             <View style={{ gap: 8, marginTop: 14 }}>
@@ -276,28 +295,32 @@ mushafLike ? (
           }
           renderItem={({ item: a, index }) => {
             const active = now?.idx === index;
+            const newPage = index === 0 || pageOf(n, a.n) !== pageOf(n, a.n - 1);
             return (
-              <View style={{ paddingVertical: 14, paddingHorizontal: active ? 10 : 0, marginHorizontal: active ? -10 : 0, borderRadius: 14, backgroundColor: active ? C.accentSoft : 'transparent', borderBottomWidth: active ? 0 : 1, borderBottomColor: C.border, gap: 8 }}>
-                <View style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 12 }}>
-                  <View style={{ width: 28, height: 28, borderRadius: 14, borderWidth: 1.5, borderColor: isSajdah(n, a.n) ? C.green : C.route, alignItems: 'center', justifyContent: 'center', marginTop: 6, backgroundColor: active ? C.accent : 'transparent' }}>
-                    <Text style={{ fontSize: fs(11), fontWeight: '700', color: active ? C.onAccent : C.accent }}>{a.n}</Text>
+              <>
+                {newPage && <PageMark page={pageOf(n, a.n)} juz={juzOf(n, a.n)} lang={lang} />}
+                <View style={{ paddingVertical: 14, paddingHorizontal: active ? 10 : 0, marginHorizontal: active ? -10 : 0, borderRadius: 14, backgroundColor: active ? C.accentSoft : 'transparent', borderBottomWidth: active ? 0 : 1, borderBottomColor: C.border, gap: 8 }}>
+                  <View style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 12 }}>
+                    <View style={{ width: 28, height: 28, borderRadius: 14, borderWidth: 1.5, borderColor: isSajdah(n, a.n) ? C.green : C.route, alignItems: 'center', justifyContent: 'center', marginTop: 6, backgroundColor: active ? C.accent : 'transparent' }}>
+                      <Text style={{ fontSize: fs(11), fontWeight: '700', color: active ? C.onAccent : C.accent }}>{a.n}</Text>
+                    </View>
+                    {view === 'meal' && a.meal ? <Text style={[T.body, { flex: 1, fontSize: fs(17) * z, lineHeight: fs(26) * z, color: C.ink }]}>{a.meal}</Text> : <Text style={[T.arabic, { flex: 1, fontFamily: qff, fontSize: arSize(24), lineHeight: arLine(arSize(24), fsAr(40) * z) }]}>{stripSajdahSign(a.ar)}</Text>}
                   </View>
-                  {view === 'meal' && a.meal ? <Text style={[T.body, { flex: 1, fontSize: fs(17) * z, lineHeight: fs(26) * z, color: C.ink }]}>{a.meal}</Text> : <Text style={[T.arabic, { flex: 1, fontFamily: qff, fontSize: arSize(24), lineHeight: arLine(arSize(24), fsAr(40) * z) }]}>{stripSajdahSign(a.ar)}</Text>}
-                </View>
-                {isSajdah(n, a.n) && (
-                  <View style={{ alignSelf: 'flex-start', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 12, backgroundColor: C.greenTint }}>
-                    <Text style={{ fontSize: fs(13), fontWeight: '700', color: C.green }}>{SAJDAH_SIGN} {pick(L.sajdah, lang)}</Text>
+                  {isSajdah(n, a.n) && (
+                    <View style={{ alignSelf: 'flex-start', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 12, backgroundColor: C.greenTint }}>
+                      <Text style={{ fontSize: fs(13), fontWeight: '700', color: C.green }}>{SAJDAH_SIGN} {pick(L.sajdah, lang)}</Text>
+                    </View>
+                  )}
+                  {view === 'ar+meal' && a.translit ? <Text style={{ fontSize: fs(14) * z, fontStyle: 'italic', color: C.muted, lineHeight: fs(20) * z }}>{a.translit}</Text> : null}
+                  {view === 'ar+meal' && a.meal ? <Text style={[T.body, { fontSize: fs(15) * z, lineHeight: fs(22) * z }]}>{a.meal}</Text> : null}
+                  <View style={{ flexDirection: 'row', gap: 8 }}>
+                    <Chipish icon="play" label={pick(L.play, lang)} onPress={() => start(index)} />
+                    <Chipish icon="tafsir" label={pick(L.tafsir, lang)} onPress={() => router.push({ pathname: '/tefsir', params: { s: String(n), a: String(a.n) } })} />
+                    <Chipish icon="bookmark" label={pick(L.mark, lang)} onPress={() => setMarkFor(a.n)} />
+                    <Chipish icon="share" label="" onPress={() => Share.share({ message: `${a.ar}\n${a.meal ?? ''}\n— ${surahName(n, lang)} ${a.n}` })} />
                   </View>
-                )}
-                {view === 'ar+meal' && a.translit ? <Text style={{ fontSize: fs(14) * z, fontStyle: 'italic', color: C.muted, lineHeight: fs(20) * z }}>{a.translit}</Text> : null}
-                {view === 'ar+meal' && a.meal ? <Text style={[T.body, { fontSize: fs(15) * z, lineHeight: fs(22) * z }]}>{a.meal}</Text> : null}
-                <View style={{ flexDirection: 'row', gap: 8 }}>
-                  <Chipish icon="play" label={pick(L.play, lang)} onPress={() => start(index)} />
-                  <Chipish icon="tafsir" label={pick(L.tafsir, lang)} onPress={() => router.push({ pathname: '/tefsir', params: { s: String(n), a: String(a.n) } })} />
-                  <Chipish icon="bookmark" label={pick(L.mark, lang)} onPress={() => setMarkFor(a.n)} />
-                  <Chipish icon="share" label="" onPress={() => Share.share({ message: `${a.ar}\n${a.meal ?? ''}\n— ${surahName(n, lang)} ${a.n}` })} />
                 </View>
-              </View>
+              </>
             );
           }}
           ListFooterComponent={
@@ -387,5 +410,17 @@ function TajweedLegend({ lang, dark }: { lang: Lang; dark: boolean }) {
         <Text style={{ fontSize: fs(12), fontWeight: '700', color: C.onAccent }}>{pick(L.rules, lang)} ›</Text>
       </Pressable>
     </ScrollView>
+  );
+}
+
+/** Sayfa başı işareti: Medine Mushafı sayfası ve cüzü */
+function PageMark({ page, juz, lang }: { page: number; juz: number; lang: Lang }) {
+  const d = (x: number) => (lang === 'ar' ? AR_DIGITS(x) : String(x));
+  return (
+    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, marginTop: 6, marginBottom: 4 }} accessibilityRole="header">
+      <View style={{ flex: 1, height: 1, backgroundColor: C.accentTint }} />
+      <Text style={{ fontSize: fs(12.5), fontWeight: '700', color: C.accent }}>{pick(L.pageMark, lang).replace('{p}', d(page)).replace('{j}', d(juz))}</Text>
+      <View style={{ flex: 1, height: 1, backgroundColor: C.accentTint }} />
+    </View>
   );
 }

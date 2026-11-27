@@ -20,10 +20,15 @@ export const HL = {
   read: { tr: 'Okumaya devam', en: 'Continue reading', ar: 'متابعة القراءة' },
   juz: { tr: '≈ {j} cüz ({p} sayfa)', en: '≈ {j} juz ({p} pages)', ar: '≈ {j} جزء ({p} صفحة)' },
   pages: { tr: '≈ {p} sayfa', en: '≈ {p} pages', ar: '≈ {p} صفحة' },
+  range: { tr: 's. {a}–{b}', en: 'p. {a}–{b}', ar: 'ص {a}–{b}' },
+  one: { tr: 's. {a}', en: 'p. {a}', ar: 'ص {a}' },
 };
 
 /** Sûre ve âyet: Türkçede sûre adıyla, öbür dillerde 2:142 biçiminde (ad listesi çevrimdışı yalnız Türkçe) */
 export const place = ([s, a]: [number, number], lg: Lang) => (lg === 'tr' ? `${surahName(s, 'tr')} ${a}` : `${s}:${a}`);
+
+/** Sayfa aralığı (Medine Mushafı): "s. 298–303" ya da tek sayfa "s. 604" */
+export const pageRange = (a: number, b: number, lg: Lang) => (a === b ? pick(HL.one, lg).replace('{a}', String(a)) : pick(HL.range, lg).replace('{a}', String(a)).replace('{b}', String(b)));
 
 /** Kalan bölümün büyüklüğü: üç çeyrek cüzden azsa yalnız sayfa (cüz yarıma yuvarlanır, sayfa ile çelişmesin) */
 export function portionText(juzLeft: number, pages: number, lg: Lang) {
@@ -55,7 +60,7 @@ export function HatimCard({ now, lg }: { now: Date; lg: Lang }) {
       ) : s.left > 0 ? (
         <View style={{ gap: 2 }}>
           <Text style={{ fontSize: fs(15), fontWeight: '600', color: C.ink }}>{pick(HL.today, lg)}: {place(s.from, lg)} → {place(s.to, lg)}</Text>
-          <Text style={{ fontSize: fs(13.5), color: C.muted }}>{portionText(s.juzLeft, s.pagesLeft, lg)}</Text>
+          <Text style={{ fontSize: fs(13.5), color: C.muted }}>{pageRange(s.pageFrom, s.pageTo, lg)} · {portionText(s.juzLeft, s.pagesLeft, lg)}</Text>
         </View>
       ) : (
         <Text style={{ fontSize: fs(15), fontWeight: '700', color: C.accent }}>{pick(HL.done, lg)}</Text>
