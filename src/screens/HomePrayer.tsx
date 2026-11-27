@@ -8,10 +8,13 @@ import { Linking, Pressable, ScrollView, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { DailyDuaCard } from '@/components/DailyDuaCard';
+import { FridayCard } from '@/components/FridayCard';
+import { HatimCard } from '@/components/HatimCard';
 import { Icon, type IconName } from '@/components/Icon';
 import { PrayerLogCard } from '@/components/PrayerLogCard';
 import { SkyScene } from '@/components/SkyScene';
 import { TesrikNote, tesrikActive } from '@/components/TesrikNote';
+import { ZikirCard } from '@/components/ZikirCard';
 import { C, fs, getTextScale, isDark, shadow } from '@/constants/theme';
 import { pick, useI18n } from '@/i18n';
 import { hijriText, nextSpecial } from '@/services/hijri';
@@ -232,8 +235,11 @@ export default function HomePrayer() {
         {pilgrim && !nearMakkah && <Shortcut icon="star" label={pick(L.rawdah, lg)} onPress={() => router.push('/ravza')} />}
         {pilgrim && !nearMakkah && <Shortcut icon="map" label={pick(L.map, lg)} onPress={() => router.push('/harita')} />}
       </View>
-      {/* Her gün dönülen yerler: bugünkü namazlar (tek dokunuşla işaret) ve günün duası */}
+      {/* Her gün dönülen yerler: cuma (yalnız cuma), bugünkü namazlar, hatim planı (varsa), zikir hedefi (zikir yapılıyorsa), günün duası */}
+      <FridayCard now={now} dhuhr={tt.dhuhr} tz={loc.tz} lg={lg} />
       <PrayerLogCard times={tt} now={now} lg={lg} />
+      <HatimCard now={now} lg={lg} />
+      <ZikirCard lg={lg} />
       <DailyDuaCard now={now} lg={lg} />
       <Pressable onPress={() => router.push('/vakitler')} style={{ alignSelf: 'center', paddingVertical: 6 }}>
         <Text style={{ fontSize: fs(13), color: C.accent, fontWeight: '700' }}>{pick(L.all, lg)} ›</Text>
@@ -261,7 +267,7 @@ function Shortcut({ icon, label, onPress, tint }: { icon: IconName; label: strin
   return (
     <Pressable onPress={onPress} accessibilityRole="button" accessibilityLabel={label}
       style={({ pressed }) => ({ flexGrow: 1, flexBasis: '40%', minHeight: 52, flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 14, borderRadius: 14, backgroundColor: C.surface, opacity: pressed ? 0.7 : 1 })}>
-      <Icon name={icon} size={20} color={tint ?? C.ink2} />
+      <Icon name={icon} size={20} color={tint ?? C.accent} />
       <Text style={{ flexShrink: 1, fontSize: fs(15), color: tint ?? C.ink, fontWeight: '600' }} numberOfLines={1}>{label}</Text>
     </Pressable>
   );

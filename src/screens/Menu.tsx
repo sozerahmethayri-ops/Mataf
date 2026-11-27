@@ -13,7 +13,7 @@ import { pick, useI18n } from '@/i18n';
 type Lang = 'tr' | 'en' | 'ar';
 // sos: kırmızı yazılır (Acil durum); öbürlerinin simgesi tek renk (renkli simge zeminleri şablon gibi duruyordu, 0.13.5)
 type Item = { icon: IconName; title: { tr: string; en: string; ar: string }; to?: string; url?: string; sos?: boolean };
-// Sade menü: her ekran bir kez, gruplarda altı-yedi satır; başka ekranlardan açılanlar (kapı bildir, Ravza 360°, okuma
+// Sade menü: her ekran bir kez, grup başına en çok sekiz satır; başka ekranlardan açılanlar (kapı bildir, Ravza 360°, okuma
 // ayarları, veri kaynakları, yol tarifi, ezan bildirimleri) yalnız aramada çıkar.
 const GROUPS: { title: { tr: string; en: string; ar: string }; items: Item[] }[] = [
   {
@@ -22,6 +22,7 @@ const GROUPS: { title: { tr: string; en: string; ar: string }; items: Item[] }[]
       { icon: 'clock', title: { tr: 'Namaz vakitleri', en: 'Prayer times', ar: 'مواقيت الصلاة' }, to: '/vakitler' },
       { icon: 'check', title: { tr: 'Namaz takibi', en: 'Prayer tracker', ar: 'متابعة الصلاة' }, to: '/namaz-takibi' },
       { icon: 'book', title: { tr: "Kur'an-ı Kerîm", en: 'The Quran', ar: 'القرآن الكريم' }, to: '/kuran' },
+      { icon: 'bookmark', title: { tr: 'Hatim planı', en: 'Khatm plan', ar: 'خطة الختمة' }, to: '/hatim' },
       { icon: 'compass', title: { tr: 'Kıble', en: 'Qibla', ar: 'القبلة' }, to: '/kible' },
       { icon: 'beads', title: { tr: 'Zikirmatik', en: 'Dhikr counter', ar: 'المسبحة' }, to: '/zikir' },
       { icon: 'moon', title: { tr: 'Hadis ve dualar', en: 'Hadith and du‘as', ar: 'الحديث والدعاء' }, to: '/hadis-dua' },
@@ -58,6 +59,8 @@ const GROUPS: { title: { tr: string; en: string; ar: string }; items: Item[] }[]
       { icon: 'users', title: { tr: 'Aile ve grup', en: 'Family & group', ar: 'العائلة والمجموعة' }, to: '/grup' },
       { icon: 'bus', title: { tr: 'Ulaşım', en: 'Transport', ar: 'التنقل' }, to: '/ulasim' },
       { icon: 'pin', title: { tr: 'Yerlerim (çadır, buluşma)', en: 'My places', ar: 'أماكني' }, to: '/yerlerim' },
+      { icon: 'list', title: { tr: 'Hazırlık listesi', en: 'Packing list', ar: 'قائمة التجهيز' }, to: '/hazirlik' },
+      { icon: 'text', title: { tr: 'Arapça ifadeler', en: 'Arabic phrases', ar: 'عبارات عربية' }, to: '/arapca' },
       { icon: 'settings', title: { tr: 'Ayarlar', en: 'Settings', ar: 'الإعدادات' }, to: '/ayarlar' },
     ],
   },
@@ -116,7 +119,7 @@ export default function Menu() {
           : <View style={listBox()}>{found.map((it, i) => <Row key={it.title.tr} it={it} lg={lg} first={i === 0} onPress={() => open(it)} />)}</View>
       ) : GROUPS.map((g) => (
         <View key={g.title.tr} style={{ gap: 8 }}>
-          <Text style={{ fontSize: fs(14), fontWeight: '700', color: C.ink2 }} accessibilityRole="header">{pick(g.title, lg)}</Text>
+          <Text style={{ fontSize: fs(14), fontWeight: '700', color: C.accent }} accessibilityRole="header">{pick(g.title, lg)}</Text>
           <View style={listBox()}>{g.items.map((it, i) => <Row key={it.title.tr} it={it} lg={lg} first={i === 0} onPress={() => open(it)} />)}</View>
         </View>
       ))}
@@ -132,7 +135,7 @@ function Row({ it, lg, first, onPress }: { it: Item; lg: Lang; first: boolean; o
   return (
     <Pressable accessibilityRole="button" onPress={onPress}
       style={({ pressed }) => ({ flexDirection: 'row', alignItems: 'center', gap: 14, minHeight: 52, paddingVertical: 6, borderTopWidth: first ? 0 : 1, borderTopColor: C.border, opacity: pressed ? 0.7 : 1 })}>
-      <Icon name={it.icon} size={20} color={it.sos ? C.closed : C.ink2} />
+      <Icon name={it.icon} size={20} color={it.sos ? C.closed : C.accent} />
       <Text style={{ flex: 1, fontSize: fs(15.5), fontWeight: '600', color: it.sos ? C.closed : C.ink }}>{pick(it.title, lg)}</Text>
       <Icon name="chevron" size={16} color={C.muted} />
     </Pressable>

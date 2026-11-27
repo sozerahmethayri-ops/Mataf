@@ -30,6 +30,10 @@ import { UMRE_STEPS, IHRAM_RULES } from '../src/data/umre';
 import { zikirStats } from '../src/services/zikirStats';
 import { FULL_DAY, countDay, countDays, dayKey, isDone, lastDays as logDays, prune, sanitize, streak, toggle } from '../src/services/prayerLog';
 import { dailyIndex, dayNumber } from '../src/services/daily';
+import { JUZ_STARTS, TOTAL_AYAH, cleanPlan, fromGlobal, hatimToday, juzPos, readAtJuz, readFromMark, targetRead } from '../src/services/hatim';
+import { zikirToday } from '../src/services/zikirStats';
+import { CHECKLIST } from '../src/data/checklist';
+import { PHRASES } from '../src/data/phrases';
 import { allTextDuas } from '../src/data/duas';
 import { altitudeText, directionText, moonLitPath, moonPhaseName, skyDay, skyNow, skyPhase } from '../src/services/sky';
 import { newer } from '../src/services/version';
@@ -497,6 +501,7 @@ for (const dark of [false, true]) for (const p of Object.keys(PALETTES) as Palet
     ['onAccent/accent', contrast(c.onAccent, c.accent)], ['accent/bg', contrast(c.accent, c.bg)],
     ['accent/accentSoft', contrast(c.accent, c.accentSoft)], ['accent/accentTint', contrast(c.accent, c.accentTint)],
     ['ink/surface', contrast(c.ink, c.surface)], ['muted/bg', contrast(c.muted, c.bg)], ['muted/surface', contrast(c.muted, c.surface)],
+    ['accent/surface', contrast(c.accent, c.surface)], ['ink2/surface', contrast(c.ink2, c.surface)],
     ['onInk/ink', contrast(c.onInk, c.ink)], ['closed/closedTint', contrast(c.closed, c.closedTint)], ['open/openTint', contrast(c.open, c.openTint)],
     ['limited/limitedTint', contrast(c.limited, c.limitedTint)], ['user/userTint', contrast(c.user, c.userTint)],
     ['white/green', contrast('#FFFFFF', c.green)], ['ink/limitedFill', contrast('#17181C', c.limitedFill)],
@@ -777,6 +782,11 @@ ok(shareLink({ lat: 21.4225, lng: 39.8262 }) === 'https://maps.google.com/?q=21.
   const ar = at(21.3549, 39.9841, new Date(2027, 4, 15, 12));
   ok(arafat.at.getTime() === ar.dhuhr.getTime(), 'hac: Arafat vakfesi bildirimi Arafat’ta öğle vaktinde');
   ok(planExtras({ now: new Date(2027, 4, 13, 9), days: 7, lang: 'tr', special: false, hajj: false, timesFor: tf, timesAt: at }).length === 0, 'hatırlatmalar kapalıyken bildirim yok');
+  const fx = planExtras({ now: new Date(2026, 10, 26, 9), days: 7, lang: 'tr', special: false, hajj: false, friday: true, timesFor: tf, timesAt: at });
+  const cuma = fx.filter((x) => x.id.startsWith('cuma-'));
+  ok(cuma.length === 1 && cuma[0].at.getDay() === 5 && cuma[0].at > tf(cuma[0].at).sunrise && cuma[0].url === '/kuran/18', `cuma hatırlatması: haftada bir, cuma sabahı, Kehf açılır (${cuma.map((x) => x.at.toString().slice(0, 21)).join()})`);
+  const qx = planExtras({ now: new Date(2026, 10, 26, 9), days: 7, lang: 'tr', special: false, hajj: false, quran: true, timesFor: tf, timesAt: at });
+  ok(qx.length >= 7 && qx.every((x) => x.id.startsWith('hatim-') && x.url === '/hatim' && x.at > tf(x.at).isha), `hatim hatırlatması: her gün yatsıdan sonra (${qx.length})`);
 }
 
 // ── Resimli gökyüzü sahnesi ──
@@ -912,6 +922,36 @@ ok(shareLink({ lat: 21.4225, lng: 39.8262 }) === 'https://maps.google.com/?q=21.
   ok(n >= 30 && i >= 0 && i < n && dailyIndex(b, n) === i && dailyIndex(c, n) === (i + 1) % n && dailyIndex(a, 0) === -1,
     `günün duası: ${n} kısa dua; aynı gün aynı, ertesi gün sıradaki`);
   ok(allTextDuas().every((x) => !!x.d.ref), 'günün duası: her duanın kaynağı yazılı');
+}
+
+// ── Hatim planı ──
+{
+  ok(JUZ_STARTS.length === 30 && JUZ_STARTS.every(([a, b], i) => i === 0 || readFromMark(a, b) > readFromMark(...JUZ_STARTS[i - 1])), 'hatim: 30 cüz başı, sıralı');
+  ok(juzPos(0) === 0 && juzPos(readFromMark(2, 142)) === 1 && juzPos(readFromMark(78, 1)) === 29 && juzPos(TOTAL_AYAH) === 30, 'hatim: cüz konumu (Bakara 142 = 1, Nebe 1 = 29, son = 30)');
+  ok(fromGlobal(1).join() === '1,1' && fromGlobal(8).join() === '2,1' && fromGlobal(TOTAL_AYAH).join() === '114,6' && fromGlobal(readFromMark(18, 45) + 1).join() === '18,45', 'hatim: Mushaf sırası → sûre ve âyet');
+  const plan = { start: '2026-11-27', days: 30, from: 0 };
+  const d0 = new Date(2026, 10, 27, 20);
+  const t0 = hatimToday(plan, 0, d0);
+  ok(t0.day === 1 && t0.left === readFromMark(2, 142) && Math.abs(t0.juzLeft - 1) < 0.01 && t0.pagesLeft === 20 && t0.from.join() === '1,1' && t0.to.join() === '2,141', `hatim: 30 günlük planda ilk gün ≈ 1 cüz (${t0.juzLeft.toFixed(2)} cüz, ${t0.pagesLeft} sayfa)`);
+  ok([0, 1, 7.5, 15, 29.25].every((j) => Math.abs(juzPos(readAtJuz(j)) - j) < 0.02), 'hatim: cüz konumu ↔ âyet sayısı karşılıklı');
+  ok(targetRead(plan, new Date(2026, 11, 26, 12)) === TOTAL_AYAH && targetRead(plan, new Date(2027, 0, 30)) === TOTAL_AYAH, 'hatim: son gün ve sonrasında hedef Mushaf sonu');
+  const done = hatimToday(plan, t0.target + 10, d0);
+  ok(done.left === 0 && !done.finished && hatimToday(plan, TOTAL_AYAH, d0).finished, 'hatim: bugünkü bölüm bitince kalan 0; son âyette hatim tamam');
+  ok(hatimToday(plan, 100, new Date(2027, 0, 10)).overdue && !hatimToday(plan, 100, d0).overdue, 'hatim: süre dolunca "süre doldu"');
+  const late = hatimToday({ start: '2026-11-27', days: 60, from: readFromMark(18, 45) }, readFromMark(18, 45), d0);
+  ok(late.from.join() === '18,45' && late.left > 0, 'hatim: kaldığı yerden başlayan plan ayraçtan başlar');
+  ok(cleanPlan({ start: '2026-11-27', days: 30, from: 0 }) !== null && cleanPlan({ start: 'x', days: 30, from: 0 }) === null && cleanPlan({ start: '2026-11-27', days: 0, from: 0 }) === null && cleanPlan(null) === null, 'hatim: bozuk plan kaydı yok sayılır');
+}
+
+// ── Zikir, hazırlık listesi, Arapça ifadeler ──
+{
+  const now = new Date(2026, 10, 27, 15);
+  const items = [{ at: new Date(2026, 10, 27, 8).getTime(), name: 'a', count: 33 }, { at: new Date(2026, 10, 26, 22).getTime(), name: 'b', count: 99 }];
+  ok(zikirToday(items, { a: 10, b: 0 }, now) === 43, 'zikir: bugünkü toplam = bugün kaydedilen + sayaçta bekleyen (33 + 10)');
+  const ids = CHECKLIST.flatMap((g) => g.items.map((i) => `${g.id}.${i.id}`));
+  ok(new Set(ids).size === ids.length && CHECKLIST.every((g) => g.items.every((i) => i.text.tr && i.text.en && i.text.ar)), `hazırlık listesi: ${ids.length} madde, kimlikler tekil, üç dilde`);
+  const ph = PHRASES.flatMap((g) => g.items);
+  ok(new Set(ph.map((p) => p.id)).size === ph.length && ph.every((p) => /[\u0600-\u06FF]/.test(p.ar) && p.tr && p.mean.tr && p.mean.en), `Arapça ifadeler: ${ph.length} ifade, Arapça metin, okunuş ve anlam`);
 }
 
 mosqueChecks().then(transitChecks).then(() => process.exit(fails ? 1 : 0));

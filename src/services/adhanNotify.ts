@@ -12,6 +12,11 @@ import { Platform } from 'react-native';
 
 import { DEFAULT_NOTIF, SOUNDS, channelId, notifText, planExtras, planNotifications, type NotifPrefs } from './adhanPlan';
 import { PLACES, fmtTime, getMethod, times, type MethodId } from './prayer';
+import { dayKey } from './prayerLog';
+
+/** Vakit girdi bildirimindeki "Kıldım" düğmesi: dokununca uygulama açılır, o vakit Namaz takibine işlenir (AdhanHost). */
+export const PRAYED_ACTION = 'prayed';
+const PRAYER_CATEGORY = 'prayer-at';
 
 export const NOTIF_KEY = 'adhan:prefs';
 type Lang = 'tr' | 'en' | 'ar';
@@ -114,15 +119,18 @@ export async function applySchedule(prefs: NotifPrefs, lang: Lang, { ask = false
   if (!notificationsSupported) return { ok: false, count: 0, reason: 'web' };
   await Notifications.cancelAllScheduledNotificationsAsync();
   // Hac hatırlatmaları ezan bildirimlerinden bağımsız açılabilir
-  if (!prefs.enabled && !prefs.hajj) return { ok: true, count: 0, reason: 'off' };
+  if (!prefs.enabled && !prefs.hajj && !prefs.quran) return { ok: true, count: 0, reason: 'off' };
   if (!(await notifPermission(ask))) return { ok: false, count: 0, reason: 'permission' };
   const resolved = await resolvePlace(prefs);
   if (!resolved && prefs.enabled) return { ok: false, count: 0, reason: 'location' };
   const place = resolved ?? { ...PLACES.makkah, method: 'UmmAlQura' as MethodId };
   await ensureChannels(lang);
+  await Notifications.setNotificationCategoryAsync(PRAYER_CATEGORY, [
+    { identifier: PRAYED_ACTION, buttonTitle: { tr: 'Kıldım', en: 'I prayed', ar: 'صلّيت' }[lang], options: { opensAppToForeground: true } },
+  ]).catch(() => undefined);
   const now = new Date();
   const extras = planExtras({
-    now, days: 7, lang, special: prefs.enabled && prefs.special, hajj: prefs.hajj,
+    now, days: 7, lang, special: prefs.enabled && prefs.special, hajj: prefs.hajj, friday: prefs.enabled && prefs.friday, quran: prefs.quran,
     timesFor: (day) => times(place.lat, place.lng, place.method, day),
     timesAt: (lat, lng, day) => times(lat, lng, 'UmmAlQura', day),
   }).slice(0, 20);
@@ -145,7 +153,8 @@ export async function applySchedule(prefs: NotifPrefs, lang: Lang, { ask = false
         title,
         body,
         sound: sound.file ?? (sound.id === 'silent' ? false : 'default'),
-        data: { kind: 'adhan', type: p.kind, prayer: p.prayer, url: '/vakitler' },
+        data: { kind: 'adhan', type: p.kind, prayer: p.prayer, day: dayKey(p.prayerAt), url: '/vakitler' },
+        ...(p.kind === 'at' && p.prayer !== 'sunrise' ? { categoryIdentifier: PRAYER_CATEGORY } : {}),
         ...(Platform.OS === 'android' ? { priority: Notifications.AndroidNotificationPriority.MAX } : {}),
       },
       trigger: { type: Notifications.SchedulableTriggerInputTypes.DATE, date: p.at, channelId: channelId(sound.id) },
@@ -159,7 +168,7 @@ export async function applySchedule(prefs: NotifPrefs, lang: Lang, { ask = false
 export async function refreshSchedule(lang: Lang) {
   if (!notificationsSupported) return;
   const prefs = await loadNotifPrefs();
-  if (!prefs.enabled && !prefs.hajj) return;
+  if (!prefs.enabled && !prefs.hajj && !prefs.quran) return;
   await applySchedule(prefs, lang).catch(() => undefined);
 }
 

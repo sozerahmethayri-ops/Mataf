@@ -50,6 +50,11 @@ function Marks({ items, lang, onRemove }: { items: Bookmark[]; lang: 'tr' | 'en'
         );
       })}
       <Text style={T.small}>{pick(L.hint, lang)}</Text>
+      <Pressable onPress={() => router.push('/hatim')} accessibilityRole="button" style={({ pressed }) => ({ minHeight: 44, flexDirection: 'row', alignItems: 'center', gap: 8, opacity: pressed ? 0.7 : 1 })}>
+        <Icon name="bookmark" size={18} color={C.accent} />
+        <Text style={{ flex: 1, fontSize: fs(15), fontWeight: '700', color: C.accent }}>{lang === 'en' ? 'Khatm plan: a daily portion' : lang === 'ar' ? 'خطة الختمة: ورد يومي' : 'Hatim planı: her gün bir bölüm'}</Text>
+        <Icon name="chevron" size={16} color={C.muted} />
+      </Pressable>
     </View>
   );
 }

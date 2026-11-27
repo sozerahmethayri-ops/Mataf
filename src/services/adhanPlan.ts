@@ -35,6 +35,10 @@ export type NotifPrefs = {
   special: boolean;
   /** Hac günlerinde (8–13 Zilhicce) Arafat, Müzdelife ve şeytan taşlama hatırlatmaları (ezan bildirimlerinden bağımsız). */
   hajj: boolean;
+  /** Cuma sabahı hatırlatma; dokununca Kehf sûresi açılır (ezan bildirimleri açıkken). */
+  friday: boolean;
+  /** Hatim planı: her gün yatsıdan 30 dk sonra hatırlatma (ezan bildirimlerinden bağımsız). */
+  quran: boolean;
   /** "Bulunduğum yer" için son bilinen konum. */
   lat?: number;
   lng?: number;
@@ -52,6 +56,8 @@ export const DEFAULT_NOTIF: NotifPrefs = {
   playAdhan: true,
   special: true,
   hajj: false,
+  friday: true,
+  quran: false,
 };
 
 export const BEFORE_CHOICES = [0, 5, 10, 15, 20, 30, 45];
@@ -166,8 +172,21 @@ const SPECIAL_TEXT: Record<'night' | 'ramadan' | 'eid' | 'arefe' | 'day', { titl
  * `days` gün içindeki mübarek gün ve hac hatırlatmaları. Mübarek günler bir önceki akşam (akşam vakti, kullanıcının
  * yeri), hac anları Arafat/Mina vakitlerine göre (Ümmü'l-Kurâ). Sıralı döner.
  */
+const FRIDAY_TEXT = {
+  title: { tr: 'Hayırlı cumalar', en: 'Blessed Friday', ar: 'جمعة مباركة' },
+  body: { tr: 'Kehf sûresini açmak için dokunun.', en: 'Tap to open Surah al-Kahf.', ar: 'اضغط لفتح سورة الكهف.' },
+};
+const QURAN_TEXT = {
+  title: { tr: 'Hatim planı', en: 'Khatm plan', ar: 'خطة الختمة' },
+  body: { tr: 'Bugünkü bölümünüzü okumak için dokunun.', en: 'Tap to read today’s portion.', ar: 'اضغط لقراءة ورد اليوم.' },
+};
+
 export function planExtras(opts: {
   now: Date; days: number; lang: L3; special: boolean; hajj: boolean;
+  /** Cuma sabahı (güneş doğduktan 1 saat sonra) */
+  friday?: boolean;
+  /** Hatim planı (yatsıdan 30 dk sonra) */
+  quran?: boolean;
   timesFor: (day: Date) => Record<PrayerKey, Date>;
   timesAt: TimesAt;
   minLeadMs?: number;
@@ -191,6 +210,12 @@ export function planExtras(opts: {
         const tx = SPECIAL_TEXT[kind];
         add(`ozel-${tag}`, timesFor(day).maghrib, tx.title[lang].replace('{n}', sp.name[lang]), tx.body[lang], '/vakitler');
       }
+    }
+    if (opts.friday && day.getDay() === 5) {
+      add(`cuma-${tag}`, new Date(timesFor(day).sunrise.getTime() + 60 * 60e3), FRIDAY_TEXT.title[lang], FRIDAY_TEXT.body[lang], '/kuran/18');
+    }
+    if (opts.quran) {
+      add(`hatim-${tag}`, new Date(timesFor(day).isha.getTime() + 30 * 60e3), QURAN_TEXT.title[lang], QURAN_TEXT.body[lang], '/hatim');
     }
     if (opts.hajj) {
       const h = toHijri(day);

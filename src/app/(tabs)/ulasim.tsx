@@ -317,7 +317,7 @@ export default function TransportScreen() {
     <SafeAreaView style={{ flex: 1, backgroundColor: C.bg }} edges={['top', 'left', 'right']}>
       <View style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 8, gap: 12 }}>
         <Text style={[T.h1, { flex: 1 }]} accessibilityRole="header">{l('title')}</Text>
-        <IconBtn name="settings" label={pick({ tr: 'Ayarlar', en: 'Settings', ar: 'الإعدادات' }, lg)} size={44} color={C.ink2} onPress={() => router.push('/ayarlar')} />
+        <IconBtn name="settings" label={pick({ tr: 'Ayarlar', en: 'Settings', ar: 'الإعدادات' }, lg)} size={44} color={C.accent} onPress={() => router.push('/ayarlar')} />
       </View>
       <View style={{ height: Math.round(height * 0.36), borderTopWidth: 1, borderBottomWidth: 1, borderColor: C.border }}>
         <TransportMap user={here} dest={dest} segments={segments} onLongPress={pickPoint}
@@ -358,7 +358,7 @@ export default function TransportScreen() {
                   {quick.map((q) => (
                     <Pressable key={q.label} onPress={q.onPress} accessibilityRole="button"
                       style={({ pressed }) => ({ flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 14, height: 44, borderRadius: 22, backgroundColor: C.surface, opacity: pressed ? 0.7 : 1 })}>
-                      <Icon name={q.icon} color={C.ink2} size={17} />
+                      <Icon name={q.icon} color={C.accent} size={17} />
                       <Text style={{ color: C.ink, fontWeight: '600', fontSize: fs(14.5) }}>{q.label}</Text>
                     </Pressable>
                   ))}

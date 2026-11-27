@@ -8,7 +8,8 @@ import Svg, { Circle } from 'react-native-svg';
 
 import { Icon } from '@/components/Icon';
 import { BarChart } from '@/components/BarChart';
-import { Btn, Header, SectionTitle, T } from '@/components/ui';
+import { Btn, Chip, Header, SectionTitle, T } from '@/components/ui';
+import { ZIKIR_GOALS, useZikirGoal } from '@/components/ZikirCard';
 import { C, fs, fsAr } from '@/constants/theme';
 import { pick, useI18n } from '@/i18n';
 import { useTheme } from '@/services/ThemeContext';
@@ -50,6 +51,9 @@ const L = {
   log: { tr: 'Zikir defteri', en: 'Dhikr log', ar: 'سجل الأذكار' },
   empty: { tr: 'Henüz kayıt yok. Saydığınız zikri "Deftere kaydet" ile not edebilirsiniz.', en: 'No entries yet. Save a count with "Save to log".', ar: 'لا توجد سجلات بعد.' },
   todayTotal: { tr: 'Bugün toplam', en: 'Today in total', ar: 'مجموع اليوم' },
+  dailyGoal: { tr: 'Günlük hedef', en: 'Daily goal', ar: 'الهدف اليومي' },
+  goalOff: { tr: 'Kapalı', en: 'Off', ar: 'إيقاف' },
+  goalSub: { tr: 'Ana sayfada bugünkü zikrinizle birlikte görünür.', en: 'Shown on the home screen with today’s dhikr.', ar: 'يظهر في الصفحة الرئيسية مع ذكر اليوم.' },
   tesbihat: { tr: 'Namaz sonrası tesbihat (33-33-34 sırayla)', en: 'After-prayer tasbih (33-33-34 in order)', ar: 'تسبيح بعد الصلاة (33-33-34)' },
   add: { tr: 'Kendi zikrini ekle', en: 'Add your own dhikr', ar: 'أضف ذكرك' },
   name: { tr: 'Zikir (ör. Yâ Latîf)', en: 'Dhikr (e.g. Ya Latif)', ar: 'الذكر' },
@@ -71,6 +75,7 @@ export default function Zikir() {
   const { prefs } = useTheme();
   const [st, setSt] = usePersisted<State>('zikir:state', { current: 'subhanallah', counts: {}, targets: {}, custom: [], tesbihat: false });
   const [log, setLog] = usePersisted<{ items: LogItem[] }>('zikir:log', { items: [] });
+  const [goal, setGoal] = useZikirGoal();
   const [note, setNote] = useState('');
   const [newName, setNewName] = useState('');
   const [chartW, setChartW] = useState(340);
@@ -187,6 +192,12 @@ export default function Zikir() {
             setNewName('');
           }} />
         </View>
+
+        <SectionTitle>{pick(L.dailyGoal, lg)}</SectionTitle>
+        <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
+          {ZIKIR_GOALS.map((g) => <Chip key={g} label={g ? g.toLocaleString(lang) : pick(L.goalOff, lg)} active={goal === g} onPress={() => setGoal(g)} />)}
+        </View>
+        <Text style={T.small}>{pick(L.goalSub, lg)}</Text>
 
         {log.items.length > 0 && (
           <>

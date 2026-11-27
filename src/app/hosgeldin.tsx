@@ -117,7 +117,7 @@ function Step({ icon, title, sub, st, btn = '', doneLabel, onPress, info }: { ic
   return (
     <View style={{ flexDirection: 'row', gap: 12, padding: 16, borderRadius: 20, backgroundColor: C.surface }}>
       <View style={{ paddingTop: 1 }}>
-        <Icon name={icon} size={22} color={C.ink2} />
+        <Icon name={icon} size={22} color={C.accent} />
       </View>
       <View style={{ flex: 1, gap: 8 }}>
         <Text style={{ fontSize: fs(16), fontWeight: '700', color: C.ink }}>{title}</Text>

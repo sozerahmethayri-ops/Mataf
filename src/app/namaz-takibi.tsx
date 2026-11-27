@@ -1,17 +1,21 @@
 // Namaz takibi: bugünün beş vakti, son 7 gün, seri. Kayıt yalnız bu telefonda (prayer:log); kaza takibine bağlantı.
 // Dil sade ve suçlamasız: kaçan vakit "kayıp" diye gösterilmez, yalnız kılınan işaretlenir.
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { router } from 'expo-router';
 import { useEffect, useMemo, useState } from 'react';
 import { Pressable, Text, View } from 'react-native';
 
-import { Icon } from '@/components/Icon';
+import { Icon, type IconName } from '@/components/Icon';
 import { CheckDot, LOG_NAMES } from '@/components/PrayerLogCard';
 import { Header, ListRow, Screen, SectionTitle, T, Toggle } from '@/components/ui';
 import { C, fs } from '@/constants/theme';
 import { pick, useI18n } from '@/i18n';
 import { fmtTime, times } from '@/services/prayer';
 import { usePrayerPlace } from '@/services/prayerPlace';
+import { readFromMark, readShare } from '@/services/hatim';
 import { LOG_PRAYERS, countDays, dayKey, isDone, lastDays, streak } from '@/services/prayerLog';
+import { useQuranPrefs } from '@/services/QuranPrefs';
+import { zikirStats, type ZikirLogItem } from '@/services/zikirStats';
 import { usePrayerLog } from '@/services/usePrayerLog';
 
 type Lang = 'tr' | 'en' | 'ar';
@@ -20,7 +24,11 @@ const L = {
   sub: { tr: 'Yalnız bu telefonda saklanır', en: 'Stored only on this phone', ar: 'تُحفظ على هذا الهاتف فقط' },
   today: { tr: 'Bugün', en: 'Today', ar: 'اليوم' },
   week: { tr: 'Son 7 gün', en: 'Last 7 days', ar: 'آخر 7 أيام' },
-  weekSum: { tr: 'Son 7 günde {n} vakit kıldınız.', en: 'You prayed {n} prayers in the last 7 days.', ar: 'صلّيت {n} صلاة في آخر 7 أيام.' },
+  thisWeek: { tr: 'Son 7 günün özeti', en: 'Last 7 days at a glance', ar: 'ملخص آخر 7 أيام' },
+  sPrayer: { tr: 'Namaz', en: 'Prayers', ar: 'الصلاة' },
+  nPrayer: { tr: '{n} vakit', en: '{n} prayers', ar: '{n} صلاة' },
+  sZikir: { tr: 'Zikir (deftere kaydedilen)', en: 'Dhikr (saved in the log)', ar: 'الذكر (المسجّل)' },
+  sQuran: { tr: 'Hatim', en: 'Khatm', ar: 'الختمة' },
   streak: { tr: '{n} gündür beş vakit tamam', en: 'All five prayers, {n} days in a row', ar: 'الصلوات الخمس كاملة منذ {n} يوم' },
   notYet: { tr: 'Vakti girmedi', en: 'Not yet time', ar: 'لم يدخل وقتها' },
   hint: {
@@ -44,6 +52,24 @@ export default function PrayerLogScreen() {
   const lg = lang as Lang;
   const { loc, method } = usePrayerPlace(lang);
   const { log, hidden, flip, setHidden } = usePrayerLog();
+  const { bookmarks } = useQuranPrefs();
+  const hb = bookmarks.find((b) => b.hatim);
+  const qPct = hb ? Math.round(readShare(readFromMark(hb.surah, hb.ayah)) * 100) : 0;
+  // Son 7 günün zikri (deftere kaydedilenler)
+  const [zw, setZw] = useState(0);
+  useEffect(() => {
+    let alive = true;
+    AsyncStorage.getItem('zikir:log')
+      .then((raw) => {
+        if (!alive) return;
+        try {
+          const items = (JSON.parse(raw ?? '{}') as { items?: ZikirLogItem[] }).items ?? [];
+          setZw(zikirStats(items, new Date()).weekTotal);
+        } catch { /* bozuk kayıt */ }
+      })
+      .catch(() => undefined);
+    return () => { alive = false; };
+  }, []);
   const [now, setNow] = useState(() => new Date());
   useEffect(() => {
     const id = setInterval(() => setNow(new Date()), 60000);
@@ -76,7 +102,7 @@ export default function PrayerLogScreen() {
           );
         })}
       </View>
-      {st >= 2 && <Text style={{ fontSize: fs(15), fontWeight: '700', color: C.green }}>{pick(L.streak, lg).replace('{n}', String(st))}</Text>}
+      {st >= 2 && <Text style={{ fontSize: fs(15), fontWeight: '700', color: C.accent }}>{pick(L.streak, lg).replace('{n}', String(st))}</Text>}
 
       <SectionTitle>{pick(L.week, lg)}</SectionTitle>
       <View style={{ borderWidth: 1, borderColor: C.border, borderRadius: 18, paddingHorizontal: 10, paddingVertical: 4 }}>
@@ -107,7 +133,12 @@ export default function PrayerLogScreen() {
           );
         })}
       </View>
-      <Text style={T.muted}>{pick(L.weekSum, lg).replace('{n}', String(sum))}</Text>
+      <SectionTitle>{pick(L.thisWeek, lg)}</SectionTitle>
+      <View style={{ borderWidth: 1, borderColor: C.border, borderRadius: 18, paddingHorizontal: 14 }}>
+        <SumRow icon="check" label={pick(L.sPrayer, lg)} value={pick(L.nPrayer, lg).replace('{n}', String(sum))} first />
+        <SumRow icon="beads" label={pick(L.sZikir, lg)} value={zw.toLocaleString(lang)} onPress={() => router.push('/zikir')} />
+        <SumRow icon="book" label={pick(L.sQuran, lg)} value={`%${qPct}`} onPress={() => router.push('/hatim')} />
+      </View>
       <Text style={T.small}>{pick(L.hint, lg)}</Text>
 
       <ListRow title={pick(L.kaza, lg)} subtitle={pick(L.kazaSub, lg)} onPress={() => router.push('/kaza')} left={<Icon name="counter" size={20} color={C.ink2} />} />
@@ -116,5 +147,16 @@ export default function PrayerLogScreen() {
         <Toggle value={!hidden} onChange={(v) => setHidden(!v)} label={pick(L.showHome, lg)} />
       </View>
     </Screen>
+  );
+}
+
+function SumRow({ icon, label, value, first, onPress }: { icon: IconName; label: string; value: string; first?: boolean; onPress?: () => void }) {
+  return (
+    <Pressable onPress={onPress} disabled={!onPress} accessibilityRole={onPress ? 'button' : undefined}
+      style={({ pressed }) => ({ minHeight: 52, flexDirection: 'row', alignItems: 'center', gap: 12, borderTopWidth: first ? 0 : 1, borderTopColor: C.border, opacity: pressed ? 0.7 : 1 })}>
+      <Icon name={icon} size={20} color={C.accent} />
+      <Text style={{ flex: 1, fontSize: fs(15), color: C.ink }}>{label}</Text>
+      <Text style={{ fontSize: fs(15), fontWeight: '700', color: C.ink, fontVariant: ['tabular-nums'] }}>{value}</Text>
+    </Pressable>
   );
 }

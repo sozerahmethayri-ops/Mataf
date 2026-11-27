@@ -3,7 +3,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useCallback, useEffect, useState } from 'react';
 
-import { LOG_KEY, prune, sanitize, toggle, type LogPrayer, type PrayerLog } from './prayerLog';
+import { LOG_KEY, isDone, prune, sanitize, toggle, type LogPrayer, type PrayerLog } from './prayerLog';
 
 /** '1' ise ana sayfadaki kart gizli */
 export const LOG_HIDDEN_KEY = 'prayer:logHidden';
@@ -30,6 +30,15 @@ async function reload() {
   } catch {
     /* okunamadı: eldeki kalsın */
   }
+}
+
+/** Bildirimdeki "Kıldım" düğmesi: o vakti işaretler (zaten işaretliyse dokunmaz). Uygulama kapalıysa düğme önce uygulamayı açar. */
+export async function markPrayed(day: string, p: LogPrayer) {
+  await reload();
+  if (isDone(state.log, day, p)) return;
+  const log = prune(toggle(state.log, day, p), new Date());
+  emit({ ...state, log });
+  await AsyncStorage.setItem(LOG_KEY, JSON.stringify(log)).catch(() => {});
 }
 
 export function usePrayerLog() {

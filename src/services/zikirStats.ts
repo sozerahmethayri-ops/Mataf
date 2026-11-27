@@ -39,3 +39,11 @@ export function zikirStats(items: ZikirLogItem[], now: Date) {
   const top = [...perName.entries()].sort((a, b) => b[1] - a[1]).slice(0, 5).map(([name, count]) => ({ name, count }));
   return { today: byDay.get(today0) ?? 0, week, weekTotal: week.reduce((s, x) => s + x.value, 0), month, all, streak, top };
 }
+
+/** Bugünkü zikir: deftere kaydedilenler ve sayaçta bekleyenler (Zikirmatik başlığındaki "Bugün toplam" ile aynı) */
+export function zikirToday(items: ZikirLogItem[], counts: Record<string, number>, now: Date) {
+  const t0 = dayStart(now);
+  const saved = items.filter((i) => dayStart(new Date(i.at)) === t0).reduce((s, i) => s + i.count, 0);
+  const live = Object.values(counts).reduce((s, n) => s + (typeof n === 'number' && n > 0 ? n : 0), 0);
+  return saved + live;
+}

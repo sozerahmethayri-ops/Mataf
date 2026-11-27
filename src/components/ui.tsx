@@ -57,10 +57,10 @@ export function Btn({ title, onPress, kind = 'primary', icon, style, disabled }:
 
 export function Chip({ label, active, onPress, dot }: { label: string; active?: boolean; onPress?: () => void; dot?: string }) {
   return (
-    <Pressable accessibilityRole="button" accessibilityState={{ selected: !!active }} onPress={onPress}
-      style={[{ height: 38, paddingHorizontal: 14, borderRadius: 19, flexDirection: 'row', alignItems: 'center', gap: 6 }, active ? { backgroundColor: C.ink } : { backgroundColor: C.bg, borderWidth: 1, borderColor: C.borderStrong }]}>
-      {dot && <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: active ? C.onInk : dot }} />}
-      <Text style={{ fontSize: fs(13), fontWeight: active ? '700' : '500', color: active ? C.onInk : C.ink }}>{label}</Text>
+    <Pressable accessibilityRole="button" accessibilityState={{ selected: !!active }} onPress={onPress} hitSlop={4}
+      style={[{ height: 38, paddingHorizontal: 14, borderRadius: 19, flexDirection: 'row', alignItems: 'center', gap: 6 }, active ? { backgroundColor: C.accent } : { backgroundColor: C.bg, borderWidth: 1, borderColor: C.borderStrong }]}>
+      {dot && <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: active ? C.onAccent : dot }} />}
+      <Text style={{ fontSize: fs(13), fontWeight: active ? '700' : '500', color: active ? C.onAccent : C.ink }}>{label}</Text>
     </Pressable>
   );
 }
@@ -90,7 +90,7 @@ export function Segmented<V extends string>({ value, options, onChange }: { valu
         return (
           <Pressable key={o.value} accessibilityRole="button" accessibilityState={{ selected: on }} onPress={() => onChange(o.value)}
             style={[{ flex: 1, height: 36, borderRadius: 10, alignItems: 'center', justifyContent: 'center' }, on && { backgroundColor: C.bg, ...shadow, shadowOpacity: 0.08, elevation: 1 }]}>
-            <Text style={{ fontSize: fs(13), fontWeight: on ? '700' : '500', color: on ? C.ink : C.muted }}>{o.label}</Text>
+            <Text style={{ fontSize: fs(13), fontWeight: on ? '700' : '500', color: on ? C.accent : C.muted }}>{o.label}</Text>
           </Pressable>
         );
       })}
@@ -184,8 +184,8 @@ const buildT = () => ({
   body: { fontSize: fs(15), lineHeight: fs(22), color: C.ink2 } as TextStyle,
   muted: { fontSize: fs(13), color: C.muted } as TextStyle,
   small: { fontSize: fs(12), color: C.muted } as TextStyle,
-  // Bölüm başlığı cümle düzeninde: büyük harf dönüşümü Türkçe "i"yi "I" yapıyordu ve şablon gibi duruyordu
-  section: { fontSize: fs(14), fontWeight: '700', color: C.ink2, marginTop: S.sm } as TextStyle,
+  // Bölüm başlığı cümle düzeninde ve palet renginde: büyük harf dönüşümü Türkçe "i"yi "I" yapıyordu
+  section: { fontSize: fs(14), fontWeight: '700', color: C.accent, marginTop: S.sm } as TextStyle,
   arabic: { fontSize: fsAr(24), lineHeight: fsAr(40), color: C.ink, textAlign: 'right', writingDirection: 'rtl' } as TextStyle,
 });
 /** Yazı stilleri — tema değişince aynı nesne yeni renklerle güncellenir. */

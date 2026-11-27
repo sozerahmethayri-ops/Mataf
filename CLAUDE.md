@@ -26,7 +26,7 @@ Projenin kararları ve çalışma kuralları burada; bir karar değişince bu do
 
 ## Komutlar
 - `npm install`: postinstall `patches/expo-widgets+58.0.29.patch`'i uygular.
-- Her değişiklikten sonra üçü de temiz olmalı: `npm run typecheck`, `npm run lint`, `npm run check` (251 test, her satır `OK`). CI typecheck ve check çalıştırır.
+- Her değişiklikten sonra üçü de temiz olmalı: `npm run typecheck`, `npm run lint`, `npm run check` (266 test, her satır `OK`). CI typecheck ve check çalıştırır.
 - `npx expo start`: Expo Go'da kutular, özel ezan sesleri ve tam zamanlı alarm yok; yerel davranışı APK ya da duman testinde gör.
 - Web görüntüsü: `npx expo export -p web --output-dir /tmp/web`, sonra `python3 tools/web-shots/shoot.py /tmp/web /tmp/shots tools/web-shots/ornek-spec.json`. Spec biçimi dosyanın başında.
 - Emülatör (duman testi, ~25 dk): `gh workflow run android-smoke.yml -R sozerahmethayri-ops/Mataf --ref main`. Sonuçlar "smoke-latest" sürüm sayfasında: `crash.txt`, `status.txt`, `screen-*.png`, `logcat.txt`, `widget-log.txt`, `alarm.txt`. Akış `scripts/smoke.sh`'te.
@@ -55,7 +55,7 @@ Platforma özel dosyalar: `X.web.tsx`, `X.android.ts`, `X.types.ts`.
 - **Metin:** Kullanıcıya görünen her yazının `tr`, `en`, `ar` karşılığı olur. Ekrana özel yazılar dosyada `const L = { anahtar: { tr, en, ar } }` ve `pick(L.anahtar, lg)`; ortak olanlar `src/i18n/strings.ts` ve `t('…')`. Arapça seçilince `I18nManager.forceRTL` ile yön döner.
 - **Türkçe yazım:** Eki cins isim taşır, özel ad yalın kalır: "Yenikapı istasyonunda inin", "Al-Shabeka 439 durağında inin", "{p} vaktine kalan". Kısa, gündelik dil; sayı birimiyle ("≈ 27 dk", "560 m").
 - **Tema:** Renkleri `C` nesnesinden çizim anında oku; tema değişince `applyTheme` aynı nesneyi günceller, ekranlar yeniden kurulur. Modül düzeyinde renkten türeyen stil varsa `onThemeChange` ile yenile. Yazı boyutu `fs(n)`, Arapça `fsAr(n)`, ortak stiller `T`. Yeni renk çifti WCAG AA'yı geçmeli (`check-logic.ts` kontrast testleri).
-- **Kayıt:** `usePersisted(anahtar, başlangıç)` ya da AsyncStorage. Var olan anahtar adları kalıcıdır (`theme:prefs`, `adhan:prefs`, `mataf.city`, `mataf.lang`, `mataf.hotel.<şehir>`, `prayer:log`, `prayer:logHidden` …); adı değişirse kullanıcının kaydı kaybolur.
+- **Kayıt:** `usePersisted(anahtar, başlangıç)` ya da AsyncStorage. Var olan anahtar adları kalıcıdır (`theme:prefs`, `adhan:prefs`, `mataf.city`, `mataf.lang`, `mataf.hotel.<şehir>`, `prayer:log`, `prayer:logHidden`, `quran:plan`, `zikir:goal`, `trip:checklist` …); adı değişirse kullanıcının kaydı kaybolur.
 - **React Compiler (lint):** Çizimde `ref.current` okunmaz. Effect içinde `setState` yerine türetilmiş değer ya da `setTimeout(…, 0)`. `Animated.Value` için `useState(() => new Animated.Value(0))`.
 - **Kutu dosyaları (`src/widgets/`):** Ayrı Hermes ortamında çalışır, dosya dışındaki değerlere erişmez. Babel yardımcısı istemeyen sözdizimi yaz: `a && a.b`, üçlü işleç, klasik `for` (`?.`, `??`, yayma `...` ve `for…of` çalışmaz). Glance'te bir `Row`/`Column` en çok 10 çocuk çizer, fazlasını sessizce keser; `weight` yok, sağa yaslamak için `Box contentAlignment`. Değişen kutuyu duman testinin görüntüsünde gör.
 - **expo-widgets yaması** (`patches/expo-widgets+58.0.29.patch`): sabitleme, kurulu kutu sayısı, dokununca açma, 30 dk yenileme, `scheduleWidgetTicks` + `WidgetTicks.kt`. expo-widgets sürümü değişirse `node_modules`'te yeniden uygula ve `npx patch-package expo-widgets` ile yamayı üret.
@@ -88,18 +88,19 @@ Platforma özel dosyalar: `X.web.tsx`, `X.android.ts`, `X.types.ts`.
 | `user` (sizin konumunuz) | #2563EB | #6EA0FF |
 | `green` / `gold` | #26754A / #C9A227 | #2A8550 / #D9B440 |
 
-- Vurgu paletini kullanıcı seçer: Kiremit (varsayılan; `accent` #B4420F, `route` #F26A1B; koyuda `accent` #F7934F), Zümrüt, Gece mavisi, Altın, Gül. Her palette `accent`, `onAccent`, `accentTint`, `accentSoft`, `route` var; hepsi açık ve koyuda WCAG AA.
+- Vurgu paletini kullanıcı seçer: Kiremit (varsayılan; `accent` #B4420F, `route` #F26A1B; koyuda `accent` #F7934F), Zümrüt, Gece mavisi, Altın, Gül. Her palette `accent`, `onAccent`, `accentTint`, `accentSoft`, `route` var; hepsi açık ve koyuda WCAG AA. Kiremit dışındaki paletler zemin, yüzey, çizgi ve yazı tonlarını da değiştirir (`theme.ts`, `PALETTES.*.light/dark`); tablo Kiremit'in değerleridir.
 - Anlamlar sabit: kırmızı kapalı (X simgesiyle; renk tek başına anlam taşımaz), amber kısıtlı, deniz yeşili açık, turuncu rota, mavi yalnız "siz" (aile üyesi renklerinde mavi yok).
 - Gölge sıcak kahve (#4A3424, opaklık 0,12; koyuda siyah 0,45).
 
 ### Yazı
-- Sistem yazı tipi. `T.h1` 26/700, `T.h2` 18/700, `T.h3` 16/700, `T.body` 15 (satır 22), `T.muted` 13, `T.small` 12, `T.section` 14/700 `ink2` cümle düzeninde (büyük harf dönüşümü yok: Türkçe "i" → "I" oluyordu); Arapça `T.arabic` 24 (satır 40), sağa yaslı. Hepsi kullanıcının yazı ölçeğiyle büyür (`fs`, `fsAr`).
+- Sistem yazı tipi. `T.h1` 26/700, `T.h2` 18/700, `T.h3` 16/700, `T.body` 15 (satır 22), `T.muted` 13, `T.small` 12, `T.section` 14/700 vurgu renginde, cümle düzeninde (büyük harf dönüşümü yok: Türkçe "i" → "I" oluyordu); Arapça `T.arabic` 24 (satır 40), sağa yaslı. Hepsi kullanıcının yazı ölçeğiyle büyür (`fs`, `fsAr`).
 
 ### Biçim ve davranış
 - Aralık `S`: 4/8/12/16/20/24. Köşe `R`: 10/14/18/24/hap. Kart: `surface` zemin, ince `border`. Dokunma alanı en az 44 px.
 - Hazır parçaları kullan (`ui.tsx`); yeni ekran `Screen` + `Header` ile kurulur.
 - Sadelik: ekranda bir ana eylem; ikincil seçenek katlanır satırda (`SelectRow`) ya da Menü aramasında.
-- Şablon (yapay zeka) görünümünden kaçın (0.13.5): simge renkli kare ya da daire zemine oturmaz, yazının yanında tek renk (`ink2`) durur; başlıkta büyük harf ve harf aralığı yok; vurgu rengi yalnız sıradaki vakit, seçili öğe ve ana eylemde; renkli zeminli kart yalnız anlam taşıyınca (kapalı, kısıtlı, açık, uyarı, seçili, bugünkü adım); alt sekmeler eşit, ortada büyütülmüş düğme yok; kısa arayüz metninde uzun tire (—) yok; veri canlı değilse "canlı" yazılmaz. Menü gruplu liste, ana sayfa kısayolları iki sütun.
+- Şablon (yapay zeka) görünümünden kaçın (0.13.5): simge renkli kare ya da daire zemine oturmaz, yazının yanında durur; başlıkta büyük harf ve harf aralığı yok; alt sekmeler eşit, ortada büyütülmüş düğme yok; kısa arayüz metninde uzun tire (—) yok; veri canlı değilse "canlı" yazılmaz. Menü gruplu liste, ana sayfa kısayolları iki sütun.
+- Palet ekranın her yerinde hissedilir (0.15.0, proje sahibinin isteği): zemin, yüzey, çizgi ve yazı paletin tonunu taşır; simgeler, bölüm başlıkları, seçili çip ve sekme, ilerleme çubukları vurgu renginde. Renkli zeminli kart yalnız anlam taşıyınca (durum renkleri, uyarı, seçili, bugünkü adım, cuma).
 - Ana sayfa: üstte resimli, hareketli gökyüzü (Mekke'de Kâbe, Saat Kulesi ve tavaf eden kalabalık; Medine'de Yeşil Kubbe; başka yerde cami). Gökyüzü rengi güneşin yüksekliğine göre değişir, güneş ve ay gerçek yerinde durur. Animasyon yerel sürücüyle, yalnız ekran öndeyken ve "Hareketleri azalt" kapalıyken.
 - Harita: etiketler çakışmaz (yer yoksa gizlenir), hedef etiketi hep görünür; Saat Kulesi yarı saydam; ölçek çubuğu; "© OpenStreetMap" atfı.
 - Kutular: krem ve kum zemin; sıradaki vakit vurgu renginde ve açık zeminde, geçenler soluk. Adlarda hücre sayısı yok (başlatıcıya göre değişir): kare, geniş, uzun, tek satır.
@@ -122,10 +123,11 @@ Platforma özel dosyalar: `X.web.tsx`, `X.android.ts`, `X.types.ts`.
 14. **Veriden bilinçli sapmalar:** OSM'de turuncu işaretli kubbeler mermer tonunda; Yeşil Kubbe kasnak + sivri kubbe (~26 m); Medine çatısındaki 27 sürgülü kubbe çizilmez (yerleri bilinmiyor). Ana kapılar: Mekke 1, 79, 62, 45, 100; Medine 1, 41, 37, 20–22, 7–9, 33–35.
 15. **Doğrulama üç katlı:** saf mantık testleri (Node), web ekran görüntüsü (Playwright), emülatör duman testi (API 34). Gerçek cihaz denemesi henüz yapılmadı.
 
-## Tamamlanan özellikler (0.14.0)
+## Tamamlanan özellikler (0.15.0)
 Sürüm sırasıyla ayrıntı README.md'nin başında.
 - **Ana sayfa ve vakitler:** resimli gökyüzü, geri sayım, altı vakit, hicrî tarih, yaklaşan mübarek gün, teşrik tekbiri; Vakitler ekranı (haftalık tablo, güneş ve ay bilgisi); hesaplama yöntemi; ana sayfa seçimi (sade vakit, Kur'an, harita, tavaf, zikir, hadis). `screens/HomePrayer.tsx`, `PrayerTimes.tsx`, `services/prayer.ts`.
 - **Her gün dönülen yerler (0.14.0):** namaz takibi (ana sayfada bugünkü beş vakit tek dokunuşla; ekranda son 7 gün, seri, kaza bağlantısı; kayıt telefonda, yedeğe girer), günün duası (kaynaklı kısa dualardan güne göre). `app/namaz-takibi.tsx`, `components/PrayerLogCard.tsx`, `DailyDuaCard.tsx`, `services/prayerLog.ts`, `usePrayerLog.ts`, `daily.ts`.
+- **Bağlılık (0.15.0):** hatim planı (30–180 gün, bölüm cüze göre eşit, Hatim ayracından; ana sayfa kartı, yatsıdan sonra hatırlatma), cuma kartı ve hatırlatması (Kehf), günlük zikir hedefi (ana sayfada), son 7 günün özeti (namaz, zikir, hatim), ezan bildiriminde "Kıldım" düğmesi (uygulamayı açar, vakti işler), hac-umre hazırlık listesi, temel Arapça ifadeler (göster, dinlet). `app/hatim.tsx`, `hazirlik.tsx`, `arapca.tsx`, `components/HatimCard.tsx`, `ZikirCard.tsx`, `FridayCard.tsx`, `services/hatim.ts`, `sharedPersisted.ts`, `data/checklist.ts`, `phrases.ts`.
 - **Bildirimler:** ezandan önce ve vaktinde; 4 ses ve kendi kaydın; mübarek gün ve hac hatırlatmaları; tam zamanlı alarm uyarısı. `app/bildirimler.tsx`, `services/adhanPlan.ts`, `adhanNotify.ts`.
 - **Ana ekran kutuları (Android):** kare, geniş, uzun, tek satır; Vakitler ve Ayarlar'dan eklenir; `mataf://vakitler?widget=<Ad>`.
 - **Harem haritası ve navigasyon:** gerçek ölçekli 3D (OSM) ve 2D gerçek harita, katmanlar, kapı bildirimleri ve onayları, kapalı kapıya göre rota, adım adım yönlendirme. `screens/MapScreen.tsx`, `scene/`, `app/kapilar.tsx`, `bildir.tsx`, `navigasyon.tsx`.
@@ -136,8 +138,8 @@ Sürüm sırasıyla ayrıntı README.md'nin başında.
 - **Genel:** ilk açılış, TR/EN/AR, açık/koyu tema ve 5 palet, yazı ölçeği, çevrimdışı paket, yedek ve geri yükleme, güncelleme uyarısı, hata ekranı ve kaydı, uygulamayı paylaşma, web sürümü.
 
 ## Şu anki durum
-- Sürüm 0.14.0 (versionCode 24). CI, APK ve web yeşil. APK: https://github.com/sozerahmethayri-ops/Mataf/releases/download/apk-latest/mataf.apk; web: https://sozerahmethayri-ops.github.io/Mataf/.
-- Doğrulandı: 251 mantık testi; web görüntüleri; emülatörde çökme yok, dört kutu eklendi ve çizildi, 24 vakit alarmı kurulu, Mekke otobüs tarifi (7A) doğru.
+- Sürüm 0.15.0 (versionCode 25). CI, APK ve web yeşil. APK: https://github.com/sozerahmethayri-ops/Mataf/releases/download/apk-latest/mataf.apk; web: https://sozerahmethayri-ops.github.io/Mataf/.
+- Doğrulandı: 266 mantık testi; web görüntüleri; emülatörde çökme yok, dört kutu eklendi ve çizildi, 24 vakit alarmı kurulu, Mekke otobüs tarifi (7A) doğru.
 - Doğrulanmadı: gerçek telefon, Mekke ve Medine'de saha, Samsung ve Xiaomi başlatıcıları.
 - Proje sahibinden beklenenler: Supabase URL ve Publishable key (GitHub secrets'a), sahada deneme, hoca kontrolü (gözden geçirme belgesi: https://claude.ai/artifact/BZSU1wpF6vLspLDwDCGiGc), dağıtım izni olan bir ezan kaydı.
 - Sürüm sürüm ayrıntılı notlar: claude.ai'deki "MATAF uygulama" projesinde `eksikler-ve-yol-haritasi.md`.
@@ -146,7 +148,7 @@ Sürüm sırasıyla ayrıntı README.md'nin başında.
 1. Saha denemesi: haritanın akıcılığı ve Suudi mobil ağında açılış süresi; tavaf ve sa'y sayacı (zemin, 1. kat, çatı); Arafat ve Mina sınır denetimi; kutular Samsung ve Xiaomi'de; bildirimlerin pil tasarrufunda gelmesi; Mekke otobüs sürelerinin Makkah Bus uygulamasıyla karşılaştırılması; çevrimdışı paketin boyutu ve süresi.
 2. Supabase'i bağla (canlı kapı bildirimleri, aile konumu): `docs/SUPABASE.md`.
 3. Dinî metinleri hocanın düzeltmeleriyle güncelle.
-4. Bağlılık (kullanıcı her gün dönsün; ilke: suçlama yok, yarış ve sıralama yok, veri telefonda): Kur'an hatim planı (gün sayısına göre günlük sayfa, kaldığı yer, hatırlatma); Cuma hatırlatması (Kehf, salavat); hac ve umre hazırlık listesi (belgeler, ilaç, ihram, aşı; yolculuktan haftalar önce açılır); ziyaretçiye temel Arapça ifadeler (büyük yazı, göster ve dinlet); ana sayfada günlük zikir hedefi; haftalık özet (namaz, Kur'an, zikir); namaz takibi kutusu (Android); ezan bildiriminde "Kıldım" düğmesi.
+4. Bağlılık (ilke: suçlama yok, yarış ve sıralama yok, veri telefonda): namaz takibi kutusu (Android, Glance; duman testiyle); "Kıldım" düğmesinin uygulamayı açmadan işlemesi (arka plan görevi); hatim ilerlemesi için kutu; Kur'an dışı günlük içerik (hadis) seçeneği.
 5. Ezan sesi: izinli kayıt; uygulama kapalıyken tam ezan için ön plan servisi.
 6. Toplu taşıma: Medine otobüs verisi; İstanbul vapurları (OSM'de durak üyeleri eksik); sefer saatli veri (GTFS); kullanıcı artarsa kendi MOTIS sunucusu.
 7. Kur'an dışı tavaf ve sa'y dualarına kâri kaydı (şimdi cihaz sesi okuyor).
@@ -165,7 +167,7 @@ Sürüm sırasıyla ayrıntı README.md'nin başında.
 - Hicrî tarih ve hac günleri Ümmü'l-Kurâ takviminden; Suudi Arabistan'ın ilanıyla bir gün kayabilir.
 - Pixel başlatıcısında geniş kutu 5×3 açılıyor; içerik ortada, altında ve üstünde boşluk kalıyor (görsel).
 - Duman testinde başlatıcının ekleme penceresi ara sıra arkada kalıyor ("widget eklendi: 0"). Kod değil otomasyon; testi yeniden çalıştır.
-- Web: ezan bildirimi ve kutu yok, pusula kısıtlı. Arapça seçilince yazı sağa yaslanıyor ama satırlar sağdan sola dönmüyor (telefonda dönüyor).
+- Bildirimdeki "Kıldım" düğmesi uygulamayı açarak işaretler (arka planda işaretleme yok). Web: ezan bildirimi ve kutu yok, pusula kısıtlı. Arapça seçilince yazı sağa yaslanıyor ama satırlar sağdan sola dönmüyor (telefonda dönüyor).
 - Kapı bildirimleri ve aile konumu Supabase bağlanana dek demo ve önizleme.
 - APK hata ayıklama anahtarıyla imzalı; Play Store'a yüklenemez.
 - Harem 3D modeli OSM kadar doğru; mescit içi hizmet noktaları örnek veri.

@@ -11,7 +11,9 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { C, shadow, fs } from '@/constants/theme';
 import { useI18n } from '@/i18n';
-import { initNotifications, loadNotifPrefs, notificationsSupported, refreshSchedule } from '@/services/adhanNotify';
+import { PRAYED_ACTION, initNotifications, loadNotifPrefs, notificationsSupported, refreshSchedule } from '@/services/adhanNotify';
+import { LOG_PRAYERS, type LogPrayer } from '@/services/prayerLog';
+import { markPrayed } from '@/services/usePrayerLog';
 
 initNotifications();
 
@@ -43,7 +45,7 @@ export async function playAdhan(uri: string) {
   }
 }
 
-type AdhanData = { kind?: string; type?: string; test?: boolean; url?: string };
+type AdhanData = { kind?: string; type?: string; test?: boolean; url?: string; prayer?: string; day?: string };
 
 export function AdhanHost() {
   const { lang } = useI18n();
@@ -79,7 +81,25 @@ export function AdhanHost() {
     const recv = Notifications.addNotificationReceivedListener((n) => {
       maybePlay(n.request.content.data as AdhanData);
     });
+    // "Kıldım" düğmesi: vakti Namaz takibine işle, bildirimi kaldır, takip ekranını aç (aynı yanıt iki kez işlenmez)
+    const handled = new Set<string>();
+    const onPrayed = (r: Notifications.NotificationResponse, delay = 0) => {
+      const d = r.notification.request.content.data as AdhanData;
+      const id = `${r.notification.request.identifier}:${r.notification.date}`;
+      if (handled.has(id) || !d.day || !d.prayer || !(LOG_PRAYERS as readonly string[]).includes(d.prayer)) return;
+      handled.add(id);
+      markPrayed(d.day, d.prayer as LogPrayer);
+      Notifications.dismissNotificationAsync(r.notification.request.identifier).catch(() => undefined);
+      setTimeout(() => router.push('/namaz-takibi'), delay);
+    };
+    // Uygulama düğmeyle açıldıysa (soğuk başlangıç) yanıt dinleyiciden önce gelmiş olabilir
+    const last = Notifications.getLastNotificationResponse();
+    if (last?.actionIdentifier === PRAYED_ACTION) {
+      onPrayed(last, 600);
+      Notifications.clearLastNotificationResponse();
+    }
     const resp = Notifications.addNotificationResponseReceivedListener((r) => {
+      if (r.actionIdentifier === PRAYED_ACTION) { onPrayed(r); return; }
       const d = r.notification.request.content.data as AdhanData & { url?: string };
       // Mübarek gün / hac hatırlatması: ilgili ekrana git
       if ((d.kind as string) === 'reminder') { if (d.url) router.push(d.url as never); return; }

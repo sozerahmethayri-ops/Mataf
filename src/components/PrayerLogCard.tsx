@@ -27,11 +27,11 @@ const L = {
   notYet: { tr: 'vakti girmedi', en: 'not yet time', ar: 'لم يدخل وقتها' },
 };
 
-/** Yuvarlak işaret: kılındıysa yeşil ve tikli */
+/** Yuvarlak işaret: kılındıysa palet renginde ve tikli */
 export function CheckDot({ on, size }: { on: boolean; size: number }) {
   return (
-    <View style={{ width: size, height: size, borderRadius: size / 2, borderWidth: 2, borderColor: on ? C.green : C.borderStrong, backgroundColor: on ? C.green : 'transparent', alignItems: 'center', justifyContent: 'center' }}>
-      {on && <Icon name="check" size={Math.round(size * 0.5)} color="#FFFFFF" />}
+    <View style={{ width: size, height: size, borderRadius: size / 2, borderWidth: 2, borderColor: on ? C.accent : C.borderStrong, backgroundColor: on ? C.accent : 'transparent', alignItems: 'center', justifyContent: 'center' }}>
+      {on && <Icon name="check" size={Math.round(size * 0.5)} color={C.onAccent} />}
     </View>
   );
 }
@@ -46,7 +46,7 @@ export function PrayerLogCard({ times, now, lg }: { times: Record<PrayerKey, Dat
       <Pressable onPress={() => router.push('/namaz-takibi')} accessibilityRole="button"
         style={({ pressed }) => ({ minHeight: 44, flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 2, opacity: pressed ? 0.7 : 1 })}>
         <Text style={{ flex: 1, fontSize: fs(15), fontWeight: '700', color: C.ink }} numberOfLines={1}>{pick(L.title, lg)}</Text>
-        <Text style={{ fontSize: fs(13.5), fontWeight: '700', color: n === 5 ? C.green : C.muted, fontVariant: ['tabular-nums'] }}>{n === 5 ? pick(L.allDone, lg) : `${n}/5`}</Text>
+        <Text style={{ fontSize: fs(13.5), fontWeight: '700', color: n === 5 ? C.accent : C.muted, fontVariant: ['tabular-nums'] }}>{n === 5 ? pick(L.allDone, lg) : `${n}/5`}</Text>
         <Icon name="chevron" size={16} color={C.muted} />
       </Pressable>
       <View style={{ flexDirection: 'row' }}>

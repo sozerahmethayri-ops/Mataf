@@ -47,6 +47,8 @@ const L = {
   stop: { tr: 'Durdur', en: 'Stop', ar: 'إيقاف' },
   special: { tr: 'Mübarek gün hatırlatması', en: 'Holy day reminder', ar: 'تذكير الأيام المباركة' },
   specialSub: { tr: 'Kandil, Ramazan ve bayramlardan bir önceki akşam. Kurban Bayramı’nda vakit bildirimleri teşrik tekbirini de hatırlatır.', en: 'The evening before holy nights, Ramadan and Eids. During Eid al-Adha the prayer alerts also remind the takbir al-tashriq.', ar: 'مساء قبل الليالي المباركة ورمضان والأعياد.' },
+  friday: { tr: 'Cuma hatırlatması', en: 'Friday reminder', ar: 'تذكير الجمعة' },
+  fridaySub: { tr: 'Cuma sabahı; dokununca Kehf sûresi açılır.', en: 'Friday morning; tap to open Surah al-Kahf.', ar: 'صباح الجمعة؛ اضغط لفتح سورة الكهف.' },
   playAdhan: { tr: 'Vakit girince ezanı oku', en: 'Play adhan at prayer time', ar: 'ارفع الأذان عند دخول الوقت' },
   ok: { tr: 'Kuruldu: önümüzdeki günler için {n} bildirim. İlki {t}.', en: 'Set: {n} notifications for the coming days. First at {t}.', ar: 'تم: {n} إشعارًا للأيام القادمة. الأول {t}.' },
   noPerm: { tr: 'Bildirim izni kapalı. Telefon ayarlarından MATAF için bildirimlere izin verin.', en: 'Notifications are not allowed. Enable them for MATAF in phone settings.', ar: 'الإشعارات غير مسموحة. فعّلها لـ MATAF من إعدادات الهاتف.' },
@@ -225,6 +227,14 @@ export default function NotificationSettings() {
             <Text style={T.small}>{l('specialSub')}</Text>
           </View>
           <Toggle value={prefs.special} onChange={(v) => setPrefs({ special: v })} label={l('special')} />
+        </View>
+
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+          <View style={{ flex: 1, gap: 2 }}>
+            <Text style={T.body}>{l('friday')}</Text>
+            <Text style={T.small}>{l('fridaySub')}</Text>
+          </View>
+          <Toggle value={prefs.friday} onChange={(v) => setPrefs({ friday: v })} label={l('friday')} />
         </View>
 
         <SectionTitle>{l('sound')}</SectionTitle>

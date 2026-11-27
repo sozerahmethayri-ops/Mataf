@@ -2,6 +2,7 @@
 
 Mekke ve Medine'deki ziyaretçiler için iOS ve Android uygulaması:
 
+- **Paletler ve her gün dönülecek yerler (0.15.0)** — Renk paleti artık bütün ekranı değiştiriyor: Zümrüt'te zemin yeşile, Gece mavisi'nde maviye, Gül'de pembeye çalıyor; simgeler, bölüm başlıkları, seçili düğmeler ve ilerleme çubukları paletin renginde. Hatim planı: 30, 60, 90 ya da 180 gün seçin; her günün bölümü Hatim ayracınızdan hesaplanır ve günlere eşit sayfa düşer (“Bugün: Kehf 45 → Kehf 98, ≈ 5 sayfa”); ana sayfada kart, istenirse yatsıdan sonra hatırlatma. Cuma günü ana sayfada “Hayırlı cumalar” kartı ve Kehf sûresine kısayol; cuma sabahı hatırlatması. Zikirmatik'te günlük hedef (100, 300, 1000) ana sayfada görünür. Namaz takibinde son 7 günün özeti (namaz, zikir, hatim). Ezan bildiriminde “Kıldım” düğmesi: uygulama açılır, vakit işlenir. Menü → Yolculuk: hac ve umre hazırlık listesi (belgeler, sağlık, ihram, telefon) ve temel Arapça ifadeler (büyük yazıyla göster, telefona okut).
 - **Namaz takibi ve günün duası (0.14.0)** — Ana sayfada “Bugünkü namazlarım”: kıldığınız vakte bir kez dokunun, yeşil tik çıkar (vakti girmeyen işaretlenmez). Namaz takibi ekranında bugünün beş vakti, son 7 günün tablosu (geçmiş günler düzeltilebilir), kaç gündür beş vaktin tam olduğu ve kaza takibine geçiş var; kart istenirse gizlenir. Kayıt yalnız telefonda durur ve yedeğe girer. Ana sayfada her gün başka bir kısa dua: Arapçası, okunuşu, anlamı ve kaynağı; paylaşılabilir. “Çok büyük” yazı boyutunda ana sayfadaki vakitler kesiliyordu (“02:…”), artık iki satırda tam görünüyor. Veri kaynaklarında demo ve bekleyen kaynaklar “Canlı” görünmüyor; bildirim olmayan kapıda “Henüz bildirim yok” yazıyor.
 - **Daha sade görünüm (0.13.5)** — Ana sayfanın kısayolları iki sütunlu, yazısı daha büyük düğmeler oldu; simgelerin altındaki renkli kutular kalktı. Menü gruplu bir liste oldu: her satırda simge, ad ve ok. Bölüm başlıkları normal yazımla çıkıyor; büyük harf dönüşümü Türkçe “i”yi “I” yapıyordu (“SUUDI ARABISTAN”). Alt sekmelerin hepsi aynı görünüyor. Kapı Durumu sunucu bağlı değilken “Yerel demo (bu cihaz)” yazıyor ve onayı olmayan kapıda “0 onay” göstermiyor. Kısa uyarılardaki uzun tireler virgül, iki nokta ya da noktaya döndü.
 - **0.13.4** — Tarif adımlarında durak sayısı İngilizcede tekil (“1 stop”), Arapçada sayı kuralına göre (محطة واحدة، محطتان، محطات).
@@ -55,7 +56,7 @@ Mekke ve Medine'deki ziyaretçiler için iOS ve Android uygulaması:
 - **Ravza rehberi** — ziyaret saatleri, Nusuk izni, resmî 360° sanal tur bağlantısı.
 - **Türkçe, İngilizce, Arapça** (Arapça sağdan sola).
 
-> Durum: **0.14.0 — geliştirme sürümü.** Bina biçimleri ve kapı yerleri OpenStreetMap'ten gelir (doğruluğu bu veri kadardır); mescit içi hizmet noktaları örnektir. Ayrıntı: [docs/VERI-KAYNAKLARI.md](docs/VERI-KAYNAKLARI.md), [scripts/osm-3d.md](scripts/osm-3d.md).
+> Durum: **0.15.0 — geliştirme sürümü.** Bina biçimleri ve kapı yerleri OpenStreetMap'ten gelir (doğruluğu bu veri kadardır); mescit içi hizmet noktaları örnektir. Ayrıntı: [docs/VERI-KAYNAKLARI.md](docs/VERI-KAYNAKLARI.md), [scripts/osm-3d.md](scripts/osm-3d.md).
 
 ## Hızlı başlangıç
 

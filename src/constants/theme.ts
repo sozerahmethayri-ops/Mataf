@@ -61,7 +61,10 @@ const DARK: Base = {
 };
 
 type Accent = { route: string; accent: string; onAccent: string; accentTint: string; accentSoft: string };
-export const PALETTES: Record<PaletteId, { name: { tr: string; en: string; ar: string }; light: Accent; dark: Accent }> = {
+// Her palet yalnız vurgu rengini değil, zeminin, yüzeyin, çizgilerin ve yazının tonunu da taşır (0.15.0): Zümrüt'te
+// ekran yeşile, Gece mavisi'nde maviye çalar. Kiremit varsayılan sıcak tonları (LIGHT/DARK) kullanır.
+type Tone = Accent & Partial<Base>;
+export const PALETTES: Record<PaletteId, { name: { tr: string; en: string; ar: string }; light: Tone; dark: Tone }> = {
   kabe: {
     name: { tr: 'Kiremit (varsayılan)', en: 'Terracotta (default)', ar: 'طوبي (افتراضي)' },
     light: { route: '#F26A1B', accent: '#B4420F', onAccent: '#FFFFFF', accentTint: '#FBE4D3', accentSoft: '#FDF0E5' },
@@ -69,23 +72,31 @@ export const PALETTES: Record<PaletteId, { name: { tr: string; en: string; ar: s
   },
   zumrut: {
     name: { tr: 'Zümrüt', en: 'Emerald', ar: 'زمردي' },
-    light: { route: '#10B981', accent: '#047857', onAccent: '#FFFFFF', accentTint: '#E3F6EE', accentSoft: '#F1FBF6' },
-    dark: { route: '#34D399', accent: '#3DD9A0', onAccent: '#052E1F', accentTint: '#0E2E22', accentSoft: '#0B231A' },
+    light: { route: '#10B981', accent: '#047857', onAccent: '#FFFFFF', accentTint: '#DDF0E6', accentSoft: '#E9F4EE',
+      bg: '#F3F8F4', surface: '#E3EEE6', border: '#D5E4DA', borderStrong: '#C0D5C7', ink: '#13241B', ink2: '#2C4236', muted: '#4D6457', overlay: 'rgba(243,248,244,0.94)' },
+    dark: { route: '#34D399', accent: '#3DD9A0', onAccent: '#052E1F', accentTint: '#0E2E22', accentSoft: '#0B231A',
+      bg: '#0E1612', surface: '#16211B', border: '#213026', borderStrong: '#2D3F33', ink: '#ECF5EF', ink2: '#D3E3D8', muted: '#9DB4A5', onInk: '#0E1612', overlay: 'rgba(22,33,27,0.94)' },
   },
   gece: {
     name: { tr: 'Gece mavisi', en: 'Midnight', ar: 'أزرق ليلي' },
-    light: { route: '#6366F1', accent: '#3730A3', onAccent: '#FFFFFF', accentTint: '#ECEBFD', accentSoft: '#F5F5FE' },
-    dark: { route: '#818CF8', accent: '#A5ABFF', onAccent: '#14123A', accentTint: '#1E1D45', accentSoft: '#171634' },
+    light: { route: '#6366F1', accent: '#3730A3', onAccent: '#FFFFFF', accentTint: '#E1E1F8', accentSoft: '#EEEEFB',
+      bg: '#F5F6FB', surface: '#E7E9F5', border: '#DADDEE', borderStrong: '#C6CBE2', ink: '#161A2E', ink2: '#30354F', muted: '#535A78', overlay: 'rgba(245,246,251,0.94)' },
+    dark: { route: '#818CF8', accent: '#A5ABFF', onAccent: '#14123A', accentTint: '#1E1D45', accentSoft: '#171634',
+      bg: '#0F1220', surface: '#171B2E', border: '#23283F', borderStrong: '#30364F', ink: '#EEF0FA', ink2: '#D5D9EC', muted: '#A3A9C6', onInk: '#0F1220', overlay: 'rgba(23,27,46,0.94)' },
   },
   altin: {
     name: { tr: 'Altın', en: 'Gold', ar: 'ذهبي' },
-    light: { route: '#D49A12', accent: '#855800', onAccent: '#FFFFFF', accentTint: '#FBF1D9', accentSoft: '#FDF8EC' },
-    dark: { route: '#E8B931', accent: '#EBC048', onAccent: '#2A1E00', accentTint: '#33290E', accentSoft: '#26200C' },
+    light: { route: '#D49A12', accent: '#855800', onAccent: '#FFFFFF', accentTint: '#F6E7C0', accentSoft: '#F9F0DA',
+      bg: '#FBF8EE', surface: '#F2EAD2', border: '#E7DCBE', borderStrong: '#D8CAA6', ink: '#2A2210', ink2: '#4A3F25', muted: '#6A5D3E', overlay: 'rgba(251,248,238,0.94)' },
+    dark: { route: '#E8B931', accent: '#EBC048', onAccent: '#2A1E00', accentTint: '#33290E', accentSoft: '#26200C',
+      bg: '#15120A', surface: '#211C10', border: '#2E2717', borderStrong: '#3D341F', ink: '#F7F1E3', ink2: '#E5DCC6', muted: '#B8AB8A', onInk: '#15120A', overlay: 'rgba(33,28,16,0.94)' },
   },
   gul: {
     name: { tr: 'Gül', en: 'Rose', ar: 'وردي' },
-    light: { route: '#E11D74', accent: '#BE185D', onAccent: '#FFFFFF', accentTint: '#FCE7F1', accentSoft: '#FDF2F7' },
-    dark: { route: '#F472B6', accent: '#F58BC3', onAccent: '#3A0820', accentTint: '#3A1527', accentSoft: '#2B111E' },
+    light: { route: '#E11D74', accent: '#BE185D', onAccent: '#FFFFFF', accentTint: '#F8DCE6', accentSoft: '#FBEBF0',
+      bg: '#FCF6F7', surface: '#F5E5EA', border: '#ECD8DE', borderStrong: '#DFC4CD', ink: '#2B1820', ink2: '#4A3039', muted: '#6E505B', overlay: 'rgba(252,246,247,0.94)' },
+    dark: { route: '#F472B6', accent: '#F58BC3', onAccent: '#3A0820', accentTint: '#3A1527', accentSoft: '#2B111E',
+      bg: '#170F13', surface: '#23171D', border: '#312028', borderStrong: '#412C35', ink: '#F8EEF2', ink2: '#E8D6DD', muted: '#BC9FAB', onInk: '#170F13', overlay: 'rgba(35,23,29,0.94)' },
   },
 };
 
