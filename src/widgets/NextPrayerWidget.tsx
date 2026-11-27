@@ -74,10 +74,13 @@ function nextLayout(props: PrayerWidgetProps, env: { colorScheme?: 'light' | 'da
       <Spacer modifiers={[height(2)]} />
       {/* Sayaç kendi Column'unun son çocuğu (kalan alana yayılıp sonraki satırları gizlemesin) */}
       <Column>
+        {/* Yatsıdan sonra "yarın" ayrı ve küçük: dar kutuda kesilen o olsun, saat değil */}
         <Row verticalAlignment="center">
           <Text color={c.accent} maxLines={1} style={{ fontSize: 16, fontWeight: 'bold' }}>{names[pi]}</Text>
           <Spacer modifiers={[width(6)]} />
-          <Text color={c.ink} maxLines={1} style={{ fontSize: 16, fontWeight: 'bold' }}>{day.t[pi] + (tomorrow && props.tomorrow ? ' · ' + props.tomorrow : '')}</Text>
+          <Text color={c.ink} maxLines={1} style={{ fontSize: 16, fontWeight: 'bold' }}>{day.t[pi]}</Text>
+          {tomorrow && props.tomorrow ? <Spacer modifiers={[width(4)]} /> : null}
+          {tomorrow && props.tomorrow ? <Text color={c.muted} maxLines={1} style={{ fontSize: 11 }}>{props.tomorrow}</Text> : null}
         </Row>
         <Countdown countdownTo={target} color={c.ink} maxLines={1} style={{ fontSize: big, fontWeight: 'bold' }}>{fallback}</Countdown>
       </Column>

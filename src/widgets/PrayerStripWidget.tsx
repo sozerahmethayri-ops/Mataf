@@ -54,21 +54,27 @@ function stripLayout(props: PrayerWidgetProps, env: { colorScheme?: 'light' | 'd
   const target = Number(day.a[pi]);
   const mins = Math.max(0, Math.ceil((target - now) / 60000));
   const fallback = Math.floor(mins / 60) + ':' + (mins % 60 < 10 ? '0' : '') + (mins % 60);
-  // Yatsıdan sonra saatin yanına "yarın" (tek satıra sığsın)
-  const when = day.t[pi] + (tomorrow && props.tomorrow ? ' ' + props.tomorrow : '');
+  // Yatsıdan sonra saatin yanına küçük "yarın". Glance satırı sığmayan son çocuğu sıfıra sıkıştırır: dar kutuda
+  // (ör. küçük ekranda 4×1) "kaldı" hiç yazılmaz. Genişlik kabaca harf sayısından (17 sp kalın ≈ 9 dp/harf).
+  const tmr = tomorrow && props.tomorrow ? props.tomorrow : '';
+  const remain = props.remain || '';
+  const need = 32 + (names[pi].length + day.t[pi].length) * 9 + 6 + (tmr ? 4 + tmr.length * 7 : 0) + 10 + 74 + 4 + remain.length * 7;
+  const showRemain = remain !== '' && (!env.width || need <= env.width);
 
   return (
     <Row modifiers={root} verticalAlignment="center">
       <Text color={c.accent} maxLines={1} style={{ fontSize: 17, fontWeight: 'bold' }}>{names[pi]}</Text>
       <Spacer modifiers={[width(6)]} />
-      <Text color={c.ink} maxLines={1} style={{ fontSize: 17, fontWeight: 'bold' }}>{when}</Text>
+      <Text color={c.ink} maxLines={1} style={{ fontSize: 17, fontWeight: 'bold' }}>{day.t[pi]}</Text>
+      {tmr ? <Spacer modifiers={[width(4)]} /> : null}
+      {tmr ? <Text color={c.muted} maxLines={1} style={{ fontSize: 12 }}>{tmr}</Text> : null}
       <Spacer modifiers={[width(10)]} />
       {/* Sayaç kabın kalan alanına yayılır: sabit genişlikli kapta, sağa yaslı */}
       <Box contentAlignment="centerEnd" modifiers={[width(74)]}>
         <Countdown countdownTo={target} color={c.ink} maxLines={1} style={{ fontSize: 16, fontWeight: 'bold', textAlign: 'end' }}>{fallback}</Countdown>
       </Box>
-      <Spacer modifiers={[width(4)]} />
-      <Text color={c.muted} maxLines={1} style={{ fontSize: 13 }}>{props.remain || ''}</Text>
+      {showRemain ? <Spacer modifiers={[width(4)]} /> : null}
+      {showRemain ? <Text color={c.muted} maxLines={1} style={{ fontSize: 13 }}>{remain}</Text> : null}
     </Row>
   );
 }

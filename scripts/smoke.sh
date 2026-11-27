@@ -119,6 +119,13 @@ for wname in NextPrayerWidget PrayerListWidget PrayerStripWidget PrayerLogWidget
   echo "$wname eklendi: $ok2" >> smoke/status.txt
   adb shell input keyevent KEYCODE_HOME; sleep 6; shot "$n-widget-$wname"; n=$((n + 1))
 done
+# Başlatıcı Ana ekran tuşunda her zaman kutunun konduğu sayfayı açmıyor: ilk sayfadan başlayıp sayfaları tek tek çek
+adb shell input keyevent KEYCODE_HOME; sleep 2; adb shell input keyevent KEYCODE_HOME; sleep 3
+shot "48-ana-ekran-0"
+for p in 1 2 3 4; do
+  adb shell input swipe $(( W * 85 / 100 )) $(( H / 2 )) $(( W * 15 / 100 )) $(( H / 2 )) 250; sleep 4
+  shot "48-ana-ekran-$p"
+done
 adb shell dumpsys appwidget > smoke/widget.txt 2>&1 || true
 # Vakit anında yenileme: uygulama sonraki vakitler için alarm kurdu mu?
 adb shell dumpsys alarm > smoke/alarm-all.txt 2>/dev/null || true
