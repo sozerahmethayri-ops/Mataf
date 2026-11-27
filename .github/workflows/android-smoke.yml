@@ -68,4 +68,6 @@ jobs:
             smoke/widget.txt
             smoke/widget-log.txt
             smoke/alarm.txt
+            smoke/alarm-all.txt
+            smoke/alarm-sections.txt
             smoke/ui.xml

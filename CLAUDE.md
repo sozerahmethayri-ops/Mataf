@@ -73,7 +73,7 @@ Platforma özel dosyalar: `X.web.tsx`, `X.android.ts`, `X.types.ts`. Giriş `ind
 3. README: değişiklik günlüğünün başına bir madde; "Durum" satırında sürüm.
 4. Commit: Türkçe, ilk satır `0.13.5: kısa özet`, altında madde madde ne ve neden. `main`'e gönder.
 5. "Android APK" iş akışı bitince `https://github.com/sozerahmethayri-ops/Mataf/releases/download/apk-latest/version.json` yeni sürümü gösterir. Uygulama buna 6 saatte bir bakar, yeni sürümde "İndir" şeridi çıkarır.
-6. Yerel davranış değiştiyse (kutular, bildirim, yama, izin, derin bağlantı) duman testini çalıştır. Bitti sayılması için: `crash.txt` "çökme kaydı yok" ile başlar; `status.txt`'te beş "eklendi: 1" satırı, "vakit alarmı: 24" ve "kıldım: süreç kapatıldı evet, bildirim önce 1, düğme 1, sonra 0, görev 1" var; ilgili `screen-*.png` gözle doğru.
+6. Yerel davranış değiştiyse (kutular, bildirim, yama, izin, derin bağlantı) duman testini çalıştır. Bitti sayılması için: `crash.txt` "çökme kaydı yok" ile başlar; `status.txt`'te beş "eklendi: 1" satırı, "vakit alarmı: 24 (farklı an: 24)" ve "kıldım: süreç kapatıldı evet, bildirim önce 1, düğme 1, sonra 0, görev 1" var; ilgili `screen-*.png` gözle doğru.
 
 ## Tasarım kuralları
 ### Renkler (`src/constants/theme.ts`)

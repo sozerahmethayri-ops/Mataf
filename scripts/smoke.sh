@@ -124,7 +124,11 @@ adb shell dumpsys appwidget > smoke/widget.txt 2>&1 || true
 adb shell dumpsys alarm > smoke/alarm-all.txt 2>/dev/null || true
 grep -B2 -A4 "expo.modules.widgets.TICK" smoke/alarm-all.txt | head -60 > smoke/alarm.txt || true
 # Yalnız bekleyen alarmlar (her biri bir "tag=" satırı); dumpsys'in istatistik satırları da TICK içerdiği için düz sayım 24'ü aşabiliyordu
-echo "vakit alarmı: $(grep -cF 'tag=*alarm*:expo.modules.widgets.TICK' smoke/alarm-all.txt)" >> smoke/status.txt
+# "farklı an": aynı vakte iki alarm (sızan eski PendingIntent) var mı? 0.21.0'da toplam 34 çıktı, 24 bekleniyordu
+tk_all=$(grep -cF 'tag=*alarm*:expo.modules.widgets.TICK' smoke/alarm-all.txt)
+tk_uniq=$(grep -A1 -F 'tag=*alarm*:expo.modules.widgets.TICK' smoke/alarm-all.txt | grep -oE 'origWhen=[0-9-]+ [0-9:.]+' | sort -u | wc -l | tr -d ' ')
+echo "vakit alarmı: $tk_all (farklı an: $tk_uniq)" >> smoke/status.txt
+grep -nE '^ *[A-Z][A-Za-z -]+:( [0-9(]|$)' smoke/alarm-all.txt | grep -iE 'pending|past-due|alarms' | head -20 > smoke/alarm-sections.txt || true
 adb shell monkey -p "$PKG" -c android.intent.category.LAUNCHER 1 >/dev/null 2>&1; sleep 6
 
 # Mekke otobüs tarifi (çevrimdışı Makkah Bus ağı): konum Haremeyn treni istasyonu, hedef Harem.
