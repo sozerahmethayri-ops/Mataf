@@ -143,11 +143,30 @@ tap 545 380; step "31-palet-zumrut" 4
 tap 200 230; step "32-tema-acik" 4
 open harita; step "33-harita-tema" 8
 
+# "Kıldım" uygulama kapalıyken (0.20.0): deneme bildirimi kurulur, uygulama arka planda kapatılır, bildirimdeki
+# düğmeye dokunulur. Arka plan görevi (expo-task-manager JS'i görünmeden yükler) bildirimi kapatmalı; deneme
+# bildiriminde vakit olmadığı için namaz işlenmez. Sayılan: uygulamanın ekrandaki bildirimleri.
+notifs() { adb shell dumpsys notification | grep -cE "NotificationRecord\(.*pkg=$PKG" || true; }
+open "bildirimler?deneme=1"; sleep 5
+adb shell input keyevent KEYCODE_HOME; sleep 2
+adb shell am kill "$PKG"; sleep 1
+killed=evet; alive && killed=hayır
+k1=0
+for s in 1 2 3 4 5 6; do k1=$(notifs); [ "$k1" -ge 1 ] && break; sleep 5; done
+adb shell cmd statusbar expand-notifications; sleep 3; shot "60-kildim-bildirim"
+kt=0; tapText "Kıldım|I prayed|صلّيت" && kt=1
+sleep 12
+k2=$(notifs)
+echo "kıldım: süreç kapatıldı $killed, bildirim önce $k1, düğme $kt, sonra $k2, görev $(adb logcat -d | grep -c 'arka planda işlendi')" >> smoke/status.txt
+shot "61-kildim-sonra"
+adb shell cmd statusbar collapse || true
+
 adb logcat -d > smoke/logcat.txt
 grep -iE "expo.?widgets|glance|PrayerWidget|appwidget" smoke/logcat.txt | head -150 > smoke/widget-log.txt || true
 # Yalnız uygulamamızın çökmeleri (Google Play hizmetleri gibi sistem süreçleri hariç) + uygulamanın neden kapatıldığı
-{ grep -n -B1 -A40 -E "Process: $PKG" smoke/logcat.txt; grep -n -A20 -E "ReactNativeJS.*(Error|Exception)|JavascriptException" smoke/logcat.txt; grep -n -E "Killing [0-9]+:$PKG|$PKG.*has died|DeadSystemException" smoke/logcat.txt | grep -v "due to from pid" | head -20; } > smoke/crash.txt
-# ("due to from pid": otobüs tarifi adımında betiğin bilerek yaptığı force-stop, çökme değil)
+{ grep -n -B1 -A40 -E "Process: $PKG" smoke/logcat.txt; grep -n -A20 -E "ReactNativeJS.*(Error|Exception)|JavascriptException" smoke/logcat.txt; grep -n -E "Killing [0-9]+:$PKG|$PKG.*has died|DeadSystemException" smoke/logcat.txt | grep -v -E "due to from pid|kill background" | head -20; } > smoke/crash.txt
+# ("due to from pid": otobüs tarifi adımında betiğin bilerek yaptığı force-stop; "kill background": Kıldım adımındaki
+# am kill. İkisi de çökme değil)
 [ -s smoke/crash.txt ] || echo "çökme kaydı yok" > smoke/crash.txt
 grep -E "ReactNativeJS|chromium" smoke/logcat.txt | grep -iE "maplibre|webgl|harita|map error|ssl" | head -60 > smoke/map-log.txt || true
 [ -s smoke/map-log.txt ] || echo "harita günlüğü boş" > smoke/map-log.txt

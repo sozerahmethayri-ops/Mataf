@@ -30,6 +30,7 @@ import { UMRE_STEPS, IHRAM_RULES } from '../src/data/umre';
 import { zikirStats } from '../src/services/zikirStats';
 import { FULL_DAY, countDay, countDays, dayKey, isDone, lastDays as logDays, prune, sanitize, streak, toggle } from '../src/services/prayerLog';
 import { dailyIndex, dayNumber } from '../src/services/daily';
+import { PRAYED_ACTION, prayedFromResponse } from '../src/services/prayedTask.types';
 import { JUZ_STARTS, TOTAL_AYAH, cleanPlan, fromGlobal, hatimToday, juzOf, juzPos, readAtJuz, readFromMark, targetRead } from '../src/services/hatim';
 import { PAGE_START, pageOf } from '../src/data/quranPages';
 import { zikirToday } from '../src/services/zikirStats';
@@ -1009,6 +1010,25 @@ ok(shareLink({ lat: 21.4225, lng: 39.8262 }) === 'https://maps.google.com/?q=21.
     log: { '2026-11-27': 3, '2026-11-26': 31, '2026-11-01': 31 }, today: new Date(2026, 10, 27, 9) });
   ok(lp.days?.map((d) => `${d.k}:${d.m}`).join() === '2026-11-27:3,2026-11-26:31,2026-11-25:0' && lp.names?.length === 5 && !!lp.light?.accent && lp.dark?.bg !== lp.light?.bg,
     'takip kutusu: son üç gün, beş ad, palet renkleri');
+}
+
+// ── Bildirimdeki "Kıldım" (uygulama içi dinleyici ve Android arka plan görevi) ──
+{
+  const req = (content: object) => ({ actionIdentifier: PRAYED_ACTION, notification: { date: 1, request: { identifier: 'at-maghrib-1', content } } });
+  const fg = prayedFromResponse(req({ data: { kind: 'adhan', type: 'at', prayer: 'maghrib', day: '2026-11-27' } }));
+  ok(fg?.id === 'at-maghrib-1' && fg.day === '2026-11-27' && fg.prayer === 'maghrib', 'kıldım: dinleyici yanıtı (content.data) okunur');
+  const bg = prayedFromResponse(req({ dataString: JSON.stringify({ kind: 'adhan', prayer: 'fajr', day: '2026-11-28' }) }));
+  ok(bg?.prayer === 'fajr' && bg.day === '2026-11-28', 'kıldım: arka plan yanıtı (content.dataString) okunur');
+  const bgEmpty = prayedFromResponse(req({ data: {}, dataString: JSON.stringify({ prayer: 'isha', day: '2026-11-28' }) }));
+  ok(bgEmpty?.prayer === 'isha', 'kıldım: boş data yerine dataString');
+  const test = prayedFromResponse(req({ data: { kind: 'adhan', type: 'at', test: true } }));
+  ok(test?.id === 'at-maghrib-1' && test.day === null && test.prayer === null, 'kıldım: deneme bildirimi yalnız kapatılır');
+  ok(prayedFromResponse(req({ data: { prayer: 'sunrise', day: '2026-11-27' } }))?.prayer === null, 'kıldım: güneş vakti işlenmez');
+  ok(prayedFromResponse(req({ data: { prayer: 'asr', day: '27.11.2026' } }))?.day === null, 'kıldım: bozuk gün işlenmez');
+  ok(prayedFromResponse(req({ dataString: '{bozuk' }))?.prayer === null, 'kıldım: bozuk JSON çökertmez');
+  ok(prayedFromResponse({ ...req({ data: {} }), actionIdentifier: 'expo.modules.notifications.actions.DEFAULT' }) === null
+    && prayedFromResponse(null) === null && prayedFromResponse({ actionIdentifier: PRAYED_ACTION, notification: null }) === null,
+    'kıldım: başka düğme ve eksik yanıt yok sayılır');
 }
 
 mosqueChecks().then(transitChecks).then(() => process.exit(fails ? 1 : 0));

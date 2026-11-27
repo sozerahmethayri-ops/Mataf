@@ -6,6 +6,6 @@ export function setLogWidgetContext(ctx: LogWidgetContext): void {
   void ctx;
 }
 
-export function pushLogWidget(log: PrayerLog): void {
+export async function pushLogWidget(log: PrayerLog): Promise<void> {
   void log;
 }

@@ -2,6 +2,7 @@
 import { createAudioPlayer, setAudioModeAsync, type AudioPlayer } from 'expo-audio';
 import * as DocumentPicker from 'expo-document-picker';
 import { Directory, File, Paths } from 'expo-file-system';
+import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
 import { AppState, Linking, Platform, Pressable, Text, View } from 'react-native';
 
@@ -113,6 +114,14 @@ export default function NotificationSettings() {
   }, [raw, ready]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => () => { previewPlayer.current?.remove(); stopAdhan(); }, []);
+
+  // mataf://bildirimler?deneme=1 → deneme bildirimi (duman testi "Kıldım"ı uygulama kapalıyken bununla dener)
+  const { deneme } = useLocalSearchParams<{ deneme?: string }>();
+  useEffect(() => {
+    if (deneme !== '1' || !notificationsSupported) return;
+    router.setParams({ deneme: undefined });
+    sendTest(mergeNotif(raw), lg).then(setTestMsg).catch(() => undefined);
+  }, [deneme]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Tam zamanlı alarm izni (Android 12+): ayarlardan dönünce yeniden bakılır
   const [exact, setExact] = useState(true);

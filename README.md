@@ -2,6 +2,7 @@
 
 Mekke ve Medine'deki ziyaretçiler için iOS ve Android uygulaması:
 
+- **“Kıldım” uygulamayı açmadan (0.20.0)** — Android'de vakit bildirimindeki “Kıldım”a dokununca uygulama artık açılmıyor: vakit Namaz takibine işleniyor, bildirim kapanıyor, ana ekrandaki namaz takibi kutusu da güncelleniyor. Uygulama kapalıyken de çalışır. Bildirimler ekranındaki deneme bildiriminde de “Kıldım” görünür; dokununca yalnız bildirim kapanır, namaz işlenmez.
 - **Namaz takibi kutusu (0.19.0)** — Android'de telefonun ana ekranına “Bugünkü namazlarım” kutusu eklenebilir: bugün kıldığınız vakitler ✓, kalanlar ○ ile görünür; üstte kaç vaktin tamam olduğu (“3/5”, beşi de kılınınca “Beş vakit tamam”), hatim planınız varsa altta hatim yüzdesi. Uygulamada işaretlediğiniz anda kutu da güncellenir; gece yarısından sonra uygulamayı açmasanız da yeni gün boş başlar. Namaz takibi ekranındaki “Telefonun ana ekranına ekle” satırıyla ya da başlatıcının kutu listesinden (“MATAF · Namaz takibi”) eklenir; dokununca uygulama açılır.
 - **Kur’an sayfa numaraları (0.18.0)** — Medine Mushafı düzeninde (604 sayfa) sayfa numaraları: mushaf görünümü artık sayfa sayfa, her sayfanın başında “Sayfa 297 · 15. cüz” işareti var; Arapça ve mealli görünümde de yeni sayfanın başladığı âyetin üstünde aynı işaret. Okuma ekranının başlığında sûrenin sayfaları (“2. sûre · s. 2–49”), Kur’an listesinde her sûrenin ilk sayfası, ayraçlarda kalınan sayfa yazıyor. Hatim planında bugünün bölümü kesin sayfa aralığıyla gösteriliyor (“s. 298–304 · ≈ 7 sayfa”).
 - **Kur’an için hat seçimi (0.17.0)** — Okuma ayarlarının başında “Hat (yazı stili)”: cihazın yazısı, Amiri Kur’an (klasik nesih, eski Kahire baskıları üslubu), Scheherazade (iri ve açık nesih), Noto Nesih (her telefonda aynı) ve Lateef (Hint alt kıtası mushaflarının üslubu); her birinde besmele önizlemesi var. Seçilen hat mushaf, Arapça, mealli ve tecvid görünümlerinde ve tecvid kuralları sayfasında kullanılır; satır aralığı yazıya göre ayarlanır, harekeler kesilmez. Yazı tipleri uygulamanın içinde, internet gerekmez. Kûfî, rik’a ve nestâlik yazılar Kur’an’daki işaretlerin bir kısmını çizemediği için eklenmedi.
@@ -60,7 +61,7 @@ Mekke ve Medine'deki ziyaretçiler için iOS ve Android uygulaması:
 - **Ravza rehberi** — ziyaret saatleri, Nusuk izni, resmî 360° sanal tur bağlantısı.
 - **Türkçe, İngilizce, Arapça** (Arapça sağdan sola).
 
-> Durum: **0.19.0 — geliştirme sürümü.** Bina biçimleri ve kapı yerleri OpenStreetMap'ten gelir (doğruluğu bu veri kadardır); mescit içi hizmet noktaları örnektir. Ayrıntı: [docs/VERI-KAYNAKLARI.md](docs/VERI-KAYNAKLARI.md), [scripts/osm-3d.md](scripts/osm-3d.md).
+> Durum: **0.20.0 — geliştirme sürümü.** Bina biçimleri ve kapı yerleri OpenStreetMap'ten gelir (doğruluğu bu veri kadardır); mescit içi hizmet noktaları örnektir. Ayrıntı: [docs/VERI-KAYNAKLARI.md](docs/VERI-KAYNAKLARI.md), [scripts/osm-3d.md](scripts/osm-3d.md).
 
 ## Hızlı başlangıç
 

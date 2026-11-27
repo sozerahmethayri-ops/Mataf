@@ -2,7 +2,7 @@
   "expo": {
     "name": "MATAF",
     "slug": "mataf",
-    "version": "0.19.0",
+    "version": "0.20.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "mataf",
@@ -36,7 +36,7 @@
       "blockedPermissions": [
         "android.permission.RECORD_AUDIO"
       ],
-      "versionCode": 29
+      "versionCode": 30
     },
     "web": {
       "output": "single",

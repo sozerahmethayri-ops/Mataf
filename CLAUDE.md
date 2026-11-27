@@ -17,7 +17,7 @@ Projenin kararları ve çalışma kuralları burada; bir karar değişince bu do
   - Namaz vakti `adhan`; güneş ve ay `suncalc`.
   - Çizim `react-native-svg` (3D Harem sahnesi, gökyüzü, simgeler); animasyon RN `Animated` (yerel sürücü) ve `react-native-reanimated`.
   - Harita: `react-native-webview` içinde MapLibre GL JS 5.24.1 (unpkg, yedek jsdelivr) + OpenFreeMap karoları; açılmazsa `PlainMap`. `react-native-maps` yalnız `GOOGLE_MAPS_API_KEY` verilirse.
-  - `expo-notifications` (ezan), `expo-audio` ve `expo-speech` (ses), `expo-location`.
+  - `expo-notifications` (ezan), `expo-task-manager` (bildirimdeki "Kıldım" arka planda), `expo-audio` ve `expo-speech` (ses), `expo-location`.
   - Ana ekran kutuları: `expo-widgets` + `@expo/ui` (Android Glance), `patch-package` yamasıyla.
   - Kayıt `@react-native-async-storage/async-storage`; sunucu `@supabase/supabase-js`.
 - Dış servisler: Photon (adres ve yer arama), OSRM (yürüme ve araç rotası), Transitous/MOTIS (toplu taşıma), api.alquran.cloud ve cdn.islamic.network (Kur'an metni ve sesi), OpenFreeMap (karo), Overpass (yalnız yedek), Supabase.
@@ -26,7 +26,7 @@ Projenin kararları ve çalışma kuralları burada; bir karar değişince bu do
 
 ## Komutlar
 - `npm install`: postinstall `patches/expo-widgets+58.0.29.patch`'i uygular.
-- Her değişiklikten sonra üçü de temiz olmalı: `npm run typecheck`, `npm run lint`, `npm run check` (281 test, her satır `OK`). CI typecheck ve check çalıştırır.
+- Her değişiklikten sonra üçü de temiz olmalı: `npm run typecheck`, `npm run lint`, `npm run check` (289 test, her satır `OK`). CI typecheck ve check çalıştırır.
 - `npx expo start`: Expo Go'da kutular, özel ezan sesleri ve tam zamanlı alarm yok; yerel davranışı APK ya da duman testinde gör.
 - Web görüntüsü: `npx expo export -p web --output-dir /tmp/web`, sonra `python3 tools/web-shots/shoot.py /tmp/web /tmp/shots tools/web-shots/ornek-spec.json`. Spec biçimi dosyanın başında.
 - Emülatör (duman testi, ~25 dk): `gh workflow run android-smoke.yml -R sozerahmethayri-ops/Mataf --ref main`. Sonuçlar "smoke-latest" sürüm sayfasında: `crash.txt`, `status.txt`, `screen-*.png`, `logcat.txt`, `widget-log.txt`, `alarm.txt`. Akış `scripts/smoke.sh`'te.
@@ -38,7 +38,7 @@ Projenin kararları ve çalışma kuralları burada; bir karar değişince bu do
 | `src/app/` | Rotalar. `(tabs)/`: `harita`, `kuran`, `index` (Ana sayfa), `ulasim`, `menu`. Diğerleri yığın ekranı; dosya adı yoldur (`vakitler`, `umre`, `hac`, `tavaf`, `say`, `cemerat`, `erisim`, `tren`, …) |
 | `src/screens/` | Birden çok rotanın paylaştığı ekran gövdeleri: `HomePrayer`, `PrayerTimes`, `MapScreen`, `Tawaf`, `Zikir`, `Menu`, `QuranList`, `HadithScreen` |
 | `src/components/` | `ui.tsx` (Screen, Header, Card, Btn, Chip, Segmented, ListRow, SelectRow, Toggle, StatusPill, `T` yazı stilleri), `Icon.tsx`, haritalar (`OnlineMap` + `onlineMapHtml.ts`, `PlainMap`, `TransportMap`, `CityMap`, `MosqueMap`), `HaramScene`, `SkyScene` + `sceneArt`, `WidgetPinRow`, `AdhanHost` |
-| `src/services/` | Mantık ve bağlamlar; React'sız olanlar testli: `prayer`, `adhanPlan`, `adhanNotify`, `location`, `transport`, `railRouter`, `transitText`, `routing`, `reports`, `tawaf`, `say`, `hac`, `kaza`, `offline`, `widgetProps`, `widgetSync`, `update`, `errorLog`, `ThemeContext`, … |
+| `src/services/` | Mantık ve bağlamlar; React'sız olanlar testli: `prayer`, `adhanPlan`, `adhanNotify`, `prayedTask`, `location`, `transport`, `railRouter`, `transitText`, `routing`, `reports`, `tawaf`, `say`, `hac`, `kaza`, `offline`, `widgetProps`, `widgetSync`, `update`, `errorLog`, `ThemeContext`, … |
 | `src/scene/` | Kendi 3D motorumuz: eğik izdüşüm (`oblique.ts`), Mekke ve Medine sahneleri, Kâbe modeli, tavaf sahnesi |
 | `src/data/` | Gömülü veri: kapılar, dualar, umre ve hac adımları, tren, erişim, `osm/` (3D binalar, hac yerleri), `istanbulRail.json`, `makkahBus.json` |
 | `src/widgets/` | Ana ekran kutuları (her biri `'widget'` yönergeli, ayrı JS ortamı) |
@@ -49,16 +49,17 @@ Projenin kararları ve çalışma kuralları burada; bir karar değişince bu do
 | `supabase/schema.sql`, `docs/` | Veritabanı şeması; `MIMARI.md` (katmanlar, kapı durumu kuralları), `SUPABASE.md` (kurulum), `VERI-KAYNAKLARI.md` (her verinin kaynağı ve lisansı) |
 | `.github/workflows/` | `android-apk`, `ci`, `web-pages` (main'e her gönderimde); `android-smoke`, `osm-fetch` (elle); `supabase-keepalive` (3 günde bir) |
 
-Platforma özel dosyalar: `X.web.tsx`, `X.android.ts`, `X.types.ts`.
+Platforma özel dosyalar: `X.web.tsx`, `X.android.ts`, `X.types.ts`. Giriş `index.ts`: önce `expo-router/entry`, sonra uygulama kapalıyken de tanımlı olması gereken arka plan görevi (`services/prayedTask`).
 
 ## Kodlama kuralları
 - **Metin:** Kullanıcıya görünen her yazının `tr`, `en`, `ar` karşılığı olur. Ekrana özel yazılar dosyada `const L = { anahtar: { tr, en, ar } }` ve `pick(L.anahtar, lg)`; ortak olanlar `src/i18n/strings.ts` ve `t('…')`. Arapça seçilince `I18nManager.forceRTL` ile yön döner.
 - **Türkçe yazım:** Eki cins isim taşır, özel ad yalın kalır: "Yenikapı istasyonunda inin", "Al-Shabeka 439 durağında inin", "{p} vaktine kalan". Kısa, gündelik dil; sayı birimiyle ("≈ 27 dk", "560 m").
 - **Tema:** Renkleri `C` nesnesinden çizim anında oku; tema değişince `applyTheme` aynı nesneyi günceller, ekranlar yeniden kurulur. Modül düzeyinde renkten türeyen stil varsa `onThemeChange` ile yenile. Yazı boyutu `fs(n)`, Arapça `fsAr(n)`, ortak stiller `T`. Yeni renk çifti WCAG AA'yı geçmeli (`check-logic.ts` kontrast testleri).
-- **Kayıt:** `usePersisted(anahtar, başlangıç)` ya da AsyncStorage. Var olan anahtar adları kalıcıdır (`theme:prefs`, `adhan:prefs`, `mataf.city`, `mataf.lang`, `mataf.hotel.<şehir>`, `prayer:log`, `prayer:logHidden`, `quran:plan`, `zikir:goal`, `trip:checklist` …); adı değişirse kullanıcının kaydı kaybolur.
+- **Kayıt:** `usePersisted(anahtar, başlangıç)` ya da AsyncStorage. Var olan anahtar adları kalıcıdır (`theme:prefs`, `adhan:prefs`, `mataf.city`, `mataf.lang`, `mataf.hotel.<şehir>`, `prayer:log`, `prayer:logHidden`, `quran:plan`, `zikir:goal`, `trip:checklist`, `widget:logCtx` …); adı değişirse kullanıcının kaydı kaybolur.
 - **React Compiler (lint):** Çizimde `ref.current` okunmaz. Effect içinde `setState` yerine türetilmiş değer ya da `setTimeout(…, 0)`. `Animated.Value` için `useState(() => new Animated.Value(0))`.
 - **Kutu dosyaları (`src/widgets/`):** Ayrı Hermes ortamında çalışır, dosya dışındaki değerlere erişmez. Babel yardımcısı istemeyen sözdizimi yaz: `a && a.b`, üçlü işleç, klasik `for` (`?.`, `??`, yayma `...` ve `for…of` çalışmaz). Glance'te bir `Row`/`Column` en çok 10 çocuk çizer, fazlasını sessizce keser; `weight` yok, sağa yaslamak için `Box contentAlignment`. Değişen kutuyu duman testinin görüntüsünde gör.
 - **expo-widgets yaması** (`patches/expo-widgets+58.0.29.patch`): sabitleme, kurulu kutu sayısı, dokununca açma, 30 dk yenileme, `scheduleWidgetTicks` + `WidgetTicks.kt`. expo-widgets sürümü değişirse `node_modules`'te yeniden uygula ve `npx patch-package expo-widgets` ile yamayı üret.
+- **Arka plan görevi:** `TaskManager.defineTask` giriş dosyasından (`index.ts`) yüklenen modülde, modül düzeyinde çağrılır. Ekran ya da `_layout` içinde tanımlanan görev uygulama kapalıyken bulunmaz; expo-task-manager bulamadığı görevin kaydını siler. Görev sonucu beklenir (kutu yazımı dahil); yoksa görünmeden açılan JS iş bitmeden kapanır.
 - **Simgeler:** `Icon.tsx`'teki yol tablosu. Olmayan ad tür denetiminde yakalanmaz, boş çizilir; yeni simgeyi tabloya ekle.
 - **Ağ:** Her istek uygulamayı tanıtan User-Agent taşır. Yer ve cami araması Photon'la (Overpass yalnız yedek). Transitous koşulları: açık kaynak, ticari değil, iletişimli User-Agent, ekranda `transitous.org/sources` bağlantısı; günde ~720 `/plan` isteği aşılırsa onlarla konuşulur. Mekke ve Medine'nin 90 km çevresinde Transitous'a istek gitmez (Suudi Arabistan verisi yok).
 - **Test:** Mantığı React'sız `src/services/*.ts` dosyasına koy, `scripts/check-logic.ts`'e `ok(koşul, 'açıklama')` ekle.
@@ -72,7 +73,7 @@ Platforma özel dosyalar: `X.web.tsx`, `X.android.ts`, `X.types.ts`.
 3. README: değişiklik günlüğünün başına bir madde; "Durum" satırında sürüm.
 4. Commit: Türkçe, ilk satır `0.13.5: kısa özet`, altında madde madde ne ve neden. `main`'e gönder.
 5. "Android APK" iş akışı bitince `https://github.com/sozerahmethayri-ops/Mataf/releases/download/apk-latest/version.json` yeni sürümü gösterir. Uygulama buna 6 saatte bir bakar, yeni sürümde "İndir" şeridi çıkarır.
-6. Yerel davranış değiştiyse (kutular, bildirim, yama, izin, derin bağlantı) duman testini çalıştır. Bitti sayılması için: `crash.txt` "çökme kaydı yok" ile başlar; `status.txt`'te beş "eklendi: 1" satırı ve "vakit alarmı: 24" var; ilgili `screen-*.png` gözle doğru.
+6. Yerel davranış değiştiyse (kutular, bildirim, yama, izin, derin bağlantı) duman testini çalıştır. Bitti sayılması için: `crash.txt` "çökme kaydı yok" ile başlar; `status.txt`'te beş "eklendi: 1" satırı, "vakit alarmı: 24" ve "kıldım: süreç kapatıldı evet, bildirim önce 1, düğme 1, sonra 0, görev 1" var; ilgili `screen-*.png` gözle doğru.
 
 ## Tasarım kuralları
 ### Renkler (`src/constants/theme.ts`)
@@ -114,7 +115,7 @@ Platforma özel dosyalar: `X.web.tsx`, `X.android.ts`, `X.types.ts`.
 5. **Sunucu isteğe bağlı:** Supabase yoksa kapı bildirimleri yerel demo, aile konumu önizleme. Yetki RLS'de (`supabase/schema.sql`). Kapı durumu kuralları (resmî duyuru önce, 3 farklı kişi, 2 saat, kapıya ≤150 m) `docs/MIMARI.md`'de.
 6. **Tema:** tek değiştirilebilir `C` nesnesi; tema değişince yalnız ekranlar yeniden kurulur (`ScreenRemount`). Kök gezgini yeniden kurmak çöküyordu (0.6.0).
 7. **Dağıtım:** mağaza yok. APK GitHub Releases'te ("apk-latest"; hata ayıklama anahtarıyla imzalı, yan yükleme için), iPhone için GitHub Pages web sürümü. R8 küçültme kapalı (WorkManager/Room açılışta çöküyordu). Gradle'a 6 GB bellek (`plugins/withGradleMemory.js`; D8 bellek hatası).
-8. **Bildirim planı:** yerelde 7 gün, en çok 60 bildirim (iOS 64 sınırı); önce hatırlatmalar (mübarek gün, hac), kalan yere ezanlar. Android 12+ tam zamanlı alarm izni yoksa uyarı ve "İzni aç".
+8. **Bildirim planı:** yerelde 7 gün, en çok 60 bildirim (iOS 64 sınırı); önce hatırlatmalar (mübarek gün, hac), kalan yere ezanlar. Android 12+ tam zamanlı alarm izni yoksa uyarı ve "İzni aç". Vakit bildirimindeki "Kıldım" Android'de uygulamayı açmaz: expo-notifications düğmeye dokununca arka plan görevini çalıştırır (uygulama kapalıysa JS görünmeden yüklenir), görev vakti işler, bildirimi kapatır, kutuyu yeniler. Görev kurulamazsa düğme uygulamayı açar ve AdhanHost işler (0.20.0).
 9. **Kutu yenileme:** sıradaki vakti kutu her çizimde `Date.now()` ile kendisi bulur (30 günlük veri). Uygulama her eşitlemede sonraki 24 vakit ve gün başını `scheduleWidgetTicks` ile AlarmManager'a verir (izin varsa tam zamanlı, yoksa 10 dk pencere); ayrıca 30 dk'da bir yenileme.
 10. **Toplu taşıma:** Transitous'ta olmayan yerler için OSM'den çevrimdışı ağ (İstanbul raylı sistem, Mekke otobüsü) ve RAPTOR benzeri tarif (`railRouter.ts`). Sefer saati yok; süre ortalama hız ve bekleme süresinden, ekranda "≈". Transitous sonuçları aynı listeye süreye göre girer. Medine'de veri yok; harita uygulaması açılır.
 11. **Yatsıdan sonra yarın:** ekranlar ve kutular yarının vakitlerini gösterir (`shownDay`); vurgulanan imsak geri sayımla aynı olsun diye.
@@ -123,11 +124,11 @@ Platforma özel dosyalar: `X.web.tsx`, `X.android.ts`, `X.types.ts`.
 14. **Veriden bilinçli sapmalar:** OSM'de turuncu işaretli kubbeler mermer tonunda; Yeşil Kubbe kasnak + sivri kubbe (~26 m); Medine çatısındaki 27 sürgülü kubbe çizilmez (yerleri bilinmiyor). Ana kapılar: Mekke 1, 79, 62, 45, 100; Medine 1, 41, 37, 20–22, 7–9, 33–35.
 15. **Doğrulama üç katlı:** saf mantık testleri (Node), web ekran görüntüsü (Playwright), emülatör duman testi (API 34). Gerçek cihaz denemesi henüz yapılmadı.
 
-## Tamamlanan özellikler (0.19.0)
+## Tamamlanan özellikler (0.20.0)
 Sürüm sırasıyla ayrıntı README.md'nin başında.
 - **Ana sayfa ve vakitler:** resimli gökyüzü, geri sayım, altı vakit, hicrî tarih, yaklaşan mübarek gün, teşrik tekbiri; Vakitler ekranı (haftalık tablo, güneş ve ay bilgisi); hesaplama yöntemi; ana sayfa seçimi (sade vakit, Kur'an, harita, tavaf, zikir, hadis). `screens/HomePrayer.tsx`, `PrayerTimes.tsx`, `services/prayer.ts`.
 - **Her gün dönülen yerler (0.14.0):** namaz takibi (ana sayfada bugünkü beş vakit tek dokunuşla; ekranda son 7 gün, seri, kaza bağlantısı; kayıt telefonda, yedeğe girer), günün duası (kaynaklı kısa dualardan güne göre). `app/namaz-takibi.tsx`, `components/PrayerLogCard.tsx`, `DailyDuaCard.tsx`, `services/prayerLog.ts`, `usePrayerLog.ts`, `daily.ts`.
-- **Bağlılık (0.15.0):** hatim planı (30–180 gün, bölüm cüze göre eşit, Hatim ayracından; ana sayfa kartı, yatsıdan sonra hatırlatma), cuma kartı ve hatırlatması (Kehf), günlük zikir hedefi (ana sayfada), son 7 günün özeti (namaz, zikir, hatim), ezan bildiriminde "Kıldım" düğmesi (uygulamayı açar, vakti işler), hac-umre hazırlık listesi, temel Arapça ifadeler (göster, dinlet). `app/hatim.tsx`, `hazirlik.tsx`, `arapca.tsx`, `components/HatimCard.tsx`, `ZikirCard.tsx`, `FridayCard.tsx`, `services/hatim.ts`, `sharedPersisted.ts`, `data/checklist.ts`, `phrases.ts`.
+- **Bağlılık (0.15.0):** hatim planı (30–180 gün, bölüm cüze göre eşit, Hatim ayracından; ana sayfa kartı, yatsıdan sonra hatırlatma), cuma kartı ve hatırlatması (Kehf), günlük zikir hedefi (ana sayfada), son 7 günün özeti (namaz, zikir, hatim), ezan bildiriminde "Kıldım" düğmesi (0.20.0'dan beri Android'de uygulamayı açmadan vakti işler, bildirimi kapatır, kutuyu yeniler; `services/prayedTask.android.ts`, `index.ts`), hac-umre hazırlık listesi, temel Arapça ifadeler (göster, dinlet). `app/hatim.tsx`, `hazirlik.tsx`, `arapca.tsx`, `components/HatimCard.tsx`, `ZikirCard.tsx`, `FridayCard.tsx`, `services/hatim.ts`, `sharedPersisted.ts`, `data/checklist.ts`, `phrases.ts`.
 - **Bildirimler:** ezandan önce ve vaktinde; 4 ses ve kendi kaydın; mübarek gün ve hac hatırlatmaları; tam zamanlı alarm uyarısı. `app/bildirimler.tsx`, `services/adhanPlan.ts`, `adhanNotify.ts`.
 - **Ana ekran kutuları (Android):** kare, geniş, uzun, tek satır; Vakitler ve Ayarlar'dan eklenir; `mataf://vakitler?widget=<Ad>`. Namaz takibi kutusu (0.19.0, `PrayerLogWidget`): bugün kılınan vakitler ✓/○, "3/5" ya da "Beş vakit tamam", hatim planı varsa "Hatim %N"; işaret değişince uygulama yazar (`services/logWidget.android.ts`, `useLogWidgetSync.ts`), "bugün"ü kutu kendisi bulur (yeni gün boş başlar); Namaz takibi ekranından eklenir.
 - **Harem haritası ve navigasyon:** gerçek ölçekli 3D (OSM) ve 2D gerçek harita, katmanlar, kapı bildirimleri ve onayları, kapalı kapıya göre rota, adım adım yönlendirme. `screens/MapScreen.tsx`, `scene/`, `app/kapilar.tsx`, `bildir.tsx`, `navigasyon.tsx`.
@@ -139,8 +140,8 @@ Sürüm sırasıyla ayrıntı README.md'nin başında.
 - **Genel:** ilk açılış, TR/EN/AR, açık/koyu tema ve 5 palet, yazı ölçeği, çevrimdışı paket, yedek ve geri yükleme, güncelleme uyarısı, hata ekranı ve kaydı, uygulamayı paylaşma, web sürümü.
 
 ## Şu anki durum
-- Sürüm 0.19.0 (versionCode 29). CI, APK ve web yeşil. APK: https://github.com/sozerahmethayri-ops/Mataf/releases/download/apk-latest/mataf.apk; web: https://sozerahmethayri-ops.github.io/Mataf/.
-- Doğrulandı: 281 mantık testi; web görüntüleri; emülatörde çökme yok, dört kutu eklendi ve çizildi, 24 vakit alarmı kurulu, Mekke otobüs tarifi (7A) doğru.
+- Sürüm 0.20.0 (versionCode 30). CI, APK ve web yeşil. APK: https://github.com/sozerahmethayri-ops/Mataf/releases/download/apk-latest/mataf.apk; web: https://sozerahmethayri-ops.github.io/Mataf/.
+- Doğrulandı: 289 mantık testi; web görüntüleri; emülatörde çökme yok, dört kutu eklendi ve çizildi, 24 vakit alarmı kurulu, Mekke otobüs tarifi (7A) doğru.
 - Doğrulanmadı: gerçek telefon, Mekke ve Medine'de saha, Samsung ve Xiaomi başlatıcıları.
 - Proje sahibinden beklenenler: Supabase URL ve Publishable key (GitHub secrets'a), sahada deneme, hoca kontrolü (gözden geçirme belgesi: https://claude.ai/artifact/BZSU1wpF6vLspLDwDCGiGc), dağıtım izni olan bir ezan kaydı.
 - Sürüm sürüm ayrıntılı notlar: claude.ai'deki "MATAF uygulama" projesinde `eksikler-ve-yol-haritasi.md`.
@@ -149,7 +150,7 @@ Sürüm sırasıyla ayrıntı README.md'nin başında.
 1. Saha denemesi: haritanın akıcılığı ve Suudi mobil ağında açılış süresi; tavaf ve sa'y sayacı (zemin, 1. kat, çatı); Arafat ve Mina sınır denetimi; kutular Samsung ve Xiaomi'de; bildirimlerin pil tasarrufunda gelmesi; Mekke otobüs sürelerinin Makkah Bus uygulamasıyla karşılaştırılması; çevrimdışı paketin boyutu ve süresi.
 2. Supabase'i bağla (canlı kapı bildirimleri, aile konumu): `docs/SUPABASE.md`.
 3. Dinî metinleri hocanın düzeltmeleriyle güncelle (tecvid kuralları sayfası ve secde notu dahil).
-4. Bağlılık (ilke: suçlama yok, yarış ve sıralama yok, veri telefonda): "Kıldım" düğmesinin uygulamayı açmadan işlemesi (arka plan görevi); Kur'an dışı günlük içerik (hadis) seçeneği.
+4. Bağlılık (ilke: suçlama yok, yarış ve sıralama yok, veri telefonda): Kur'an dışı günlük içerik (hadis) seçeneği.
 5. Ezan sesi: izinli kayıt; uygulama kapalıyken tam ezan için ön plan servisi.
 6. Toplu taşıma: Medine otobüs verisi; İstanbul vapurları (OSM'de durak üyeleri eksik); sefer saatli veri (GTFS); kullanıcı artarsa kendi MOTIS sunucusu.
 7. Kur'an dışı tavaf ve sa'y dualarına kâri kaydı (şimdi cihaz sesi okuyor).
@@ -168,7 +169,7 @@ Sürüm sırasıyla ayrıntı README.md'nin başında.
 - Hicrî tarih ve hac günleri Ümmü'l-Kurâ takviminden; Suudi Arabistan'ın ilanıyla bir gün kayabilir.
 - Pixel başlatıcısında geniş kutu 5×3 açılıyor; içerik ortada, altında ve üstünde boşluk kalıyor (görsel).
 - Duman testinde başlatıcının ekleme penceresi ara sıra arkada kalıyor ("widget eklendi: 0"). Kod değil otomasyon; testi yeniden çalıştır.
-- Bildirimdeki "Kıldım" düğmesi uygulamayı açarak işaretler (arka planda işaretleme yok). Web: ezan bildirimi ve kutu yok, pusula kısıtlı. Arapça seçilince yazı sağa yaslanıyor ama satırlar sağdan sola dönmüyor (telefonda dönüyor).
+- Bildirimdeki "Kıldım" yalnız Android'de uygulamayı açmadan işler; duman testinde deneme bildirimiyle (vakit işlenmeden) denendi, gerçek vakit bildirimiyle ve pil tasarrufu kipinde telefonda bakılmalı. Web: ezan bildirimi ve kutu yok, pusula kısıtlı. Arapça seçilince yazı sağa yaslanıyor ama satırlar sağdan sola dönmüyor (telefonda dönüyor).
 - Kapı bildirimleri ve aile konumu Supabase bağlanana dek demo ve önizleme.
 - APK hata ayıklama anahtarıyla imzalı; Play Store'a yüklenemez.
 - Harem 3D modeli OSM kadar doğru; mescit içi hizmet noktaları örnek veri.

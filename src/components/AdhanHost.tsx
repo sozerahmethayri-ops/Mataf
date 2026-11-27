@@ -11,8 +11,8 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { C, shadow, fs } from '@/constants/theme';
 import { useI18n } from '@/i18n';
-import { PRAYED_ACTION, initNotifications, loadNotifPrefs, notificationsSupported, refreshSchedule } from '@/services/adhanNotify';
-import { LOG_PRAYERS, type LogPrayer } from '@/services/prayerLog';
+import { initNotifications, loadNotifPrefs, notificationsSupported, refreshSchedule } from '@/services/adhanNotify';
+import { PRAYED_ACTION, prayedFromResponse, prayedInBackground } from '@/services/prayedTask';
 import { markPrayed } from '@/services/usePrayerLog';
 
 initNotifications();
@@ -81,16 +81,22 @@ export function AdhanHost() {
     const recv = Notifications.addNotificationReceivedListener((n) => {
       maybePlay(n.request.content.data as AdhanData);
     });
-    // "Kıldım" düğmesi: vakti Namaz takibine işle, bildirimi kaldır, takip ekranını aç (aynı yanıt iki kez işlenmez)
+    // "Kıldım" düğmesi: vakti Namaz takibine işle, bildirimi kaldır (aynı yanıt iki kez işlenmez). Android'de düğme
+    // uygulama önde değilken arka plan görevinde işlenir (prayedTask); burası uygulama açıkken ve görev kurulamadığında
+    // çalışır. Düğme uygulamayı açtıysa (görev yok) takip ekranı açılır; açmadan işlendiyse ekran değişmez.
     const handled = new Set<string>();
     const onPrayed = (r: Notifications.NotificationResponse, delay = 0) => {
-      const d = r.notification.request.content.data as AdhanData;
-      const id = `${r.notification.request.identifier}:${r.notification.date}`;
-      if (handled.has(id) || !d.day || !d.prayer || !(LOG_PRAYERS as readonly string[]).includes(d.prayer)) return;
-      handled.add(id);
-      markPrayed(d.day, d.prayer as LogPrayer);
-      Notifications.dismissNotificationAsync(r.notification.request.identifier).catch(() => undefined);
-      setTimeout(() => router.push('/namaz-takibi'), delay);
+      const hit = prayedFromResponse(r);
+      const key = hit ? `${hit.id}:${r.notification.date}` : '';
+      if (!hit || handled.has(key)) return;
+      handled.add(key);
+      Notifications.dismissNotificationAsync(hit.id).catch(() => undefined);
+      if (!hit.day || !hit.prayer) return; // deneme bildirimi: işlenecek vakit yok
+      markPrayed(hit.day, hit.prayer)
+        .then((changed) => {
+          if (changed && !prayedInBackground()) setTimeout(() => router.push('/namaz-takibi'), delay);
+        })
+        .catch(() => undefined);
     };
     // Uygulama düğmeyle açıldıysa (soğuk başlangıç) yanıt dinleyiciden önce gelmiş olabilir
     const last = Notifications.getLastNotificationResponse();

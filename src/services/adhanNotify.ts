@@ -11,11 +11,11 @@ import * as Notifications from 'expo-notifications';
 import { Platform } from 'react-native';
 
 import { DEFAULT_NOTIF, SOUNDS, channelId, notifText, planExtras, planNotifications, type NotifPrefs } from './adhanPlan';
+import { PRAYED_ACTION, registerPrayedTask } from './prayedTask';
 import { PLACES, fmtTime, getMethod, times, type MethodId } from './prayer';
 import { dayKey } from './prayerLog';
 
-/** Vakit girdi bildirimindeki "Kıldım" düğmesi: dokununca uygulama açılır, o vakit Namaz takibine işlenir (AdhanHost). */
-export const PRAYED_ACTION = 'prayed';
+/** Vakit girdi bildirimindeki "Kıldım" düğmesinin kategorisi */
 const PRAYER_CATEGORY = 'prayer-at';
 
 export const NOTIF_KEY = 'adhan:prefs';
@@ -125,9 +125,7 @@ export async function applySchedule(prefs: NotifPrefs, lang: Lang, { ask = false
   if (!resolved && prefs.enabled) return { ok: false, count: 0, reason: 'location' };
   const place = resolved ?? { ...PLACES.makkah, method: 'UmmAlQura' as MethodId };
   await ensureChannels(lang);
-  await Notifications.setNotificationCategoryAsync(PRAYER_CATEGORY, [
-    { identifier: PRAYED_ACTION, buttonTitle: { tr: 'Kıldım', en: 'I prayed', ar: 'صلّيت' }[lang], options: { opensAppToForeground: true } },
-  ]).catch(() => undefined);
+  await setPrayedCategory(lang);
   const now = new Date();
   const extras = planExtras({
     now, days: 7, lang, special: prefs.enabled && prefs.special, hajj: prefs.hajj, friday: prefs.enabled && prefs.friday, quran: prefs.quran,
@@ -164,6 +162,17 @@ export async function applySchedule(prefs: NotifPrefs, lang: Lang, { ask = false
   return { ok: true, count: plan.length + extras.length, first: firsts[0] };
 }
 
+/**
+ * "Kıldım" düğmesi. Android'de arka plan görevi kurulduysa uygulamayı açmadan vakti işler (prayedTask.android.ts);
+ * kurulamadıysa ve başka platformda dokununca uygulama açılır, AdhanHost işler.
+ */
+async function setPrayedCategory(lang: Lang) {
+  const background = await registerPrayedTask();
+  await Notifications.setNotificationCategoryAsync(PRAYER_CATEGORY, [
+    { identifier: PRAYED_ACTION, buttonTitle: { tr: 'Kıldım', en: 'I prayed', ar: 'صلّيت' }[lang], options: { opensAppToForeground: !background } },
+  ]).catch(() => undefined);
+}
+
 /** Uygulama açılışında / öne gelişinde sessizce yenile (izin istemeden). */
 export async function refreshSchedule(lang: Lang) {
   if (!notificationsSupported) return;
@@ -172,10 +181,11 @@ export async function refreshSchedule(lang: Lang) {
   await applySchedule(prefs, lang).catch(() => undefined);
 }
 
-/** Seçilen sesi denemek için 5 sn sonra bir örnek bildirim. */
+/** Seçilen sesi denemek için 5 sn sonra bir örnek bildirim. "Kıldım" düğmesi de görünür; dokununca yalnız kapanır. */
 export async function sendTest(prefs: NotifPrefs, lang: Lang) {
   if (!(await notifPermission(true))) return false;
   await ensureChannels(lang);
+  await setPrayedCategory(lang);
   const sound = SOUNDS.find((s) => s.id === prefs.sound) ?? SOUNDS[0];
   await Notifications.scheduleNotificationAsync({
     content: {
@@ -183,6 +193,7 @@ export async function sendTest(prefs: NotifPrefs, lang: Lang) {
       body: { tr: `Ses: ${sound.ml.tr}`, en: `Sound: ${sound.ml.en}`, ar: `الصوت: ${sound.ml.ar}` }[lang],
       sound: sound.file ?? (sound.id === 'silent' ? false : 'default'),
       data: { kind: 'adhan', type: 'at', test: true },
+      categoryIdentifier: PRAYER_CATEGORY,
     },
     trigger: { type: Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL, seconds: 5, channelId: channelId(sound.id) },
   });

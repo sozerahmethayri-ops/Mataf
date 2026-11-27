@@ -17,7 +17,8 @@ const emit = (s: State) => {
   for (const fn of listeners) fn(s);
 };
 
-async function reload() {
+/** Kaydı yeniden okur; okunamazsa false (eldeki kopya kalır) */
+async function reload(): Promise<boolean> {
   try {
     const pairs = await AsyncStorage.multiGet([LOG_KEY, LOG_HIDDEN_KEY]);
     const raw = pairs[0]?.[1];
@@ -28,19 +29,25 @@ async function reload() {
       /* bozuk kayıt: boş başla */
     }
     emit({ log, hidden: pairs[1]?.[1] === '1' });
+    return true;
   } catch {
     /* okunamadı: eldeki kalsın */
+    return false;
   }
 }
 
-/** Bildirimdeki "Kıldım" düğmesi: o vakti işaretler (zaten işaretliyse dokunmaz). Uygulama kapalıysa düğme önce uygulamayı açar. */
-export async function markPrayed(day: string, p: LogPrayer) {
-  await reload();
-  if (isDone(state.log, day, p)) return;
+/**
+ * Bildirimdeki "Kıldım" düğmesi: o vakti işaretler; işaretlediyse true. Zaten işaretliyse ya da kayıt okunamazsa
+ * dokunmaz (eldeki kopya eksik olabilir, üstüne yazılmaz). Android'de uygulama kapalıyken de çalışır (prayedTask).
+ */
+export async function markPrayed(day: string, p: LogPrayer): Promise<boolean> {
+  if (!(await reload())) return false;
+  if (isDone(state.log, day, p)) return false;
   const log = prune(toggle(state.log, day, p), new Date());
   emit({ ...state, log });
   await AsyncStorage.setItem(LOG_KEY, JSON.stringify(log)).catch(() => {});
-  pushLogWidget(log);
+  await pushLogWidget(log);
+  return true;
 }
 
 export function usePrayerLog() {
