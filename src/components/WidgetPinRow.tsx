@@ -1,17 +1,18 @@
 // "Ana ekrana vakit kutusu ekle": yalnız Android'de ve başlatıcı destekliyorsa görünür. Dokununca dört boy
 // açılır (küçük, orta, liste, şerit); seçilen boy için başlatıcının onay penceresi açılır. Altında kutuların
-// görünümü seçilir (koyu şeffaf, uygulamanın teması, açık, koyu); seçim bütün kutulara hemen yazılır.
+// rengi (paletin koyu ya da açık tonu, ya da uygulamanın teması) ve zeminin şeffaflığı seçilir; seçim bütün
+// kutulara hemen yazılır.
 import { useCallback, useEffect, useState } from 'react';
 import { AppState, Pressable, Text, View } from 'react-native';
 
 import { Icon, type IconName } from '@/components/Icon';
-import { ListRow, SelectRow } from '@/components/ui';
+import { ListRow, Segmented, SelectRow } from '@/components/ui';
 import { C, fs } from '@/constants/theme';
 import { pick, useI18n } from '@/i18n';
 import type { Lang } from '@/i18n/strings';
 import { askExactAlarm, exactAlarmGranted } from '@/services/adhanNotify';
 import { useTheme } from '@/services/ThemeContext';
-import { WIDGET_STYLES, type WidgetStyle } from '@/services/widgetProps';
+import { DEFAULT_WIDGET_CLEAR, WIDGET_CLEAR, WIDGET_STYLES, type WidgetStyle } from '@/services/widgetProps';
 import { pinPrayerWidget, refreshWidgetTicks, widgetCount, widgetPinSupported, type WidgetName } from '@/services/widgetSync';
 
 type T3 = { tr: string; en: string; ar: string };
@@ -21,13 +22,14 @@ const L = {
   exact: { tr: 'Kutu vakit girince birkaç dakika geç değişebilir. Tam vaktinde değişsin diye “Alarmlar ve hatırlatıcılar” iznini açın ›', en: 'The widget may switch a few minutes late. Tap to allow “Alarms & reminders” so it changes exactly on time ›', ar: 'قد تتغير الأداة متأخرة بضع دقائق. اضغط للسماح بـ«المنبهات والتذكيرات» لتتغير في الوقت تمامًا ›' },
   added: { tr: 'Ana ekranda {n} tane ✓ · başka boy eklemek için dokunun', en: '{n} on your home screen ✓ · tap to add another size', ar: '{n} على الشاشة ✓ · اضغط لإضافة حجم آخر' },
   manual: { tr: 'Olmadıysa: ana ekranda boş yere basılı tutun → Widget’lar → MATAF', en: 'If nothing happened: long-press the home screen → Widgets → MATAF', ar: 'إن لم يحدث شيء: اضغط مطولًا على الشاشة الرئيسية ← الأدوات ← MATAF' },
-  style: { tr: 'Kutu görünümü', en: 'Widget look', ar: 'مظهر الأداة' },
+  style: { tr: 'Kutu rengi', en: 'Widget colour', ar: 'لون الأداة' },
+  clear: { tr: 'Kutu şeffaflığı', en: 'Widget transparency', ar: 'شفافية الأداة' },
+  none: { tr: 'Yok', en: 'None', ar: 'بلا' },
 };
 const STYLES: Record<WidgetStyle, { label: T3; sub: T3 }> = {
-  glass: { label: { tr: 'Koyu şeffaf', en: 'Dark see-through', ar: 'داكن شفاف' }, sub: { tr: 'Duvar kâğıdı görünür, beyaz yazı', en: 'Wallpaper shows through, white text', ar: 'تظهر الخلفية، نص أبيض' } },
+  dark: { label: { tr: 'Koyu', en: 'Dark', ar: 'داكن' }, sub: { tr: 'Paletin koyu tonu, açık yazı', en: 'Dark shade of your palette, light text', ar: 'درجة داكنة من لوحتك، نص فاتح' } },
+  light: { label: { tr: 'Açık', en: 'Light', ar: 'فاتح' }, sub: { tr: 'Paletin açık tonu, koyu yazı', en: 'Light shade of your palette, dark text', ar: 'درجة فاتحة من لوحتك، نص داكن' } },
   theme: { label: { tr: 'Uygulamanın temasıyla', en: 'Same as the app', ar: 'مثل التطبيق' }, sub: { tr: 'Uygulama açıksa açık, koyuysa koyu', en: 'Light or dark, following the app', ar: 'فاتح أو داكن حسب التطبيق' } },
-  light: { label: { tr: 'Açık', en: 'Light', ar: 'فاتح' }, sub: { tr: 'Krem zemin', en: 'Cream background', ar: 'خلفية كريمية' } },
-  dark: { label: { tr: 'Koyu', en: 'Dark', ar: 'داكن' }, sub: { tr: 'Koyu zemin', en: 'Dark background', ar: 'خلفية داكنة' } },
 };
 const SIZES: { name: WidgetName; icon: IconName; title: T3; sub: T3 }[] = [
   { name: 'NextPrayerWidget', icon: 'clock', title: { tr: 'Küçük · sıradaki vakit', en: 'Small · next prayer', ar: 'صغير · الصلاة التالية' }, sub: { tr: 'Kare · sıradaki vakit ve geri sayım', en: 'Square · next prayer and countdown', ar: 'مربع · الصلاة التالية والعد التنازلي' } },
@@ -82,9 +84,14 @@ export function WidgetPinRow() {
           ))}
         </View>
       )}
-      <SelectRow<WidgetStyle> title={pick(L.style, lg)} value={prefs.widget ?? 'glass'} onChange={(widget) => setTheme({ widget })}
+      <SelectRow<WidgetStyle> title={pick(L.style, lg)} value={prefs.widget ?? 'dark'} onChange={(widget) => setTheme({ widget })}
         left={<Icon name="palette" size={20} color={C.accent} />}
         options={WIDGET_STYLES.map((v) => ({ value: v, label: pick(STYLES[v].label, lg), sub: pick(STYLES[v].sub, lg) }))} />
+      <View style={{ gap: 8, paddingVertical: 10 }}>
+        <Text style={{ fontSize: fs(15), fontWeight: '600', color: C.ink }}>{pick(L.clear, lg)}</Text>
+        <Segmented value={String(prefs.widgetClear ?? DEFAULT_WIDGET_CLEAR)} onChange={(v) => setTheme({ widgetClear: Number(v) })}
+          options={WIDGET_CLEAR.map((n) => ({ value: String(n), label: n === 0 ? pick(L.none, lg) : `%${n}` }))} />
+      </View>
     </View>
   );
 }

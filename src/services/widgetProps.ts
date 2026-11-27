@@ -29,23 +29,27 @@ export function widgetPlace(label: string, lang: Lang) {
   return label;
 }
 
-const pickColors = (c: Colors): PrayerWidgetColors => ({ bg: c.bg, ink: c.ink, muted: c.muted, accent: c.accent, tint: c.accentTint, fill: c.accent, onFill: c.onAccent });
-
 /**
- * Kutu görünümü (Ayarlar ve Vakitler → kutu satırı): glass = koyu şeffaf, duvar kâğıdı görünür (varsayılan, 0.22.0);
- * theme = uygulamanın açık/koyu teması; light ve dark sabit.
+ * Kutu rengi (Vakitler ve Ayarlar → kutu satırı, 0.22.0): dark ve light seçili paletin koyu ve açık tonları,
+ * theme uygulamanın açık/koyu temasını izler. Varsayılan koyu, %40 şeffaf (duvar kâğıdı görünür).
  */
-export type WidgetStyle = 'glass' | 'theme' | 'light' | 'dark';
-export const WIDGET_STYLES: WidgetStyle[] = ['glass', 'theme', 'light', 'dark'];
+export type WidgetStyle = 'dark' | 'light' | 'theme';
+export const WIDGET_STYLES: WidgetStyle[] = ['dark', 'light', 'theme'];
+/** Şeffaflık yüzdesi (zemin); yazılar hep tam opak */
+export const WIDGET_CLEAR = [0, 20, 40, 60, 80] as const;
+export const DEFAULT_WIDGET_CLEAR = 40;
 export const widgetMode = (style: WidgetStyle | undefined, theme: ThemeMode): PrayerWidgetMode =>
-  style === 'glass' || style === undefined ? 'glass' : style === 'theme' ? theme : style;
+  style === 'theme' ? theme : style === 'light' ? 'light' : 'dark';
 
-/** Koyu şeffaf: %62 siyah zemin, beyaz yazı; vurgu yazısı koyu temanın, dolu hap açık temanın vurgusu (beyaz yazıyla AA) */
-export function glassColors(palette: PaletteId): PrayerWidgetColors {
-  const l = colorsFor(false, palette);
-  const d = colorsFor(true, palette);
-  return { bg: '#0000009E', ink: '#FFFFFF', muted: '#FFFFFFB8', accent: d.accent, tint: '#FFFFFF2E', fill: l.accent, onFill: l.onAccent };
+/** '#RRGGBB' + saydamlık → '#RRGGBBAA' (Expo renk çözücüsü CSS sırası: alfa sonda) */
+export function withAlpha(hex: string, opacity: number) {
+  const a = Math.round(Math.min(1, Math.max(0, opacity)) * 255);
+  return hex.slice(0, 7) + a.toString(16).padStart(2, '0').toUpperCase();
 }
+
+const pickColors = (c: Colors, clear = DEFAULT_WIDGET_CLEAR): PrayerWidgetColors => ({
+  bg: withAlpha(c.bg, 1 - clear / 100), ink: c.ink, muted: c.muted, accent: c.accent, tint: c.accentTint, fill: c.accent, onFill: c.onAccent,
+});
 
 export type WidgetPropsInput = {
   /** Bugün (saat önemsiz) */
@@ -64,8 +68,10 @@ export type WidgetPropsInput = {
   lang: Lang;
   palette: PaletteId;
   mode: ThemeMode;
-  /** Kutu görünümü (verilmezse koyu şeffaf) */
+  /** Kutu rengi (verilmezse koyu) */
   style?: WidgetStyle;
+  /** Zeminin şeffaflığı, % (verilmezse 40) */
+  clear?: number;
   days?: number;
 };
 
@@ -96,9 +102,8 @@ export function buildWidgetProps(o: WidgetPropsInput): PrayerWidgetProps {
     stale: L.stale[o.lang],
     empty: L.empty[o.lang],
     mode: widgetMode(o.style, o.mode),
-    light: pickColors(colorsFor(false, o.palette)),
-    dark: pickColors(colorsFor(true, o.palette)),
-    glass: glassColors(o.palette),
+    light: pickColors(colorsFor(false, o.palette), o.clear),
+    dark: pickColors(colorsFor(true, o.palette), o.clear),
   };
 }
 
@@ -132,6 +137,7 @@ export type LogWidgetContext = {
   palette: PaletteId;
   mode: ThemeMode;
   style?: WidgetStyle;
+  clear?: number;
 };
 
 /** Son üç günün işaretleri (bugün, dün, önceki gün); küçük uygulama bugünü kendisi seçer */
@@ -150,8 +156,7 @@ export function buildLogWidgetProps(o: LogWidgetContext & { log: PrayerLog; toda
     hatim: o.hatim,
     empty: o.empty,
     mode: widgetMode(o.style, o.mode),
-    light: pickColors(colorsFor(false, o.palette)),
-    dark: pickColors(colorsFor(true, o.palette)),
-    glass: glassColors(o.palette),
+    light: pickColors(colorsFor(false, o.palette), o.clear),
+    dark: pickColors(colorsFor(true, o.palette), o.clear),
   };
 }

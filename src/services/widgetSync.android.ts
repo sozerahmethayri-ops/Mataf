@@ -46,7 +46,7 @@ export function usePrayerWidgetSync({ loc, method, label, waiting }: WidgetSyncI
   useEffect(() => {
     if (waiting) return;
     const day = today().toDateString();
-    const sig = [loc.lat.toFixed(3), loc.lng.toFixed(3), loc.tz ?? '', method, place, lg, names, prefs.palette, prefs.mode, prefs.widget, day].join('~');
+    const sig = [loc.lat.toFixed(3), loc.lng.toFixed(3), loc.tz ?? '', method, place, lg, names, prefs.palette, prefs.mode, prefs.widget, prefs.widgetClear, day].join('~');
     if (sig === lastSig) return;
     // İlk çizimi bekletmemek için biraz sonra
     const id = setTimeout(() => {
@@ -66,6 +66,7 @@ export function usePrayerWidgetSync({ loc, method, label, waiting }: WidgetSyncI
             palette: prefs.palette,
             mode: prefs.mode,
             style: prefs.widget,
+            clear: prefs.widgetClear,
           });
           for (const w of ws) w.updateSnapshot(props);
           // Vakit girince (ve gün dönünce) küçük uygulamalar hemen yenilensin
@@ -78,7 +79,7 @@ export function usePrayerWidgetSync({ loc, method, label, waiting }: WidgetSyncI
       }).catch(() => undefined);
     }, 1200);
     return () => clearTimeout(id);
-  }, [waiting, loc.lat, loc.lng, loc.tz, method, place, lg, names, prefs.palette, prefs.mode, prefs.widget]);
+  }, [waiting, loc.lat, loc.lng, loc.tz, method, place, lg, names, prefs.palette, prefs.mode, prefs.widget, prefs.widgetClear]);
 }
 
 /** Yenileme anlarını yeniden kur (ör. tam zamanlı alarm izni yeni verildiyse alarmlar artık tam vaktinde). */

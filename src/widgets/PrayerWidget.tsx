@@ -9,9 +9,9 @@
 // Vakitler 30 günlük olarak verilir; küçük uygulama her çizimde (Android en geç 30 dakikada bir yeniler)
 // "şimdi"yi kendisi bulur. Uygulama açılmasa da günler ilerledikçe doğru günü ve sıradaki vakti gösterir.
 //
-// Görünüm (0.22.0, proje sahibinin isteği: "Ezan Vakti Pro'ya benzesin"): varsayılan koyu şeffaf zemin (duvar
-// kâğıdı görünür), büyük ve saniye saniye işleyen geri sayım, miladi ve hicrî tarih, altı vakit yan yana ve
-// sıradaki dolu renkli hapta. Geri sayım Text'e verilen countdownTo ile yerelde Android Chronometer olur
+// Görünüm (0.22.0, proje sahibinin isteği: "Ezan Vakti Pro'ya benzesin"): zemin seçili paletin koyu ya da açık
+// tonu, şeffaflığı ayarlanır (varsayılan koyu, %40 şeffaf; duvar kâğıdı görünür); büyük ve saniye saniye işleyen
+// geri sayım, miladi ve hicrî tarih, altı vakit yan yana ve sıradaki dolu renkli hapta. Geri sayım Text'e verilen countdownTo ile yerelde Android Chronometer olur
 // (expo-widgets yaması, WidgetCountdown.kt); başlatıcı onu kendisi işletir, yenileme gerekmez.
 import type * as UI from '@expo/ui/jetpack-compose';
 import type * as M from '@expo/ui/jetpack-compose/modifiers';
@@ -38,8 +38,8 @@ declare const height: typeof M.height;
 export type PrayerWidgetColors = { bg: string; ink: string; muted: string; accent: string; tint: string; fill?: string; onFill?: string };
 /** Bir gün: s = günün başı (ms, dize), d = gün etiketi, h = hicrî tarih, t = 6 saat ("05:12"), a = 6 an (ms, dize). */
 export type PrayerWidgetDay = { s: string; d: string; h?: string; t: string[]; a: string[] };
-/** glass: koyu şeffaf (varsayılan); system/light/dark: düz zemin */
-export type PrayerWidgetMode = 'system' | 'light' | 'dark' | 'glass';
+/** system: telefonun açık/koyu ayarı; light/dark sabit. Zeminin şeffaflığı renkte (#RRGGBBAA). */
+export type PrayerWidgetMode = 'system' | 'light' | 'dark';
 export type PrayerWidgetProps = {
   v?: number;
   place?: string;
@@ -62,19 +62,15 @@ export type PrayerWidgetProps = {
   mode?: PrayerWidgetMode;
   light?: PrayerWidgetColors;
   dark?: PrayerWidgetColors;
-  glass?: PrayerWidgetColors;
 };
 /** Geri sayım: Text'in kendisi; countdownTo yerel tarafta Chronometer'a çevrilir, çocuk yazı yalnız yedek */
 export type CountdownProps = { countdownTo: number; color: string; maxLines?: number; style?: { fontSize?: number; fontWeight?: 'bold' | 'normal' }; children?: string };
 
 function prayerLayout(props: PrayerWidgetProps, env: { colorScheme?: 'light' | 'dark' }) {
   'widget';
-  let c = props.mode === 'glass' ? props.glass : undefined;
-  if (!c) {
-    const dk = props.mode === 'dark' || (props.mode !== 'light' && env.colorScheme === 'dark');
-    c = dk ? props.dark : props.light;
-  }
-  if (!c) c = { bg: '#0000009E', ink: '#FFFFFF', muted: '#FFFFFFB8', accent: '#F7934F', tint: '#FFFFFF2E', fill: '#B4420F', onFill: '#FFFFFF' };
+  const dk = props.mode === 'dark' || (props.mode !== 'light' && env.colorScheme === 'dark');
+  let c = dk ? props.dark : props.light;
+  if (!c) c = { bg: '#17120E99', ink: '#F6EFE7', muted: '#B3A393', accent: '#F7934F', tint: '#3A2214', fill: '#F7934F', onFill: '#1F0F05' };
   const fill = c.fill || c.accent;
   const onFill = c.onFill || c.bg;
   const Countdown = Text as unknown as (p: CountdownProps) => ReactElement;

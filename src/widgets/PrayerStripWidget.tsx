@@ -19,12 +19,9 @@ declare const width: typeof M.width;
 
 function stripLayout(props: PrayerWidgetProps, env: { colorScheme?: 'light' | 'dark' }) {
   'widget';
-  let c = props.mode === 'glass' ? props.glass : undefined;
-  if (!c) {
-    const dk = props.mode === 'dark' || (props.mode !== 'light' && env.colorScheme === 'dark');
-    c = dk ? props.dark : props.light;
-  }
-  if (!c) c = { bg: '#0000009E', ink: '#FFFFFF', muted: '#FFFFFFB8', accent: '#F7934F', tint: '#FFFFFF2E', fill: '#B4420F', onFill: '#FFFFFF' };
+  const dk = props.mode === 'dark' || (props.mode !== 'light' && env.colorScheme === 'dark');
+  let c = dk ? props.dark : props.light;
+  if (!c) c = { bg: '#17120E99', ink: '#F6EFE7', muted: '#B3A393', accent: '#F7934F', tint: '#3A2214', fill: '#F7934F', onFill: '#1F0F05' };
   const Countdown = Text as unknown as (p: CountdownProps) => ReactElement;
   const days = props.days || [];
   const names = props.names && props.names.length === 6 ? props.names : ['İmsak', 'Güneş', 'Öğle', 'İkindi', 'Akşam', 'Yatsı'];

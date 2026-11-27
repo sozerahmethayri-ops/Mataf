@@ -40,18 +40,14 @@ export type PrayerLogWidgetProps = {
   mode?: PrayerWidgetMode;
   light?: PrayerWidgetColors;
   dark?: PrayerWidgetColors;
-  glass?: PrayerWidgetColors;
 };
 
 function logLayout(props: PrayerLogWidgetProps, env: { colorScheme?: 'light' | 'dark' }) {
   'widget';
-  // Görünüm vakit kutularıyla aynı (PrayerWidget.tsx): glass = koyu şeffaf, yoksa açık/koyu
-  let c = props.mode === 'glass' ? props.glass : undefined;
-  if (!c) {
-    const dk = props.mode === 'dark' || (props.mode !== 'light' && env.colorScheme === 'dark');
-    c = dk ? props.dark : props.light;
-  }
-  if (!c) c = { bg: '#0000009E', ink: '#FFFFFF', muted: '#FFFFFFB8', accent: '#F7934F', tint: '#FFFFFF2E', fill: '#B4420F', onFill: '#FFFFFF' };
+  // Görünüm vakit kutularıyla aynı (PrayerWidget.tsx): paletin koyu ya da açık tonu, zemin şeffaf olabilir
+  const dk = props.mode === 'dark' || (props.mode !== 'light' && env.colorScheme === 'dark');
+  let c = dk ? props.dark : props.light;
+  if (!c) c = { bg: '#17120E99', ink: '#F6EFE7', muted: '#B3A393', accent: '#F7934F', tint: '#3A2214', fill: '#F7934F', onFill: '#1F0F05' };
   const fill = c.fill || c.accent;
   const onFill = c.onFill || c.bg;
   const root = [fillMaxSize(), background(c.bg), cornerRadius(22), padding(14, 10, 14, 10)];

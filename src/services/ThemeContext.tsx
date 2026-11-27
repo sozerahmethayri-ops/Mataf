@@ -28,10 +28,12 @@ export type ThemePrefs = {
   haptics: boolean;
   /** Sekmeler arasında kaydırarak geçiş */
   swipeTabs: boolean;
-  /** Ana ekran kutularının görünümü (varsayılan koyu şeffaf, 0.22.0) */
+  /** Ana ekran kutularının rengi: paletin koyu ya da açık tonu ya da uygulamanın teması (0.22.0) */
   widget: WidgetStyle;
+  /** Kutu zemininin şeffaflığı, % (0–80) */
+  widgetClear: number;
 };
-const DEFAULTS: ThemePrefs = { mode: 'system', palette: 'kabe', text: 1, arabic: 1, home: 'vakit', map3d: true, reduceMotion: false, haptics: true, swipeTabs: true, widget: 'glass' };
+const DEFAULTS: ThemePrefs = { mode: 'system', palette: 'kabe', text: 1, arabic: 1, home: 'vakit', map3d: true, reduceMotion: false, haptics: true, swipeTabs: true, widget: 'dark', widgetClear: 40 };
 type Ctx = { prefs: ThemePrefs; dark: boolean; key: string; setTheme: (p: Partial<ThemePrefs>) => void };
 const ThemeCtx = createContext<Ctx | null>(null);
 

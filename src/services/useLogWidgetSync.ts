@@ -36,7 +36,8 @@ export function useLogWidgetSync(lg: Lang) {
       palette: prefs.palette,
       mode: prefs.mode,
       style: prefs.widget,
+      clear: prefs.widgetClear,
     });
     pushLogWidget(log);
-  }, [log, lg, hatim, prefs.palette, prefs.mode, prefs.widget]);
+  }, [log, lg, hatim, prefs.palette, prefs.mode, prefs.widget, prefs.widgetClear]);
 }
