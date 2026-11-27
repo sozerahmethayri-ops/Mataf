@@ -9,7 +9,7 @@ import { ActivityIndicator, FlatList, I18nManager, Platform, ScrollView, Text, V
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { AR_DIGITS, MarkSheet, QL, TajweedLegend, nextZoom } from '@/components/QuranParts';
-import { Btn, Header, IconBtn, T } from '@/components/ui';
+import { Btn, Chip, Header, IconBtn, T } from '@/components/ui';
 import { C, fs, fsAr, isDark } from '@/constants/theme';
 import { ayahMark, lineFor } from '@/data/quranFonts';
 import { PAGE_COUNT, pageAyahs, pageOf } from '@/data/quranPages';
@@ -73,17 +73,18 @@ export default function MushafScreen() {
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: C.bg }} edges={['top', 'left', 'right', 'bottom']}>
       <View style={{ paddingHorizontal: 16 }}>
+        {/* Başlıkta yalnız bir düğme (dar ekranda sûre adı sıkışıyordu); büyütme ve tecvid alttaki satırda */}
         <Header back title={surahName(fs0, lg)} subtitle={pick(QL.pageMark, lg).replace('{p}', d(page)).replace('{j}', d(juzOf(fs0, fa0)))}
           right={
-            <View style={{ flexDirection: 'row', gap: 4 }}>
-              <IconBtn name="minus" size={40} label={pick(QL.zoomOut, lg)} onPress={() => setPrefs({ zoom: nextZoom(z, -1) })} />
-              <IconBtn name="plus" size={40} label={pick(QL.zoomIn, lg)} onPress={() => setPrefs({ zoom: nextZoom(z, 1) })} />
-              <IconBtn name="palette" size={40} label={pick(L.tajweed, lg)} tint={tajweed ? C.accentTint : C.surface} color={tajweed ? C.accent : C.ink}
-                onPress={() => setPrefs({ view: tajweed ? 'mushaf' : 'tecvid' })} />
-              <IconBtn name="list" size={40} label={pick(L.list, lg)}
-                onPress={() => { setPrefs({ view: 'ar+meal' }); router.replace({ pathname: '/kuran/[sure]', params: { sure: String(fs0), a: String(fa0), ...(b ? { b } : null) } }); }} />
-            </View>
+            <IconBtn name="list" size={40} label={pick(L.list, lg)}
+              onPress={() => { setPrefs({ view: 'ar+meal' }); router.replace({ pathname: '/kuran/[sure]', params: { sure: String(fs0), a: String(fa0), ...(b ? { b } : null) } }); }} />
           } />
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, paddingTop: 8 }}>
+          <Chip label={pick(L.tajweed, lg)} active={tajweed} onPress={() => setPrefs({ view: tajweed ? 'mushaf' : 'tecvid' })} />
+          <View style={{ flex: 1 }} />
+          <IconBtn name="minus" size={38} label={pick(QL.zoomOut, lg)} onPress={() => setPrefs({ zoom: nextZoom(z, -1) })} />
+          <IconBtn name="plus" size={38} label={pick(QL.zoomIn, lg)} onPress={() => setPrefs({ zoom: nextZoom(z, 1) })} />
+        </View>
       </View>
       {tajweed && <View style={{ paddingHorizontal: 16, paddingTop: 6 }}><TajweedLegend lang={lg} dark={dark} /></View>}
       <FlatList

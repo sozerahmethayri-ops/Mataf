@@ -64,8 +64,8 @@ function stripLayout(props: PrayerWidgetProps, env: { colorScheme?: 'light' | 'd
       <Text color={c.ink} maxLines={1} style={{ fontSize: 17, fontWeight: 'bold' }}>{when}</Text>
       <Spacer modifiers={[width(10)]} />
       {/* Sayaç kabın kalan alanına yayılır: sabit genişlikli kapta, sağa yaslı */}
-      <Box contentAlignment="centerEnd" modifiers={[width(80)]}>
-        <Countdown countdownTo={target} color={c.ink} maxLines={1} style={{ fontSize: 17, fontWeight: 'bold', textAlign: 'end' }}>{fallback}</Countdown>
+      <Box contentAlignment="centerEnd" modifiers={[width(74)]}>
+        <Countdown countdownTo={target} color={c.ink} maxLines={1} style={{ fontSize: 16, fontWeight: 'bold', textAlign: 'end' }}>{fallback}</Countdown>
       </Box>
       <Spacer modifiers={[width(4)]} />
       <Text color={c.muted} maxLines={1} style={{ fontSize: 13 }}>{props.remain || ''}</Text>

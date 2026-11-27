@@ -3,6 +3,7 @@
 import type { Lang } from '@/i18n/strings';
 import { cachedJson } from './cache';
 import { pageAyahs } from '@/data/quranPages';
+import { stripBasmala } from './basmala';
 import { offlineSurah } from './offline';
 import { globalAyah } from './quranIndex';
 
@@ -58,13 +59,7 @@ export async function listTranslations(): Promise<Edition[]> {
   return r.data.data;
 }
 
-/** alquran.cloud'un Uthmani metninde 1. ayetin başına eklenen besmeleyi ayırır (Fâtiha ve Tevbe hariç). */
-export function stripBasmala(surah: number, ayah: number, text: string) {
-  if (surah === 1 || surah === 9 || ayah !== 1) return text;
-  const words = text.split(' ');
-  if (words.length > 4 && words[0].includes('سْمِ') && words[3].includes('رَّحِيمِ')) return words.slice(4).join(' ');
-  return text;
-}
+export { stripBasmala } from './basmala';
 
 export async function getSurahText(n: number, translation: string | null, translit: string | null): Promise<{ ayahs: FullAyah[]; fromCache: boolean; name?: string }> {
   const eds = ['quran-uthmani', translation, translit].filter(Boolean) as string[];

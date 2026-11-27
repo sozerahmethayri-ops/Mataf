@@ -31,6 +31,7 @@ import { UMRE_STEPS, IHRAM_RULES } from '../src/data/umre';
 import { zikirStats } from '../src/services/zikirStats';
 import { FULL_DAY, countDay, countDays, dayKey, isDone, lastDays as logDays, prune, sanitize, streak, toggle } from '../src/services/prayerLog';
 import { dailyIndex, dayNumber } from '../src/services/daily';
+import { stripBasmala } from '../src/services/basmala';
 import { PRAYED_ACTION, prayedFromResponse } from '../src/services/prayedTask.types';
 import { DICTS } from '../src/i18n/strings';
 import { JUZ_STARTS, TOTAL_AYAH, cleanPlan, fromGlobal, hatimToday, juzOf, juzPos, readAtJuz, readFromMark, targetRead } from '../src/services/hatim';
@@ -1092,6 +1093,19 @@ ok(shareLink({ lat: 21.4225, lng: 39.8262 }) === 'https://maps.google.com/?q=21.
   ok(order && prev === 6236 && total === 6236, 'mushaf: 604 sayfa boşluksuz, 6236 âyet');
   ok(key(fromGlobalAyah(8)) === '2:1' && key(fromGlobalAyah(6236)) === '114:6' && pageAyahs(pageOf(18, 10)).some((x) => key(x) === '18:10'),
     'mushaf: genel numara → sûre:âyet; âyetin sayfası onu içerir');
+}
+
+// ── Besmele ayırma (sûre ve sayfa uçları; hareke sırasından bağımsız) ──
+{
+  const alm = 'الٓمٓ';
+  const b1 = 'بِسْمِ ٱللَّهِ ٱلرَّحْمَٰنِ ٱلرَّحِيمِ';
+  // Aynı besmele: şedde ile fetha ters sırada, tatvilli rahmân ve başta BOM
+  const b2 = '\uFEFFبِسْمِ ٱللَّهِ ٱلر\u064E\u0651حْمَـٰنِ ٱلر\u064E\u0651حِيمِ';
+  ok(stripBasmala(2, 1, `${b1} ${alm}`) === alm && stripBasmala(2, 1, `${b2}  ${alm}`) === alm, 'besmele: 1. âyetin başındaki besmele ayrılır (hareke sırası, tatvil, BOM fark etmez)');
+  ok(stripBasmala(1, 1, b1) === b1 && stripBasmala(9, 1, 'بَرَآءَةٌ مِّنَ ٱللَّهِ') === 'بَرَآءَةٌ مِّنَ ٱللَّهِ' && stripBasmala(2, 2, `${b1} ${alm}`) === `${b1} ${alm}`,
+    'besmele: Fâtiha, Tevbe ve 2. âyet dokunulmaz');
+  const neml30 = 'إِنَّهُۥ مِن سُلَيْمَٰنَ وَإِنَّهُۥ بِسْمِ ٱللَّهِ ٱلرَّحْمَٰنِ ٱلرَّحِيمِ';
+  ok(stripBasmala(27, 30, neml30) === neml30, 'besmele: Neml 30 (âyet içindeki besmele) bozulmaz');
 }
 
 mosqueChecks().then(transitChecks).then(() => process.exit(fails ? 1 : 0));
