@@ -7,10 +7,12 @@ import { useEffect, useMemo, useState } from 'react';
 import { Linking, Pressable, ScrollView, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { DailyDuaCard } from '@/components/DailyDuaCard';
 import { Icon, type IconName } from '@/components/Icon';
+import { PrayerLogCard } from '@/components/PrayerLogCard';
 import { SkyScene } from '@/components/SkyScene';
 import { TesrikNote, tesrikActive } from '@/components/TesrikNote';
-import { C, fs, isDark, shadow } from '@/constants/theme';
+import { C, fs, getTextScale, isDark, shadow } from '@/constants/theme';
 import { pick, useI18n } from '@/i18n';
 import { hijriText, nextSpecial } from '@/services/hijri';
 import { PRAYERS, fmtTime, nextPrayer, shownDay, times, type PrayerKey } from '@/services/prayer';
@@ -102,6 +104,8 @@ export default function HomePrayer() {
   const [pickOpen, setPickOpen] = useState(false);
   const [upd, later] = useUpdate();
   const focused = useIsFocused();
+  // Büyük yazıda altı vakit iki satıra (3 + 3) iner; tek satırda saatler kesiliyordu ("02:…")
+  const twoRows = getTextScale() > 1.1;
   const skyLabel = `${pick(L.sunWord, lg)}: ${altitudeText(sky.sun.alt, lg)}, ${directionText(sky.sun.az, lg)}. ${pick(L.moonWord, lg)}: ${moonPhaseName(sky.moon.phase, lg)}, ${pct(sky.moon.fraction, lg)}${sky.moon.alt < 0 ? `, ${pick(L.moonDown, lg)}` : ''}.`;
   return (
     <ScrollView style={{ flex: 1, backgroundColor: C.bg }} contentContainerStyle={{ paddingBottom: 28 }}>
@@ -162,14 +166,16 @@ export default function HomePrayer() {
           {day.tomorrow && (
             <Text style={{ fontSize: fs(12), fontWeight: '700', color: C.muted, paddingHorizontal: 4, marginBottom: -6 }} numberOfLines={1}>{pick(L.tomorrowTimes, lg)}</Text>
           )}
-          <View style={{ flexDirection: 'row', gap: 4 }}>
+          <View style={{ flexDirection: 'row', flexWrap: 'wrap', rowGap: 6 }}>
             {PRAYERS.map((p) => {
               const on = nx.key === p;
               const past = !on && !day.tomorrow && day.t[p] < now;
               return (
-                <View key={p} style={{ flex: 1, paddingVertical: 9, borderRadius: 16, alignItems: 'center', gap: 3, backgroundColor: on ? C.accent : 'transparent' }}>
-                  <Text style={{ fontSize: fs(11.5), fontWeight: '600', color: on ? C.onAccent : past ? C.muted : C.ink2 }} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75}>{names[p]}</Text>
-                  <Text style={{ fontSize: fs(15), fontWeight: '700', color: on ? C.onAccent : past ? C.muted : C.ink, fontVariant: ['tabular-nums'] }} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75}>{fmtTime(day.t[p], loc.tz)}</Text>
+                <View key={p} style={{ width: twoRows ? '33.333%' : '16.666%', paddingHorizontal: 2 }}>
+                  <View style={{ paddingVertical: 9, borderRadius: 16, alignItems: 'center', gap: 3, backgroundColor: on ? C.accent : 'transparent' }}>
+                    <Text style={{ fontSize: fs(11.5), fontWeight: '600', color: on ? C.onAccent : past ? C.muted : C.ink2 }} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75}>{names[p]}</Text>
+                    <Text style={{ fontSize: fs(15), fontWeight: '700', color: on ? C.onAccent : past ? C.muted : C.ink, fontVariant: ['tabular-nums'] }} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75}>{fmtTime(day.t[p], loc.tz)}</Text>
+                  </View>
                 </View>
               );
             })}
@@ -226,6 +232,9 @@ export default function HomePrayer() {
         {pilgrim && !nearMakkah && <Shortcut icon="star" label={pick(L.rawdah, lg)} onPress={() => router.push('/ravza')} />}
         {pilgrim && !nearMakkah && <Shortcut icon="map" label={pick(L.map, lg)} onPress={() => router.push('/harita')} />}
       </View>
+      {/* Her gün dönülen yerler: bugünkü namazlar (tek dokunuşla işaret) ve günün duası */}
+      <PrayerLogCard times={tt} now={now} lg={lg} />
+      <DailyDuaCard now={now} lg={lg} />
       <Pressable onPress={() => router.push('/vakitler')} style={{ alignSelf: 'center', paddingVertical: 6 }}>
         <Text style={{ fontSize: fs(13), color: C.accent, fontWeight: '700' }}>{pick(L.all, lg)} ›</Text>
       </Pressable>

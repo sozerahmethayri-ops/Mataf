@@ -111,6 +111,8 @@ let arabicScale = 1;
 export const fs = (n: number) => Math.round(n * textScale * 2) / 2;
 /** Arapça (Kur'an, dua) yazı boyutu: ayrı ölçek. */
 export const fsAr = (n: number) => Math.round(n * arabicScale * 2) / 2;
+/** Seçili yazı ölçeği (1 = normal, 1.3 = çok büyük); düzeni büyük yazıya göre değiştirmek için */
+export const getTextScale = () => textScale;
 export function applyTextScale(text: number, arabic: number) {
   textScale = text;
   arabicScale = arabic;

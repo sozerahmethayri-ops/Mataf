@@ -28,6 +28,9 @@ import { buildMadinah } from '../src/scene/madinah';
 import { MASA_LENGTH, adjustSay, initialSay, nearMasa, pointOnMasa, project, startSayManual, stepSay, type SayState } from '../src/services/say';
 import { UMRE_STEPS, IHRAM_RULES } from '../src/data/umre';
 import { zikirStats } from '../src/services/zikirStats';
+import { FULL_DAY, countDay, countDays, dayKey, isDone, lastDays as logDays, prune, sanitize, streak, toggle } from '../src/services/prayerLog';
+import { dailyIndex, dayNumber } from '../src/services/daily';
+import { allTextDuas } from '../src/data/duas';
 import { altitudeText, directionText, moonLitPath, moonPhaseName, skyDay, skyNow, skyPhase } from '../src/services/sky';
 import { newer } from '../src/services/version';
 import { guessKind, shareLink } from '../src/services/myPlaces';
@@ -872,6 +875,43 @@ ok(shareLink({ lat: 21.4225, lng: 39.8262 }) === 'https://maps.google.com/?q=21.
   const ticks = widgetTicks(props, now);
   ok(ticks.length === 24 && ticks.every((t, i) => t > now && (i === 0 || t > ticks[i - 1])), `küçük uygulama: 24 yenileme anı, ileri ve sıralı (ilki ${new Date(ticks[0]).toTimeString().slice(0, 5)})`);
   ok(props.after === 'Sonra', 'küçük uygulama: "Sonra" etiketi');
+}
+
+// ── Namaz takibi ──
+{
+  const today = new Date(2026, 10, 27, 15, 0);
+  const d0 = dayKey(today);
+  ok(d0 === '2026-11-27' && dayKey(new Date(2026, 0, 5, 23, 59)) === '2026-01-05', 'namaz takibi: gün anahtarı yerel tarih, sıfır dolgulu');
+  let log = toggle({}, d0, 'fajr');
+  log = toggle(log, d0, 'asr');
+  ok(isDone(log, d0, 'fajr') && isDone(log, d0, 'asr') && !isDone(log, d0, 'dhuhr') && countDay(log, d0) === 2, 'namaz takibi: işaretle, say (2 vakit)');
+  log = toggle(toggle(log, d0, 'fajr'), d0, 'asr');
+  ok(!(d0 in log), 'namaz takibi: iki işaret de kalkınca gün kayıttan silinir');
+  const days = logDays(today, 7);
+  ok(days.length === 7 && days[6] === d0 && days[0] === '2026-11-21', 'namaz takibi: son 7 gün eskiden yeniye, bugün sonda');
+  const full: Record<string, number> = {};
+  for (const k of logDays(today, 4).slice(0, 3)) full[k] = FULL_DAY; // 3 tam gün (dün dahil), bugün eksik
+  ok(streak(full, today) === 3, `namaz takibi: bugün bitmeden seri bozulmaz (3 = ${streak(full, today)})`);
+  ok(streak({ ...full, [d0]: FULL_DAY }, today) === 4, 'namaz takibi: bugün de tamamsa seri 4');
+  ok(streak({ ...full, [days[5]]: 15 }, today) === 0, 'namaz takibi: dün eksikse seri sıfır (dün 4 vakit)');
+  ok(countDays({ ...full, [d0]: 3 }, days) === 17, 'namaz takibi: son 7 günde 3×5 + 2 = 17 vakit');
+  const old = { '2025-01-01': 31, [d0]: 1 };
+  ok(Object.keys(prune(old, today)).join() === d0, 'namaz takibi: 400 günden eski kayıt atılır');
+  const clean = sanitize({ [d0]: 5, 'x': 3, '2026-11-26': 99, '2026-11-25': 1.5, '2026-11-24': 0, '2026-11-23': '7' });
+  ok(Object.keys(clean).join() === d0 && clean[d0] === 5 && Object.keys(sanitize(null)).length === 0, 'namaz takibi: bozuk kayıt temizlenir');
+}
+
+// ── Günün duası ──
+{
+  const a = new Date(2026, 10, 27, 0, 5);
+  const b = new Date(2026, 10, 27, 23, 55);
+  const c = new Date(2026, 10, 28, 0, 5);
+  ok(dayNumber(a) === dayNumber(b) && dayNumber(c) === dayNumber(a) + 1, 'günün duası: gün numarası saatten bağımsız, ertesi gün +1');
+  const n = allTextDuas().filter((x) => x.d.ar.length <= 200).length;
+  const i = dailyIndex(a, n);
+  ok(n >= 30 && i >= 0 && i < n && dailyIndex(b, n) === i && dailyIndex(c, n) === (i + 1) % n && dailyIndex(a, 0) === -1,
+    `günün duası: ${n} kısa dua; aynı gün aynı, ertesi gün sıradaki`);
+  ok(allTextDuas().every((x) => !!x.d.ref), 'günün duası: her duanın kaynağı yazılı');
 }
 
 mosqueChecks().then(transitChecks).then(() => process.exit(fails ? 1 : 0));

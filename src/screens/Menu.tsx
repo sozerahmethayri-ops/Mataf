@@ -13,18 +13,19 @@ import { pick, useI18n } from '@/i18n';
 type Lang = 'tr' | 'en' | 'ar';
 // sos: kırmızı yazılır (Acil durum); öbürlerinin simgesi tek renk (renkli simge zeminleri şablon gibi duruyordu, 0.13.5)
 type Item = { icon: IconName; title: { tr: string; en: string; ar: string }; to?: string; url?: string; sos?: boolean };
-// Sade menü: her ekran bir kez, gruplar altışar; başka ekranlardan açılanlar (kapı bildir, Ravza 360°, okuma
+// Sade menü: her ekran bir kez, gruplarda altı-yedi satır; başka ekranlardan açılanlar (kapı bildir, Ravza 360°, okuma
 // ayarları, veri kaynakları, yol tarifi, ezan bildirimleri) yalnız aramada çıkar.
 const GROUPS: { title: { tr: string; en: string; ar: string }; items: Item[] }[] = [
   {
     title: { tr: 'İbadet', en: 'Worship', ar: 'العبادة' },
     items: [
       { icon: 'clock', title: { tr: 'Namaz vakitleri', en: 'Prayer times', ar: 'مواقيت الصلاة' }, to: '/vakitler' },
+      { icon: 'check', title: { tr: 'Namaz takibi', en: 'Prayer tracker', ar: 'متابعة الصلاة' }, to: '/namaz-takibi' },
       { icon: 'book', title: { tr: "Kur'an-ı Kerîm", en: 'The Quran', ar: 'القرآن الكريم' }, to: '/kuran' },
       { icon: 'compass', title: { tr: 'Kıble', en: 'Qibla', ar: 'القبلة' }, to: '/kible' },
       { icon: 'beads', title: { tr: 'Zikirmatik', en: 'Dhikr counter', ar: 'المسبحة' }, to: '/zikir' },
       { icon: 'moon', title: { tr: 'Hadis ve dualar', en: 'Hadith and du‘as', ar: 'الحديث والدعاء' }, to: '/hadis-dua' },
-      { icon: 'check', title: { tr: 'Kaza takibi', en: 'Missed prayers', ar: 'قضاء الصلوات' }, to: '/kaza' },
+      { icon: 'counter', title: { tr: 'Kaza takibi', en: 'Missed prayers', ar: 'قضاء الصلوات' }, to: '/kaza' },
     ],
   },
   {

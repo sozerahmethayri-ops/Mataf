@@ -45,13 +45,18 @@ export default function DataSources() {
         <Btn title={t('data.sync')} kind="secondary" onPress={syncAll} disabled={busy} />
       </Card>
       <SectionTitle>Kaynaklar</SectionTitle>
-      {SOURCES.map((s) => (
-        <ListRow key={s.id} title={s.title}
-          subtitle={`${s.id === 'reports' ? (backend === 'supabase' ? 'Supabase · canlı' : 'Yerel demo · bu cihaz') : s.meta}${ages[s.id] ? ` · ${ago(ages[s.id], t)}` : ''}`}
-          right={<View style={{ paddingHorizontal: 9, paddingVertical: 4, borderRadius: 10, backgroundColor: s.live ? C.openTint : C.surface }}>
-            <Text style={{ fontSize: fs(11), fontWeight: '700', color: s.live ? C.open : '#334155' }}>{s.live ? '● Canlı' : 'Sürümlü'}</Text>
-          </View>} />
-      ))}
+      {SOURCES.map((s) => {
+        // "Canlı" yalnız gerçekten canlıyken: kapı bildirimleri Supabase bağlıysa; resmî veri henüz bağlı değil (bekliyor)
+        const live = s.id === 'reports' && backend === 'supabase';
+        const tag = live ? '● Canlı' : s.id === 'reports' ? 'Demo' : s.id === 'official' ? 'Bekliyor' : 'Sürümlü';
+        return (
+          <ListRow key={s.id} title={s.title}
+            subtitle={`${s.id === 'reports' ? (backend === 'supabase' ? 'Supabase · canlı' : 'Yerel demo · bu cihaz') : s.meta}${ages[s.id] ? ` · ${ago(ages[s.id], t)}` : ''}`}
+            right={<View style={{ paddingHorizontal: 9, paddingVertical: 4, borderRadius: 10, backgroundColor: live ? C.openTint : C.surface }}>
+              <Text style={{ fontSize: fs(11), fontWeight: '700', color: live ? C.open : C.ink2 }}>{tag}</Text>
+            </View>} />
+        );
+      })}
       <Text style={T.small}>Kurallar: resmî kapanma bilgisi ziyaretçi bildirimlerinden önce gelir. Bildirim 3 farklı kişi onaylayınca görünür, 2 saat içinde yeniden onaylanmazsa kalkar.</Text>
     </Screen>
   );

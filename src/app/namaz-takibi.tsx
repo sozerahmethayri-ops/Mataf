@@ -1,0 +1,120 @@
+// Namaz takibi: bugünün beş vakti, son 7 gün, seri. Kayıt yalnız bu telefonda (prayer:log); kaza takibine bağlantı.
+// Dil sade ve suçlamasız: kaçan vakit "kayıp" diye gösterilmez, yalnız kılınan işaretlenir.
+import { router } from 'expo-router';
+import { useEffect, useMemo, useState } from 'react';
+import { Pressable, Text, View } from 'react-native';
+
+import { Icon } from '@/components/Icon';
+import { CheckDot, LOG_NAMES } from '@/components/PrayerLogCard';
+import { Header, ListRow, Screen, SectionTitle, T, Toggle } from '@/components/ui';
+import { C, fs } from '@/constants/theme';
+import { pick, useI18n } from '@/i18n';
+import { fmtTime, times } from '@/services/prayer';
+import { usePrayerPlace } from '@/services/prayerPlace';
+import { LOG_PRAYERS, countDays, dayKey, isDone, lastDays, streak } from '@/services/prayerLog';
+import { usePrayerLog } from '@/services/usePrayerLog';
+
+type Lang = 'tr' | 'en' | 'ar';
+const L = {
+  title: { tr: 'Namaz takibi', en: 'Prayer tracker', ar: 'متابعة الصلاة' },
+  sub: { tr: 'Yalnız bu telefonda saklanır', en: 'Stored only on this phone', ar: 'تُحفظ على هذا الهاتف فقط' },
+  today: { tr: 'Bugün', en: 'Today', ar: 'اليوم' },
+  week: { tr: 'Son 7 gün', en: 'Last 7 days', ar: 'آخر 7 أيام' },
+  weekSum: { tr: 'Son 7 günde {n} vakit kıldınız.', en: 'You prayed {n} prayers in the last 7 days.', ar: 'صلّيت {n} صلاة في آخر 7 أيام.' },
+  streak: { tr: '{n} gündür beş vakit tamam', en: 'All five prayers, {n} days in a row', ar: 'الصلوات الخمس كاملة منذ {n} يوم' },
+  notYet: { tr: 'Vakti girmedi', en: 'Not yet time', ar: 'لم يدخل وقتها' },
+  hint: {
+    tr: 'Kıldığınız namaza dokunun; yanlışlıkla işaretlediyseniz yeniden dokunun. Geçmiş günleri tablodan düzeltebilirsiniz.',
+    en: 'Tap a prayer once you have prayed it; tap again to undo. You can correct past days in the table.',
+    ar: 'اضغط على الصلاة بعد أدائها، واضغط مرة أخرى للتراجع. يمكنك تصحيح الأيام السابقة من الجدول.',
+  },
+  kaza: { tr: 'Kaza namazı takibi', en: 'Missed prayers (qada)', ar: 'قضاء الصلوات' },
+  kazaSub: { tr: 'Kılamadığınız namazları kaza edin ve sayın', en: 'Make up the prayers you missed and keep count', ar: 'اقضِ ما فاتك من الصلوات وعُدَّه' },
+  showHome: { tr: 'Ana sayfada göster', en: 'Show on the home screen', ar: 'إظهار في الصفحة الرئيسية' },
+};
+
+/** 'YYYY-MM-DD' → yerel öğle (ayrıştırma motorundan bağımsız) */
+const fromKey = (k: string) => {
+  const [y, m, d] = k.split('-').map(Number);
+  return new Date(y, m - 1, d, 12);
+};
+
+export default function PrayerLogScreen() {
+  const { lang } = useI18n();
+  const lg = lang as Lang;
+  const { loc, method } = usePrayerPlace(lang);
+  const { log, hidden, flip, setHidden } = usePrayerLog();
+  const [now, setNow] = useState(() => new Date());
+  useEffect(() => {
+    const id = setInterval(() => setNow(new Date()), 60000);
+    return () => clearInterval(id);
+  }, []);
+  const tt = useMemo(() => times(loc.lat, loc.lng, method, now), [loc.lat, loc.lng, method, now]);
+  const today = dayKey(now);
+  const days = lastDays(now, 7);
+  const st = streak(log, now);
+  const sum = countDays(log, days);
+  const dayFmt = new Intl.DateTimeFormat(lang, { weekday: 'short', day: 'numeric' });
+
+  return (
+    <Screen>
+      <Header back title={pick(L.title, lg)} subtitle={pick(L.sub, lg)} />
+
+      <SectionTitle>{pick(L.today, lg)}</SectionTitle>
+      <View style={{ borderWidth: 1, borderColor: C.border, borderRadius: 18, paddingHorizontal: 14 }}>
+        {LOG_PRAYERS.map((p, i) => {
+          const due = tt[p] <= now;
+          const on = isDone(log, today, p);
+          return (
+            <Pressable key={p} disabled={!due} onPress={() => flip(today, p)} accessibilityRole="checkbox" accessibilityState={{ checked: on, disabled: !due }}
+              accessibilityLabel={pick(LOG_NAMES[p], lg)}
+              style={({ pressed }) => ({ minHeight: 56, flexDirection: 'row', alignItems: 'center', gap: 12, borderTopWidth: i ? 1 : 0, borderTopColor: C.border, opacity: !due ? 0.45 : pressed ? 0.7 : 1 })}>
+              <CheckDot on={on} size={30} />
+              <Text style={{ flex: 1, fontSize: fs(16), fontWeight: '600', color: C.ink }}>{pick(LOG_NAMES[p], lg)}</Text>
+              <Text style={{ fontSize: fs(15), color: C.muted, fontVariant: ['tabular-nums'] }}>{due ? fmtTime(tt[p], loc.tz) : pick(L.notYet, lg)}</Text>
+            </Pressable>
+          );
+        })}
+      </View>
+      {st >= 2 && <Text style={{ fontSize: fs(15), fontWeight: '700', color: C.green }}>{pick(L.streak, lg).replace('{n}', String(st))}</Text>}
+
+      <SectionTitle>{pick(L.week, lg)}</SectionTitle>
+      <View style={{ borderWidth: 1, borderColor: C.border, borderRadius: 18, paddingHorizontal: 10, paddingVertical: 4 }}>
+        <View style={{ flexDirection: 'row', alignItems: 'center', minHeight: 34 }}>
+          <View style={{ width: 72 }} />
+          {LOG_PRAYERS.map((p) => (
+            <Text key={p} style={{ flex: 1, textAlign: 'center', fontSize: fs(11.5), fontWeight: '700', color: C.muted }} numberOfLines={1}>{pick(LOG_NAMES[p], lg)}</Text>
+          ))}
+        </View>
+        {days.slice().reverse().map((d) => {
+          const isToday = d === today;
+          const label = isToday ? pick(L.today, lg) : dayFmt.format(fromKey(d));
+          return (
+            <View key={d} style={{ flexDirection: 'row', alignItems: 'center', minHeight: 48, borderTopWidth: 1, borderTopColor: C.border }}>
+              <Text style={{ width: 72, fontSize: fs(13), fontWeight: isToday ? '700' : '500', color: isToday ? C.ink : C.ink2 }} numberOfLines={1}>{label}</Text>
+              {LOG_PRAYERS.map((p) => {
+                const due = !isToday || tt[p] <= now;
+                const on = isDone(log, d, p);
+                return (
+                  <Pressable key={p} disabled={!due} onPress={() => flip(d, p)} accessibilityRole="checkbox" accessibilityState={{ checked: on, disabled: !due }}
+                    accessibilityLabel={`${label}, ${pick(LOG_NAMES[p], lg)}`}
+                    style={({ pressed }) => ({ flex: 1, minHeight: 44, alignItems: 'center', justifyContent: 'center', opacity: !due ? 0.35 : pressed ? 0.7 : 1 })}>
+                    <CheckDot on={on} size={24} />
+                  </Pressable>
+                );
+              })}
+            </View>
+          );
+        })}
+      </View>
+      <Text style={T.muted}>{pick(L.weekSum, lg).replace('{n}', String(sum))}</Text>
+      <Text style={T.small}>{pick(L.hint, lg)}</Text>
+
+      <ListRow title={pick(L.kaza, lg)} subtitle={pick(L.kazaSub, lg)} onPress={() => router.push('/kaza')} left={<Icon name="counter" size={20} color={C.ink2} />} />
+      <View style={{ flexDirection: 'row', alignItems: 'center', minHeight: 52, gap: 12 }}>
+        <Text style={{ flex: 1, fontSize: fs(15), fontWeight: '600', color: C.ink }}>{pick(L.showHome, lg)}</Text>
+        <Toggle value={!hidden} onChange={(v) => setHidden(!v)} label={pick(L.showHome, lg)} />
+      </View>
+    </Screen>
+  );
+}

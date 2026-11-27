@@ -56,7 +56,7 @@ export default function GateDetail() {
             {official?.comment ? <Text style={T.muted}>{official.comment}</Text> : null}
             <View style={{ flexDirection: 'row', gap: 6, flexWrap: 'wrap' }}>
               {s?.source === 'official' && <Tag text={t('detail.official')} />}
-              <Tag text={t('gates.confirmations', { n: s?.confirmations ?? 0 })} />
+              <Tag text={s?.confirmations ? t('gates.confirmations', { n: s.confirmations }) : t('gates.noReports')} />
               {s?.lastAt ? <Tag text={ago(s.lastAt, t)} /> : null}
             </View>
           </View>
