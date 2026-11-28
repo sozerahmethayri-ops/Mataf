@@ -89,7 +89,8 @@ function listLayout(props: PrayerWidgetProps, env: { colorScheme?: 'light' | 'da
         <Text color={c.muted} maxLines={1} style={{ fontSize: 11 }}>{day.h || day.d}</Text>
       </Row>
       <Spacer modifiers={[height(4)]} />
-      <Column modifiers={[padding(4, 0, 4, 0)]}>
+      {/* Tam genişlik: yoksa sayaç üstündeki yazı kadar daralır ("1:01…") */}
+      <Column modifiers={[fillMaxWidth(), padding(4, 0, 4, 0)]}>
         <Text color={c.accent} maxLines={1} style={{ fontSize: 11, fontWeight: 'bold' }}>{label}</Text>
         <Countdown countdownTo={target} color={c.ink} maxLines={1} style={{ fontSize: 26, fontWeight: 'bold' }}>{fallback}</Countdown>
       </Column>

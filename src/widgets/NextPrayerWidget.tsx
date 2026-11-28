@@ -14,6 +14,7 @@ declare const Row: typeof UI.Row;
 declare const Text: typeof UI.Text;
 declare const Spacer: typeof UI.Spacer;
 declare const fillMaxSize: typeof M.fillMaxSize;
+declare const fillMaxWidth: typeof M.fillMaxWidth;
 declare const background: typeof M.background;
 declare const cornerRadius: typeof M.cornerRadius;
 declare const padding: typeof M.padding;
@@ -72,8 +73,9 @@ function nextLayout(props: PrayerWidgetProps, env: { colorScheme?: 'light' | 'da
     <Column modifiers={root} verticalAlignment="center">
       <Text color={c.muted} maxLines={1} style={{ fontSize: 11 }}>{props.place || 'MATAF'}</Text>
       <Spacer modifiers={[height(2)]} />
-      {/* Sayaç kendi Column'unun son çocuğu (kalan alana yayılıp sonraki satırları gizlemesin) */}
-      <Column>
+      {/* Sayaç kendi Column'unun son çocuğu (kalan alana yayılıp sonraki satırları gizlemesin); Column tam genişlikte,
+          yoksa en geniş kardeşi kadar daralır ve kısa vakit adında sayaç "1:0…" diye kesilir */}
+      <Column modifiers={[fillMaxWidth()]}>
         {/* Yatsıdan sonra "yarın" ayrı ve küçük: dar kutuda kesilen o olsun, saat değil */}
         <Row verticalAlignment="center">
           <Text color={c.accent} maxLines={1} style={{ fontSize: 16, fontWeight: 'bold' }}>{names[pi]}</Text>

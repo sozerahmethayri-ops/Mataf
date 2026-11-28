@@ -44,6 +44,7 @@ Her kutunun çizim işlevi `'widget'` yönergesiyle başlar. Gövde derlemede di
 - `Text`'e `countdownTo` (hedef an, ms) verince yerelde Android `Chronometer` olur ve saniye saniye kendiliğinden işler (yama: `WidgetCountdown.kt`). `Text`'in içindeki yazı yalnız yedektir.
 - Türü: `const Countdown = Text as unknown as (p: CountdownProps) => ReactElement;` `color`, `maxLines` ve `style` (`fontSize`, `fontWeight`, `textAlign`) geçer; `textAlign` yerelde gravity olur.
 - Sayaç bulunduğu kabın kalan alanına yayılır. Ya kendi `Column`'unun son çocuğu olsun ya da sabit genişlikli bir `Box` içinde dursun; yoksa yanındaki ve altındaki öğeleri gizler.
+- Sayacın `Column`'u `fillMaxWidth()` almalı: yoksa Column en geniş kardeşi kadar daralır ve vakit adı kısa olunca ("Asr 12:15") sayaç "1:0…" diye kesilir. Hata, "yarın"lı uzun satırla denenince görünmez; iki durumu da dene.
 - Vakit girdikten sonra kutu yenilenene dek sayaç eksiye düşer ("−0:12"). Tam zamanlı alarm izni yoksa bu 10 dakikaya kadar sürebilir.
 
 ## Renk

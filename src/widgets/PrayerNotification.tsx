@@ -85,9 +85,9 @@ const PrayerNotification = createCustomNotification<PrayerWidgetProps>('PrayerNo
     const past = !tomorrow && k < pi;
     cells.push(
       <Column key={'c' + k} horizontalAlignment="center"
-        modifiers={on ? [width(50), background(fill), cornerRadius(10), padding(0, 3, 0, 3)] : [width(50), padding(0, 3, 0, 3)]}>
-        <Text color={on ? onFill : muted} maxLines={1} style={{ fontSize: 10 }}>{names[k]}</Text>
-        <Text color={on ? onFill : past ? muted : ink} maxLines={1} style={{ fontSize: 13, fontWeight: 'bold' }}>{day.t[k]}</Text>
+        modifiers={on ? [width(41), background(fill), cornerRadius(10), padding(0, 3, 0, 3)] : [width(41), padding(0, 3, 0, 3)]}>
+        <Text color={on ? onFill : muted} maxLines={1} style={{ fontSize: 9 }}>{names[k]}</Text>
+        <Text color={on ? onFill : past ? muted : ink} maxLines={1} style={{ fontSize: 12, fontWeight: 'bold' }}>{day.t[k]}</Text>
       </Column>,
     );
   }
