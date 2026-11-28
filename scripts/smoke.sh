@@ -162,7 +162,10 @@ open harita; step "33-harita-tema" 8
 # "Kıldım" uygulama kapalıyken (0.20.0): deneme bildirimi kurulur, uygulama arka planda kapatılır, bildirimdeki
 # düğmeye dokunulur. Arka plan görevi (expo-task-manager JS'i görünmeden yükler) bildirimi kapatmalı; deneme
 # bildiriminde vakit olmadığı için namaz işlenmez. Sayılan: uygulamanın ekrandaki bildirimleri.
-notifs() { adb shell dumpsys notification | grep -cE "NotificationRecord\(.*pkg=$PKG" || true; }
+# Kalıcı vakit bildirimi (0.23.0) sayılmaz: etiketi expo_widgets_notification:PrayerNotification
+notifs() { adb shell dumpsys notification | grep -E "NotificationRecord\(.*pkg=$PKG" | grep -vc "expo_widgets_notification" || true; }
+ongoing() { adb shell dumpsys notification | grep -cE "NotificationRecord\(.*pkg=$PKG.*expo_widgets_notification:PrayerNotification" || true; }
+echo "kalıcı bildirim: $(ongoing)" >> smoke/status.txt
 open "bildirimler?deneme=1"; sleep 5
 adb shell input keyevent KEYCODE_HOME; sleep 2
 adb shell am kill "$PKG"; sleep 1

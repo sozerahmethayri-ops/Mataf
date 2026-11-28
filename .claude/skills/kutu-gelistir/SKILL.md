@@ -14,6 +14,7 @@ description: MATAF'ın Android ana ekran kutularını (widget) geliştirme ve d�
 | Uzun (vakit listesi) | `PrayerListWidget.tsx` | 2×3 | altı satır ayrı `Column`'da |
 | Tek satır (şerit) | `PrayerStripWidget.tsx` | 4×1 | dar kutuda "kaldı" yazılmaz |
 | Namaz takibi | `PrayerLogWidget.tsx` | 4×2 | `PrayerLogWidgetProps`; "bugün"ü kutu kendisi bulur |
+| Kalıcı vakit bildirimi | `PrayerNotification.tsx` | bildirim | `createCustomNotification`; kapalı/açık düzen; `setOngoingPrayer` (widgetSync.android.ts) koyar, vakit alarmı yeniden çizer |
 
 - **Veri (React'sız, testli):** `src/services/widgetProps.ts`. `buildWidgetProps` 30 günlük vakti, yeri, dili, rengi ve şeffaflığı hazırlar. `buildLogWidgetProps` namaz takibi kutusunu hazırlar. `widgetTicks`/`widgetNext` sıradaki anları bulur. `withAlpha` ve `widgetMode` de burada.
 - **Yazma:** `widgetSync.android.ts` yer, yöntem, dil ya da tema değişince bütün vakit kutularına `updateSnapshot` yapar ve sonraki 24 vakti `scheduleWidgetTicks` ile AlarmManager'a verir. Namaz takibi kutusu için `logWidget.android.ts` + `useLogWidgetSync.ts`. Web ve iOS'ta `.ts` boş eşleri var.

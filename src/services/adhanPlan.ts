@@ -39,6 +39,8 @@ export type NotifPrefs = {
   friday: boolean;
   /** Hatim planı: her gün yatsıdan 30 dk sonra hatırlatma (ezan bildirimlerinden bağımsız). */
   quran: boolean;
+  /** Bildirim panelinde kalıcı vakit kutusu (Android): sıradaki vakit, geri sayım, günün vakitleri. */
+  ongoing: boolean;
   /** "Bulunduğum yer" için son bilinen konum. */
   lat?: number;
   lng?: number;
@@ -58,6 +60,7 @@ export const DEFAULT_NOTIF: NotifPrefs = {
   hajj: false,
   friday: true,
   quran: false,
+  ongoing: true,
 };
 
 export const BEFORE_CHOICES = [0, 5, 10, 15, 20, 30, 45];

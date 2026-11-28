@@ -20,6 +20,13 @@
   (OSM'de Umre ve Fetih kapıları 40 ve 30 olarak işli; kaynaklar arasında fark var).
 - **Yürüme rotası:** gerçek dış hatların çevresinden en kısa yol (görünürlük ağı).
 
+### Kapılar ve şehir dokusu (0.23.0)
+
+- **Ana kapı numaraları:** Mekke'de 1 Kral Abdülaziz, 45 Fetih, 62 Umre, 79 Kral Fahd, 100 Kral Abdullah. Kaynak: Genel Kurum'un (Mescid-i Haram ve Mescid-i Nebevî İşleri) 2025 duyurusu. Medine'de büyük kapı grupları: 1 Selam, 7–9 Kral Suud, 20–22 Kral Fahd, 33–35 Kral Abdülaziz, 37 Mekke, 41 Bakî.
+- **Diğer kapılar:** OpenStreetMap'teki giriş noktaları ve numaraları (tabela kayıtları), 28.11.2026. Mekke'de 124 numaralı kapı alındı. Medine'de 16 kapı grubu alındı; kadınlar girişleri adlarından işaretlendi. Üretim betiği `scripts/gates_osm.ts`.
+- **Alınmayanlar:** Mekke'nin kuzeyindeki 30–41 aralığı alınmadı. OSM'de Fetih Kapısı 30, Umre Kapısı 40 numaralı; Genel Kurum ise 45 ve 62 diyor. Tabela sahada doğrulanınca eklenecek.
+- **Şehir dokusu:** Mescitlerin 1,3 km çevresindeki bina tabanları ve tünel olmayan yollar, OSM, 28.11.2026. Üretim betiği `scripts/osm_context.py`.
+
 ## Tahmin / örnek olanlar (değiştirilmeli)
 
 - Yeşil Kubbe'nin yüksekliği (≈26 m, fotoğraflara göre), Medine'deki şemsiyelerin dizilişi, yüksekliği OSM'de olmayan otellerin yüksekliği.

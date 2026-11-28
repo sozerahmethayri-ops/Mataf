@@ -35,7 +35,8 @@ curl -sSL -o status.txt https://github.com/sozerahmethayri-ops/Mataf/releases/do
 - `crash.txt` "çökme kaydı yok" ile başlar.
 - `status.txt`'te beş kutu satırı da eklendi gösterir: `widget`, `NextPrayerWidget`, `PrayerListWidget`, `PrayerStripWidget`, `PrayerLogWidget`. Değer `1` ya da `dokunma x y` olabilir, `0` olmamalı.
 - `vakit alarmı: 24 (farklı an: 24)`
-- `kıldım: süreç kapatıldı evet, bildirim önce 1, düğme 1, sonra 0, görev 1`
+- `kıldım: süreç kapatıldı evet, bildirim önce 1, düğme 1, sonra 0, görev 1` (kalıcı vakit bildirimi bu sayıma girmez)
+- `kalıcı bildirim: 1`: bildirim panelindeki vakit kutusu (0.23.0)
 - `dokununca öndeki` satırında `app.mataf.navigator` geçer: kutuya dokununca uygulama açılır.
 - Hiçbir satırda `NOT RUNNING after …` yok.
 - Değişen ekranın görüntüsü gözle doğru. Ölçütler geçse de görüntülere mutlaka bak: kutu düzeni, kesilen yazı ve boş çizim yalnız görüntüde görünür.

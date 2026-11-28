@@ -166,6 +166,8 @@ def main():
     ok(KILDIM in lines, 'Kıldım arka planda işliyor', kildim)
     tap = next((x for x in lines if x.startswith('dokununca öndeki')), '')
     ok('app.mataf.navigator' in tap, 'kutuya dokununca uygulama açılıyor', ' '.join(tap.split()[-3:]) or 'satır yok')
+    og = next((x for x in lines if x.startswith('kalıcı bildirim')), 'satır yok')
+    ok(og == 'kalıcı bildirim: 1', 'kalıcı vakit bildirimi panelde', og)
     dead = [x for x in lines if x.startswith('NOT RUNNING')]
     ok(not dead, 'uygulama tur boyunca açık', '; '.join(dead))
 

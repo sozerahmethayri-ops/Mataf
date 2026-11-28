@@ -3,9 +3,11 @@
 // (yerel yama: scheduleWidgetTicks). Yer, yöntem, dil ya da tema değişince yeniden yazılır.
 // Küçük uygulama modülleri geç yüklenir; yerel modül yoksa (ör. Expo Go) sessizce atlanır.
 import { requireOptionalNativeModule } from 'expo';
+import * as Notifications from 'expo-notifications';
 import { useEffect } from 'react';
 
 import { useI18n } from '@/i18n';
+import { loadNotifPrefs } from './adhanNotify';
 import type { Lang } from '@/i18n/strings';
 import { hijriText } from './hijri';
 import { PRAYERS, fmtTime, times } from './prayer';
@@ -69,10 +71,12 @@ export function usePrayerWidgetSync({ loc, method, label, waiting }: WidgetSyncI
             clear: prefs.widgetClear,
           });
           for (const w of ws) w.updateSnapshot(props);
-          // Vakit girince (ve gün dönünce) küçük uygulamalar hemen yenilensin
+          // Vakit girince (ve gün dönünce) küçük uygulamalar ve kalıcı vakit bildirimi hemen yenilensin
           pinApi()?.scheduleWidgetTicks?.(widgetTicks(props, Date.now()));
           lastProps = props;
           lastSig = sig;
+          ongoingLang = lg;
+          loadNotifPrefs().then((n) => setOngoingPrayer(n.ongoing)).catch(() => undefined);
         } catch (e) {
           console.warn('[widget] güncellenemedi', e);
         }
@@ -80,6 +84,37 @@ export function usePrayerWidgetSync({ loc, method, label, waiting }: WidgetSyncI
     }, 1200);
     return () => clearTimeout(id);
   }, [waiting, loc.lat, loc.lng, loc.tz, method, place, lg, names, prefs.palette, prefs.mode, prefs.widget, prefs.widgetClear]);
+}
+
+// ── Kalıcı vakit bildirimi (bildirim panelinde MATAF kutusu; src/widgets/PrayerNotification.tsx) ──
+type Ongoing = { post(props: object, options: object): Promise<unknown>; cancelAll(): Promise<void> };
+let ongoing: Promise<Ongoing | null> | null = null;
+let ongoingLang: Lang = 'tr';
+const ONGOING_CHANNEL = 'mataf-vakit';
+function loadOngoing() {
+  ongoing ??= import('@/widgets/PrayerNotification').then((m) => m.default as unknown as Ongoing).catch(() => null);
+  return ongoing;
+}
+/** Açıksa son vakit verisiyle bildirimi koy (aynı kimlikle günceller), kapalıysa kaldır. İzin yoksa sessizce geçer. */
+export async function setOngoingPrayer(enabled: boolean) {
+  const f = await loadOngoing();
+  if (!f) return;
+  try {
+    if (!enabled) { await f.cancelAll(); return; }
+    if (!lastProps) return;
+    // Sessiz, rozetsiz kanal: kalıcı kutu ses çıkarmaz, titremez
+    await Notifications.setNotificationChannelAsync(ONGOING_CHANNEL, {
+      name: { tr: 'Vakit kutusu (kalıcı)', en: 'Prayer times (persistent)', ar: 'أوقات الصلاة (دائم)' }[ongoingLang],
+      importance: Notifications.AndroidImportance.LOW, // eslint-disable-line import/namespace
+      sound: null,
+      enableVibrate: false,
+      showBadge: false,
+      lockscreenVisibility: Notifications.AndroidNotificationVisibility.PUBLIC, // eslint-disable-line import/namespace
+    }).catch(() => undefined);
+    await f.post(lastProps, { id: 'vakit', channelId: ONGOING_CHANNEL, ongoing: true, alertOnlyOnce: true, autoCancel: false, url: 'mataf://vakitler' });
+  } catch (e) {
+    console.warn('[bildirim] kalıcı vakit', e);
+  }
 }
 
 /** Yenileme anlarını yeniden kur (ör. tam zamanlı alarm izni yeni verildiyse alarmlar artık tam vaktinde). */
