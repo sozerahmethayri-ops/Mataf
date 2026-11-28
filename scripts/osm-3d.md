@@ -103,3 +103,33 @@ Sonra `python3 scripts/makkah_bus.py out.json src/data/makkahBus.json`. Durak (s
 aynı adla ve 150 m'den yakınsa tek durak olur; adlar `[Arapça, enlem, boylam, İngilizce]`. Renk yazılmamış hatta aynı
 numaralı öbür yönün rengi kullanılır. Kasım 2026'da OSM'de 7 numaralı hat yoktu (7A var); Medine'de otobüs hattı yok.
 
+## Kapılar (src/data/gatesExtra.ts, 0.23.0)
+
+```
+[out:json][timeout:240];
+(
+  node["entrance"](around:800,21.4225,39.8262); node["door"](around:800,21.4225,39.8262);
+  node["name"~"باب|Gate|Bab|Door",i](around:800,21.4225,39.8262);
+  node["entrance"](around:500,24.4675,39.6114); node["door"](around:500,24.4675,39.6114);
+  node["name"~"باب|Gate|Bab|Door",i](around:500,24.4675,39.6114);
+);
+out body center;
+```
+
+Çevirme: `npx tsx scripts/gates_osm.ts out.json > src/data/gatesExtra.ts`. Kapının dış ve iç noktası bina hattından bulunur; `npm run check` hepsinin doğru tarafta olduğunu denetler.
+
+## Geniş çevre: bina tabanları ve yollar (src/data/osm/context.ts, 0.23.0)
+
+```
+[out:json][timeout:300];
+(
+  way[building](around:1300,21.4225,39.8262);
+  way[highway~"^(trunk|primary|secondary|tertiary|residential|unclassified|pedestrian|living_street|service)$"][!tunnel](around:1300,21.4225,39.8262);
+  way[building](around:1300,24.4675,39.6114);
+  way[highway~"^(trunk|primary|secondary|tertiary|residential|unclassified|pedestrian|living_street|service)$"][!tunnel](around:1300,24.4675,39.6114);
+);
+out tags geom;
+```
+
+Çevirme: `python3 -I scripts/osm_context.py out.json > src/data/osm/context.ts`. Düz zemin katmanı olarak çizilir (`src/scene/context.ts`).
+

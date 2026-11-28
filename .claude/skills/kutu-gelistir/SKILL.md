@@ -14,6 +14,7 @@ description: MATAF'ın Android ana ekran kutularını (widget) geliştirme ve d�
 | Uzun (vakit listesi) | `PrayerListWidget.tsx` | 2×3 | altı satır ayrı `Column`'da |
 | Tek satır (şerit) | `PrayerStripWidget.tsx` | 4×1 | dar kutuda "kaldı" yazılmaz |
 | Namaz takibi | `PrayerLogWidget.tsx` | 4×2 | `PrayerLogWidgetProps`; "bugün"ü kutu kendisi bulur |
+| Kalıcı vakit bildirimi | `PrayerNotification.tsx` | bildirim | `createCustomNotification`; kapalı/açık düzen; `setOngoingPrayer` (widgetSync.android.ts) koyar, vakit alarmı yeniden çizer |
 
 - **Veri (React'sız, testli):** `src/services/widgetProps.ts`. `buildWidgetProps` 30 günlük vakti, yeri, dili, rengi ve şeffaflığı hazırlar. `buildLogWidgetProps` namaz takibi kutusunu hazırlar. `widgetTicks`/`widgetNext` sıradaki anları bulur. `withAlpha` ve `widgetMode` de burada.
 - **Yazma:** `widgetSync.android.ts` yer, yöntem, dil ya da tema değişince bütün vakit kutularına `updateSnapshot` yapar ve sonraki 24 vakti `scheduleWidgetTicks` ile AlarmManager'a verir. Namaz takibi kutusu için `logWidget.android.ts` + `useLogWidgetSync.ts`. Web ve iOS'ta `.ts` boş eşleri var.
@@ -43,6 +44,7 @@ Her kutunun çizim işlevi `'widget'` yönergesiyle başlar. Gövde derlemede di
 - `Text`'e `countdownTo` (hedef an, ms) verince yerelde Android `Chronometer` olur ve saniye saniye kendiliğinden işler (yama: `WidgetCountdown.kt`). `Text`'in içindeki yazı yalnız yedektir.
 - Türü: `const Countdown = Text as unknown as (p: CountdownProps) => ReactElement;` `color`, `maxLines` ve `style` (`fontSize`, `fontWeight`, `textAlign`) geçer; `textAlign` yerelde gravity olur.
 - Sayaç bulunduğu kabın kalan alanına yayılır. Ya kendi `Column`'unun son çocuğu olsun ya da sabit genişlikli bir `Box` içinde dursun; yoksa yanındaki ve altındaki öğeleri gizler.
+- Sayacın `Column`'u `fillMaxWidth()` almalı: yoksa Column en geniş kardeşi kadar daralır ve vakit adı kısa olunca ("Asr 12:15") sayaç "1:0…" diye kesilir. Hata, "yarın"lı uzun satırla denenince görünmez; iki durumu da dene.
 - Vakit girdikten sonra kutu yenilenene dek sayaç eksiye düşer ("−0:12"). Tam zamanlı alarm izni yoksa bu 10 dakikaya kadar sürebilir.
 
 ## Renk

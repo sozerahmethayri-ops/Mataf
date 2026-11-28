@@ -26,7 +26,9 @@ export default function ReportScreen() {
   const { city } = useApp();
   const { add } = useReports();
   const { fix } = useLocation();
-  const cityGates = GATES.filter((g) => g.city === city);
+  // Konum biliniyorsa en yakın kapılar önce; yoksa ana kapılar önce
+  const here = fix ? toLocal(city, fix.lat, fix.lng) : null;
+  const cityGates = GATES.filter((g) => g.city === city).sort((a, b) => (here ? dist(a.pos, here) - dist(b.pos, here) : Number(!!b.main) - Number(!!a.main)));
   const [gateId, setGateId] = useState(params.gate ?? cityGates[0].id);
   const [status, setStatus] = useState<GateStatus>('closed');
   const [floor, setFloor] = useState<Floor>('ground');

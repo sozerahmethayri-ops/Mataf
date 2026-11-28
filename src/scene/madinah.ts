@@ -5,6 +5,7 @@
 import type { Pt } from '@/data/sites';
 import { BAQI, NABAWI_3D } from '@/data/osm/nabawi3d';
 import { Cam, line, type Prim } from './oblique';
+import { contextPrims } from './context';
 import { arcades, buildModel, cylinder, decodeOsm3d, domeCap, drawModel, hull, pointInPoly, signedArea, type Item, type Model, type Paint, type Part } from './osm3d';
 
 const f = (v: number) => v.toFixed(1);
@@ -108,7 +109,7 @@ export function buildMadinah(cam: Cam): { below: Prim[]; above: Prim[]; ghost: P
   const P = (p: Pt) => cam.P(p[0], p[1]);
   const poly = (pl: Pt[], fill: string, extra: Partial<Prim> = {}): Prim => ({ t: 'poly', pts: pl.map((q) => P(q).map(f).join(',')).join(' '), fill, ...extra }) as Prim;
   // Cennetü'l-Bakî: kum rengi zemin, mezar sıraları, ortadan geçen yürüyüş yolları ve 3 m'lik çevre duvarı
-  const ground: Prim[] = [poly(plaza, '#FAF8F4'), poly(BAQI, '#E4D3AE')];
+  const ground: Prim[] = [...contextPrims(cam, 'madinah'), poly(plaza, '#FAF8F4'), poly(BAQI, '#E4D3AE')];
   {
     const step = cam.k >= 1.2 ? 9 : cam.k >= 0.6 ? 14 : 22;
     const rx = Math.max(0.5, Math.min(2.2, 1.1 * cam.k));

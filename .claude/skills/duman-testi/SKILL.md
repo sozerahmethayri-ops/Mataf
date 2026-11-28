@@ -35,7 +35,8 @@ curl -sSL -o status.txt https://github.com/sozerahmethayri-ops/Mataf/releases/do
 - `crash.txt` "çökme kaydı yok" ile başlar.
 - `status.txt`'te beş kutu satırı da eklendi gösterir: `widget`, `NextPrayerWidget`, `PrayerListWidget`, `PrayerStripWidget`, `PrayerLogWidget`. Değer `1` ya da `dokunma x y` olabilir, `0` olmamalı.
 - `vakit alarmı: 24 (farklı an: 24)`
-- `kıldım: süreç kapatıldı evet, bildirim önce 1, düğme 1, sonra 0, görev 1`
+- `kıldım: süreç kapatıldı evet, bildirim önce 1, düğme 1, sonra 0, görev 1` (kalıcı vakit bildirimi ve sistemin grup özeti `ranker_group` bu sayıma girmez)
+- `kalıcı bildirim: 1`: bildirim panelindeki vakit kutusu (0.23.0)
 - `dokununca öndeki` satırında `app.mataf.navigator` geçer: kutuya dokununca uygulama açılır.
 - Hiçbir satırda `NOT RUNNING after …` yok.
 - Değişen ekranın görüntüsü gözle doğru. Ölçütler geçse de görüntülere mutlaka bak: kutu düzeni, kesilen yazı ve boş çizim yalnız görüntüde görünür.
@@ -65,7 +66,7 @@ Emülatör ekranı 320×640 dp; gerçek telefonlar daha geniş olduğu için yaz
 
 - **`widget eklendi: 0`:** Başlatıcının ekleme penceresi bazen arkada kalıyor. Bu kod hatası değil, otomasyon aksaklığı; testi yeniden çalıştır. O kutunun kodu son başarılı turdan beri değişmediyse bunu not et.
 - **Ana ekran tuşu:** Kutunun konduğu sayfayı her zaman açmıyor. 44–47 boş görünürse `48-ana-ekran-*` sayfalarına bak; `logcat.txt`'te `AddWorkspaceItemsTask` satırı kutunun konduğu sayfayı (`screen=`) gösterir.
-- **`vakit alarmı: 34`:** 0.21.0'da bir kez görüldü, yeniden üretilemedi. Tekrarlarsa `alarm-all.txt` ve `alarm-sections.txt` dosyalarında aynı vakte kurulmuş ikinci alarmı (`origWhen`) ara.
+- **`vakit alarmı: 34`:** Çözüldü (0.23.0). Fazlalık, `dumpsys alarm`ın "Removal history" bölümündeki iptal edilmiş eski alarmlarmış; sayım artık o bölümden önce durur. Yine 24'ü aşarsa `alarm-all.txt`'te aynı vakte kurulmuş ikinci bekleyen alarmı (`origWhen`) ara.
 - **Yarım kalan tur:** `status.txt` yalnız `running` içeriyorsa tur yarıda kesilmiştir; iş akışının günlüğüne bak (`gh run view <id> --log-failed`).
 
 ## Sonucu kaydetme

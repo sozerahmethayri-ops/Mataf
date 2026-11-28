@@ -110,6 +110,8 @@ export type QuranPrefs = {
   font?: QuranFontId;
   /** Mushaf görünümünde en son açılan sayfa (1–604) */
   page?: number;
+  /** En son okunan yer (mushaf ya da okuma ekranı): sûre, âyet, sayfa */
+  last?: { s: number; a: number; p: number };
 };
 export type QuranView = 'ar+meal' | 'ar' | 'meal' | 'mushaf' | 'tecvid';
 

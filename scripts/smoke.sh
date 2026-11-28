@@ -94,6 +94,15 @@ if [ $added = 0 ]; then
     if widgetAdded; then added="dokunma $p"; break; fi
   done
 fi
+# Başlatıcının penceresi ara sıra hiç öne gelmiyor: bir kez daha iste
+if [ "$added" = 0 ]; then
+  adb shell input keyevent KEYCODE_HOME; sleep 2
+  open "vakitler?widget=1"; sleep 8
+  if tapText "Add to home screen|ADD TO HOME SCREEN|Add automatically|ADD AUTOMATICALLY|Add|ADD|Ekle|EKLE|Ana ekrana ekle"; then sleep 4; widgetAdded && added="ikinci deneme"; fi
+  if [ "$added" = 0 ]; then
+    for p in "700 950" "850 930" "750 930"; do tap $p; sleep 4; if widgetAdded; then added="ikinci deneme, dokunma $p"; break; fi; done
+  fi
+fi
 echo "widget eklendi: $added" >> smoke/status.txt
 sleep 3
 adb shell input keyevent KEYCODE_HOME; sleep 6; shot "41-widget-ana-ekran"
@@ -132,7 +141,8 @@ adb shell dumpsys alarm > smoke/alarm-all.txt 2>/dev/null || true
 grep -B2 -A4 "expo.modules.widgets.TICK" smoke/alarm-all.txt | head -60 > smoke/alarm.txt || true
 # Yalnız bekleyen alarmlar (her biri bir "tag=" satırı); dumpsys'in istatistik satırları da TICK içerdiği için düz sayım 24'ü aşabiliyordu
 # "farklı an": aynı vakte iki alarm (sızan eski PendingIntent) var mı? 0.21.0'da toplam 34 çıktı, 24 bekleniyordu
-tk_all=$(grep -cF 'tag=*alarm*:expo.modules.widgets.TICK' smoke/alarm-all.txt)
+# "Removal history" bölümü iptal edilen (yeniden kurulurken silinen) alarmları da listeler: yalnız ondan öncekiler sayılır
+tk_all=$(awk '/Removal history:/{exit} index($0, "tag=*alarm*:expo.modules.widgets.TICK"){n++} END{print n+0}' smoke/alarm-all.txt)
 tk_uniq=$(grep -A1 -F 'tag=*alarm*:expo.modules.widgets.TICK' smoke/alarm-all.txt | grep -oE 'origWhen=[0-9-]+ [0-9:.]+' | sort -u | wc -l | tr -d ' ')
 echo "vakit alarmı: $tk_all (farklı an: $tk_uniq)" >> smoke/status.txt
 grep -nE '^ *[A-Z][A-Za-z -]+:( [0-9(]|$)' smoke/alarm-all.txt | grep -iE 'pending|past-due|alarms' | head -20 > smoke/alarm-sections.txt || true
@@ -162,7 +172,11 @@ open harita; step "33-harita-tema" 8
 # "Kıldım" uygulama kapalıyken (0.20.0): deneme bildirimi kurulur, uygulama arka planda kapatılır, bildirimdeki
 # düğmeye dokunulur. Arka plan görevi (expo-task-manager JS'i görünmeden yükler) bildirimi kapatmalı; deneme
 # bildiriminde vakit olmadığı için namaz işlenmez. Sayılan: uygulamanın ekrandaki bildirimleri.
-notifs() { adb shell dumpsys notification | grep -cE "NotificationRecord\(.*pkg=$PKG" || true; }
+# Kalıcı vakit bildirimi (0.23.0) sayılmaz: etiketi expo_widgets_notification:PrayerNotification
+# Sistemin otomatik grup özeti (ranker_group) de sayılmaz: kalıcı bildirimle deneme bildirimi birlikteyken oluşur
+notifs() { adb shell dumpsys notification | grep -E "NotificationRecord\(.*pkg=$PKG" | grep -v -e expo_widgets_notification -e ranker_group -e mataf-vakit | wc -l | tr -d ' '; }
+ongoing() { adb shell dumpsys notification | grep -cE "NotificationRecord\(.*pkg=$PKG.*expo_widgets_notification:PrayerNotification" || true; }
+echo "kalıcı bildirim: $(ongoing)" >> smoke/status.txt
 open "bildirimler?deneme=1"; sleep 5
 adb shell input keyevent KEYCODE_HOME; sleep 2
 adb shell am kill "$PKG"; sleep 1

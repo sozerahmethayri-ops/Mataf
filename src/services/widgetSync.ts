@@ -10,6 +10,8 @@ export function usePrayerWidgetSync(input: WidgetSyncInput): void {
 
 export const widgetPinSupported = () => false;
 export const refreshWidgetTicks = () => undefined;
+/** Kalıcı vakit bildirimi yalnız Android'de (widgetSync.android.ts) */
+export const setOngoingPrayer = async (enabled: boolean) => { void enabled; };
 export const widgetCount = () => 0;
 export const WIDGET_NAMES = ['PrayerWidget', 'NextPrayerWidget', 'PrayerListWidget', 'PrayerStripWidget', 'PrayerLogWidget'] as const;
 export type WidgetName = (typeof WIDGET_NAMES)[number];

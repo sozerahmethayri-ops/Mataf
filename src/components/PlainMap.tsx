@@ -8,7 +8,7 @@ import { C, fs } from '@/constants/theme';
 import { niceScale } from '@/scene/layout';
 
 export type PlainLL = { lat: number; lng: number };
-export type PlainPin = PlainLL & { id: string; color: string; label?: string; big?: boolean };
+export type PlainPin = PlainLL & { id: string; color: string; label?: string; big?: boolean; minor?: boolean; num?: string };
 export type PlainLine = { coords: PlainLL[]; color: string; dashed?: boolean; width?: number };
 /** Dolgulu alan (ör. Arafat sınırı). Çerçevelemeye katılmaz. */
 export type PlainArea = { coords: PlainLL[]; color: string; opacity?: number; outline?: boolean; dashed?: boolean };
@@ -75,7 +75,7 @@ export function PlainMap({ pins, lines = [], areas = [], user, selectedId, onPin
             ))}
             {pins.map((p) => {
               const [a, b] = S(p);
-              const r = p.big || p.id === selectedId ? 9 : 6.5;
+              const r = p.big || p.id === selectedId ? 9 : p.minor ? 4 : 6.5;
               return (
                 <G key={p.id} onPress={onPin ? () => onPin(p.id) : undefined}>
                   <Circle cx={a} cy={b} r={r + 7} fill="transparent" />

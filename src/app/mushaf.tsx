@@ -4,21 +4,26 @@
 // çevrimdışı paketten ya da alquran.cloud /page'den gelir ve cihazda saklanır. Tecvid renkleri açılıp kapanır.
 // Âyete dokununca ayraç; ayraçla açıldıysa (b) okunan sayfanın ilk âyeti ayraca yazılır. Son sayfa quran:prefs.page.
 import { router, useLocalSearchParams } from 'expo-router';
-import { memo, useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, FlatList, I18nManager, Platform, ScrollView, Text, View, useWindowDimensions } from 'react-native';
+import { setAudioModeAsync, useAudioPlayer } from 'expo-audio';
+import { memo, useEffect, useMemo, useRef, useState } from 'react';
+import { ActivityIndicator, FlatList, I18nManager, Modal, Platform, Pressable, ScrollView, Text, TextInput, View, useWindowDimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { AR_DIGITS, MarkSheet, QL, TajweedLegend, nextZoom } from '@/components/QuranParts';
 import { Btn, Chip, Header, IconBtn, T } from '@/components/ui';
+import { Icon } from '@/components/Icon';
 import { C, fs, fsAr, isDark } from '@/constants/theme';
 import { ayahMark, lineFor } from '@/data/quranFonts';
-import { PAGE_COUNT, pageAyahs, pageOf } from '@/data/quranPages';
+import { RECITERS } from '@/data/quranEditions';
+import { PAGE_COUNT, fromGlobalAyah, pageAyahs, pageGlobalRange, pageOf } from '@/data/quranPages';
 import { SAJDAH_SIGN, isSajdah, stripSajdahSign } from '@/data/sajdah';
 import { ruleColor } from '@/data/tajweed';
 import { pick, useI18n } from '@/i18n';
 import type { Lang } from '@/i18n/strings';
 import { juzOf } from '@/services/hatim';
 import { getPageText, stripBasmala, surahName, type PageAyah } from '@/services/quran';
+import { localAyahAudio } from '@/services/offline';
+import { ayahAudioUrl } from '@/services/quranIndex';
 import { useQuranPrefs } from '@/services/QuranPrefs';
 import { parseTajweed, stripTajweedBasmala } from '@/services/tajweed';
 import { useAsync } from '@/services/useAsync';
@@ -30,6 +35,13 @@ const L = {
   err: { tr: 'Sayfa yüklenemedi. İnternet bağlantınızı kontrol edin ya da Çevrimdışı paketi indirin.', en: 'The page could not be loaded. Check your connection or download the offline pack.', ar: 'تعذّر تحميل الصفحة. تحقّق من الاتصال أو نزّل الحزمة دون اتصال.' },
   juz: { tr: '{j}. cüz', en: 'Juz {j}', ar: 'الجزء {j}' },
   sajdah: { tr: 'Secde âyeti', en: 'Verse of prostration', ar: 'آية سجدة' },
+  listen: { tr: 'Sayfayı dinle', en: 'Listen to the page', ar: 'استمع إلى الصفحة' },
+  stop: { tr: 'Durdur', en: 'Stop', ar: 'إيقاف' },
+  goto: { tr: 'Sayfaya git', en: 'Go to page', ar: 'اذهب إلى صفحة' },
+  gotoHint: { tr: 'Sayfa numarası (1–604)', en: 'Page number (1–604)', ar: 'رقم الصفحة (1–604)' },
+  go: { tr: 'Git', en: 'Go', ar: 'اذهب' },
+  cancel: { tr: 'Vazgeç', en: 'Cancel', ar: 'إلغاء' },
+  audioErr: { tr: 'Ses yüklenemedi; bağlantınızı kontrol edin.', en: 'Audio could not be loaded; check your connection.', ar: 'تعذّر تحميل الصوت؛ تحقق من الاتصال.' },
 };
 const BASMALA = 'بِسْمِ ٱللَّهِ ٱلرَّحْمَٰنِ ٱلرَّحِيمِ';
 const clampPage = (p: number) => Math.max(1, Math.min(PAGE_COUNT, Math.round(p) || 1));
@@ -51,6 +63,54 @@ export default function MushafScreen() {
   // Sayfa 1 sağda, sonraki solda: soldan sağa düzende liste ters çevrilir (Arapça telefonda düzen zaten sağdan sola)
   const inverted = !(Platform.OS !== 'web' && I18nManager.isRTL);
   const [fs0, fa0] = pageAyahs(page)[0];
+  const listRef = useRef<FlatList<number>>(null);
+  const toPage = (n: number, animated = true) => {
+    const t = clampPage(n);
+    setPage(t);
+    try { listRef.current?.scrollToIndex({ index: t - 1, animated }); } catch { /* yok say */ }
+  };
+
+  // Sayfayı dinle: sayfanın âyetleri sırayla (seçili kâri); sayfa bitince sonraki sayfaya geçip sürer
+  const player = useAudioPlayer(null);
+  const [now, setNow] = useState<number | null>(null);
+  const [audioErr, setAudioErr] = useState(false);
+  const aq = useRef<{ g: number; end: number; page: number } | null>(null);
+  const playG = (g: number) => {
+    const cur = aq.current;
+    if (!cur) return;
+    if (g > cur.end) {
+      const next = cur.page + 1;
+      if (next > PAGE_COUNT) { stopAudio(); return; }
+      const [a0, a1] = pageGlobalRange(next);
+      aq.current = { g: a0, end: a1, page: next };
+      toPage(next);
+      playG(a0);
+      return;
+    }
+    cur.g = g;
+    setNow(g);
+    const uri = localAyahAudio(g, prefs.reciter) ?? ayahAudioUrl(g, prefs.reciter);
+    try { player.replace({ uri }); player.play(); } catch { setAudioErr(true); }
+  };
+  const stopAudio = () => { aq.current = null; setNow(null); try { player.pause(); } catch { /* yok say */ } };
+  const startAudio = async () => {
+    setAudioErr(false);
+    await setAudioModeAsync({ playsInSilentMode: true, shouldPlayInBackground: true, interruptionMode: 'doNotMix' }).catch(() => undefined);
+    const [a0, a1] = pageGlobalRange(page);
+    aq.current = { g: a0, end: a1, page };
+    playG(a0);
+  };
+  useEffect(() => {
+    const sub = player.addListener('playbackStatusUpdate', (st) => {
+      const cur = aq.current;
+      if (cur && st.didJustFinish) playG(cur.g + 1);
+    });
+    return () => sub.remove();
+  });
+  useEffect(() => () => { aq.current = null; }, []);
+  const nowAt = now != null ? fromGlobalAyah(now) : null;
+  const reciterName = RECITERS.find((r) => r.id === prefs.reciter)?.name ?? '';
+  const [jump, setJump] = useState<string | null>(null);
   const d = (x: number) => (lg === 'ar' ? AR_DIGITS(x) : String(x));
 
   // Görünen sayfa (kaydırma bitince)
@@ -63,7 +123,7 @@ export default function MushafScreen() {
   // Son sayfa ve (ayraçla açıldıysa) ayraç yeri, sayfada biraz durunca kaydedilir
   useEffect(() => {
     const id = setTimeout(() => {
-      setPrefs({ page });
+      setPrefs({ page, last: { s: fs0, a: fa0, p: page } });
       const bm = b ? bookmarks.find((x) => x.id === b) : undefined;
       if (bm && (bm.surah !== fs0 || bm.ayah !== fa0)) saveBookmark({ ...bm, surah: fs0, ayah: fa0 });
     }, 1200);
@@ -82,12 +142,15 @@ export default function MushafScreen() {
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, paddingTop: 8 }}>
           <Chip label={pick(L.tajweed, lg)} active={tajweed} onPress={() => setPrefs({ view: tajweed ? 'mushaf' : 'tecvid' })} />
           <View style={{ flex: 1 }} />
+          <IconBtn name={now != null ? 'pause' : 'play'} size={38} label={pick(now != null ? L.stop : L.listen, lg)} onPress={() => (now != null ? stopAudio() : void startAudio())} />
+          <IconBtn name="search" size={38} label={pick(L.goto, lg)} onPress={() => setJump('')} />
           <IconBtn name="minus" size={38} label={pick(QL.zoomOut, lg)} onPress={() => setPrefs({ zoom: nextZoom(z, -1) })} />
           <IconBtn name="plus" size={38} label={pick(QL.zoomIn, lg)} onPress={() => setPrefs({ zoom: nextZoom(z, 1) })} />
         </View>
       </View>
       {tajweed && <View style={{ paddingHorizontal: 16, paddingTop: 6 }}><TajweedLegend lang={lg} dark={dark} /></View>}
       <FlatList
+        ref={listRef}
         data={pages}
         keyExtractor={(x) => String(x)}
         horizontal
@@ -104,6 +167,31 @@ export default function MushafScreen() {
         style={Platform.OS === 'web' ? { flex: 1, direction: 'ltr' } : { flex: 1 }}
         renderItem={({ item }) => <MushafPage page={item} width={width} z={z} font={prefs.font} tajweed={tajweed} dark={dark} lang={lg} onAyah={onAyah} />}
       />
+      {(now != null || audioErr) && (
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, marginHorizontal: 12, marginBottom: 8, padding: 10, borderRadius: 18, backgroundColor: C.ink }}>
+          <Icon name="speaker" size={18} color={C.onInk} />
+          <Text style={{ flex: 1, color: C.onInk, fontSize: fs(13), fontWeight: '700' }} numberOfLines={1}>
+            {audioErr ? pick(L.audioErr, lg) : nowAt ? `${surahName(nowAt[0], lg)} ${d(nowAt[1])} · ${reciterName}` : ''}
+          </Text>
+          <Pressable onPress={() => { stopAudio(); setAudioErr(false); }} accessibilityRole="button" accessibilityLabel={pick(L.stop, lg)} hitSlop={8}>
+            <Icon name="close" size={18} color={C.onInk} />
+          </Pressable>
+        </View>
+      )}
+      <Modal visible={jump != null} transparent animationType="fade" onRequestClose={() => setJump(null)}>
+        <Pressable onPress={() => setJump(null)} style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.35)', justifyContent: 'center', padding: 24 }}>
+          <Pressable onPress={() => undefined} style={{ backgroundColor: C.bg, borderRadius: 20, padding: 18, gap: 12 }}>
+            <Text style={T.h2}>{pick(L.goto, lg)}</Text>
+            <TextInput value={jump ?? ''} onChangeText={(v) => setJump(v.replace(/[^0-9]/g, '').slice(0, 3))} keyboardType="number-pad" autoFocus
+              placeholder={pick(L.gotoHint, lg)} placeholderTextColor={C.muted} onSubmitEditing={() => { if (jump) toPage(Number(jump), false); setJump(null); }}
+              style={{ height: 48, borderRadius: 14, backgroundColor: C.surface, paddingHorizontal: 14, fontSize: fs(18), color: C.ink }} />
+            <View style={{ flexDirection: 'row', gap: 10 }}>
+              <View style={{ flex: 1 }}><Btn title={pick(L.cancel, lg)} kind="secondary" onPress={() => setJump(null)} /></View>
+              <View style={{ flex: 1 }}><Btn title={pick(L.go, lg)} disabled={!jump} onPress={() => { if (jump) toPage(Number(jump), false); setJump(null); }} /></View>
+            </View>
+          </Pressable>
+        </Pressable>
+      </Modal>
       <MarkSheet visible={!!mark} ayah={mark?.a ?? 1} surah={mark?.s ?? 1} lang={lg} bookmarks={bookmarks}
         onPick={(bm) => { if (mark) saveBookmark({ ...bm, surah: mark.s, ayah: mark.a }); setMark(null); }} onClose={() => setMark(null)} />
     </SafeAreaView>

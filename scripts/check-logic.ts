@@ -6,6 +6,7 @@ import { fitCamera, overlaps, placeLabels } from '../src/scene/layout';
 import { MAKKAH_CORE, buildMakkah } from '../src/scene/makkah';
 import { CORNERS, KAABA_POLY, adjustLap, bearingOf, initialLap, pointAt, startManual, stepLap, zoneOf, type Fix, type LapState } from '../src/services/tawaf';
 import { globalAyah, surahLength } from '../src/services/quranIndex';
+import { juzStartPage, parseQuranQuery } from '../src/services/quranNav';
 import { DUA_LIB, isQuranRef } from '../src/data/duas';
 import { TAWAF_DHIKR, type DuaText } from '../src/data/tawaf';
 import { OVERPASS_ENDPOINTS, bearingDeg, distanceM, findMosques, parseOverpass, parsePhotonMosques, pickMosques, type El, type Fetcher } from '../src/services/mosques';
@@ -81,6 +82,18 @@ ok(summarize([r('g', 'closed', 'off', 60, true), r('g', 'open', 'a', 1), r('g', 
 const all = () => 'open' as GateStatus;
 const p1 = planRoute('makkah', DEMO_START.makkah, 'mataf', all)!;
 ok(p1.gate?.id === 'mk-62', `batıdan Mataf'a en kısa kapı 62 (seçilen: ${p1.gate?.id}, ${Math.round(p1.lengthM)} m)`);
+{
+  // Kapılar: ana kapılar + OSM'den gelenler (0.23.0)
+  const ids = new Set(GATES.map((g) => g.id));
+  ok(ids.size === GATES.length, `kapı kimlikleri tekil (${GATES.length} kapı)`);
+  const mk = GATES.filter((g) => g.city === 'makkah');
+  const md = GATES.filter((g) => g.city === 'madinah');
+  ok(mk.length >= 120 && md.length >= 20, `Mekke ${mk.length}, Medine ${md.length} kapı`);
+  ok(['1', '45', '62', '79', '100'].every((n) => mk.some((g) => g.no === n && g.main)), 'Mekke ana kapıları 1, 45, 62, 79, 100 (Genel Kurum)');
+  const good = GATES.filter((g) => !isInsideBuilding(g.city, g.out) && isInsideBuilding(g.city, g.inner)).length;
+  ok(good / GATES.length > 0.9, `kapıların dış noktası dışarıda, iç noktası içeride (${good}/${GATES.length})`);
+  ok(md.some((g) => g.women) && md.filter((g) => g.women).every((g) => g.side.tr.includes('kadınlar')), 'Medine kadınlar girişleri işaretli');
+}
 const p2 = planRoute('makkah', DEMO_START.makkah, 'mataf', (id) => (id === 'mk-62' ? 'closed' : 'open'))!;
 ok(!!p2.gate && p2.gate.id !== 'mk-62', `62 kapalı → yeni kapı ${p2.gate?.id} (${Math.round(p2.lengthM)} m)`);
 {
@@ -1109,3 +1122,17 @@ ok(shareLink({ lat: 21.4225, lng: 39.8262 }) === 'https://maps.google.com/?q=21.
 }
 
 mosqueChecks().then(transitChecks).then(() => process.exit(fails ? 1 : 0));
+
+{
+  // Kur'an'da gezinme: arama kutusu (0.23.0)
+  const names = [['Fâtiha', 'Bakara', 'Âl-i İmrân'], ['Al-Faatiha', 'Al-Baqara', 'Aal-i-Imraan']];
+  const q = (x: string) => JSON.stringify(parseQuranQuery(x, names));
+  ok(q('2:255') === '{"kind":"ayah","s":2,"a":255}' && q('2 255') === q('2:255'), 'arama: 2:255 ve 2 255 → Bakara 255');
+  ok(q('bakara 255') === q('2:255') && q('al-baqara 255') === q('2:255') && q('BAKARA') === '{"kind":"ayah","s":2,"a":1}', 'arama: sûre adıyla (Türkçe, İngilizce, büyük harf)');
+  ok(q('ali imran 7') === '{"kind":"ayah","s":3,"a":7}', 'arama: şapkasız ve kesmesiz ad');
+  ok(q('s 300') === '{"kind":"page","p":300}' && q('sayfa 604') === '{"kind":"page","p":604}' && q('s 605') === 'null', 'arama: sayfa (1–604)');
+  ok(q('c 15') === '{"kind":"juz","j":15}' && q('cüz 30') === '{"kind":"juz","j":30}' && q('c 31') === 'null', 'arama: cüz (1–30)');
+  ok(q('2:287') === 'null' && q('115:1') === 'null' && q('xyz') === 'null', 'arama: olmayan âyet ve sûre null');
+  ok(juzStartPage(1) === 1 && juzStartPage(2) === 22 && juzStartPage(30) === 582, `cüz başı sayfaları (2 → ${juzStartPage(2)}, 30 → ${juzStartPage(30)})`);
+}
+

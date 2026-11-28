@@ -15,12 +15,14 @@ import { BEFORE_CHOICES, DEFAULT_NOTIF, SOUNDS, prayerName, type NotifPrefs, typ
 import { NOTIF_KEY, applySchedule, askExactAlarm, exactAlarmGranted, mergeNotif, notificationsSupported, sendTest, type ApplyResult } from '@/services/adhanNotify';
 import type { PrayerKey } from '@/services/prayer';
 import { usePersisted } from '@/services/usePersisted';
-import { refreshWidgetTicks } from '@/services/widgetSync';
+import { refreshWidgetTicks, setOngoingPrayer } from '@/services/widgetSync';
 
 type Lang = 'tr' | 'en' | 'ar';
 const L = {
   title: { tr: 'Ezan bildirimleri', en: 'Adhan notifications', ar: 'إشعارات الأذان' },
   enable: { tr: 'Ezan yaklaşınca bildir', en: 'Notify before adhan', ar: 'نبّهني قبل الأذان' },
+  ongoing: { tr: 'Bildirim panelinde vakit kutusu', en: 'Prayer times in the notification panel', ar: 'أوقات الصلاة في لوحة الإشعارات' },
+  ongoingSub: { tr: 'Sürekli duran kutu: sıradaki vakit, geri sayım ve günün vakitleri. Ses çıkarmaz.', en: 'A persistent box: next prayer, countdown and today’s times. Silent.', ar: 'مربع دائم: الصلاة التالية والعد التنازلي وأوقات اليوم. بلا صوت.' },
   enableSub: { tr: 'Telefon kilitliyken de gelir; internet gerekmez.', en: 'Works with the phone locked; no internet needed.', ar: 'يعمل والهاتف مقفل؛ دون حاجة للإنترنت.' },
   place: { tr: 'Vakitler', en: 'Prayer times for', ar: 'المواقيت حسب' },
   here: { tr: 'Bulunduğum yer', en: 'My location', ar: 'موقعي' },
@@ -190,6 +192,16 @@ export default function NotificationSettings() {
           </View>
           <Toggle value={prefs.enabled} onChange={(v) => setPrefs({ enabled: v })} label={l('enable')} />
         </View>
+        {Platform.OS === 'android' && (
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, paddingTop: 8 }}>
+            <Icon name="clock" color={prefs.ongoing ? C.accent : C.muted} />
+            <View style={{ flex: 1 }}>
+              <Text style={[T.body, { fontWeight: '700' }]}>{l('ongoing')}</Text>
+              <Text style={T.small}>{l('ongoingSub')}</Text>
+            </View>
+            <Toggle value={prefs.ongoing} onChange={(v) => { setPrefs({ ongoing: v }); void setOngoingPrayer(v); }} label={l('ongoing')} />
+          </View>
+        )}
         {status && !status.ok && status.reason === 'permission' && (
           <View style={{ gap: 8 }}>
             <Text style={[T.small, { color: C.closed }]}>{l('noPerm')}</Text>

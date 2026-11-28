@@ -92,8 +92,12 @@ function init(){
     map.addLayer({id:'lines',type:'line',source:'lines',filter:['!',['get','d']],layout:lay,paint:{'line-color':['get','c'],'line-width':['get','w']}});
     map.addLayer({id:'lines-dash',type:'line',source:'lines',filter:['get','d'],layout:lay,paint:{'line-color':['get','c'],'line-width':['get','w'],'line-dasharray':[0.1,2]}});
     map.addLayer({id:'pins-sel',type:'circle',source:'pins',filter:['get','s'],paint:{'circle-radius':19,'circle-color':['get','c'],'circle-opacity':0.2}});
-    map.addLayer({id:'pins',type:'circle',source:'pins',paint:{'circle-radius':['case',['any',['get','b'],['get','s']],9,6.5],
-      'circle-color':['get','c'],'circle-stroke-color':'#ffffff','circle-stroke-width':2}});
+    map.addLayer({id:'pins',type:'circle',source:'pins',paint:{'circle-radius':['case',['any',['get','b'],['get','s']],9,['has','m'],4.5,6.5],
+      'circle-color':['get','c'],'circle-stroke-color':'#ffffff','circle-stroke-width':['case',['has','m'],1.2,2]}});
+    // Küçük kapıların numarası yakınlaşınca (z17+)
+    map.addLayer({id:'pins-num',type:'symbol',source:'pins',minzoom:17,filter:['has','n'],
+      layout:{'text-field':['get','n'],'text-font':['Noto Sans Bold'],'text-size':11,'text-offset':[0,-1.1],'text-anchor':'bottom','text-allow-overlap':false},
+      paint:{'text-color':CFG.ink,'text-halo-color':CFG.halo,'text-halo-width':1.6}});
     map.addLayer({id:'pins-label',type:'symbol',source:'pins',filter:['all',['has','l'],['any',['get','s'],['get','b']]],
       layout:{'text-field':['get','l'],'text-font':['Noto Sans Bold'],'text-size':13,'text-offset':[0,-1.4],'text-anchor':'bottom','text-max-width':12},
       paint:{'text-color':CFG.ink,'text-halo-color':CFG.halo,'text-halo-width':1.8}});
@@ -132,7 +136,7 @@ function apply(st,first){
   map.getSource('lines').setData(fc((st.lines||[]).concat(outl).filter(function(l){return l.coords.length>1}).map(function(l){
     return{type:'Feature',properties:{c:l.color,w:l.width||5,d:!!l.dashed},geometry:{type:'LineString',coordinates:l.coords.map(function(p){return[p.lng,p.lat]})}}})));
   map.getSource('pins').setData(fc((st.pins||[]).map(function(p){
-    var pr={id:p.id,c:p.color,b:!!p.big,s:p.id===st.selectedId};if(p.label)pr.l=p.label;
+    var pr={id:p.id,c:p.color,b:!!p.big,s:p.id===st.selectedId};if(p.label)pr.l=p.label;if(p.minor)pr.m=1;if(p.num)pr.n=p.num;
     return{type:'Feature',properties:pr,geometry:{type:'Point',coordinates:[p.lng,p.lat]}}})));
   map.getSource('user').setData(fc(st.user?[{type:'Feature',properties:{},geometry:{type:'Point',coordinates:[st.user.lng,st.user.lat]}}]:[]));
   if(first||st.fitKey!==lastFit){lastFit=st.fitKey;fit(st,!first)}
