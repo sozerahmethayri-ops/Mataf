@@ -11,7 +11,7 @@ import { LayersPanel, useMapLayers } from '@/components/MapLayers';
 import { Btn, Chip, IconBtn, T } from '@/components/ui';
 import { C, shadow, fs } from '@/constants/theme';
 import { RAWDAH } from '@/data/content';
-import { DESTINATIONS, GATES, dist, toLatLng, type Pt } from '@/data/sites';
+import { DESTINATIONS, GATES, dist, toLatLng, type City, type Pt } from '@/data/sites';
 import { pick, useI18n } from '@/i18n';
 import { useApp } from '@/services/AppContext';
 import { kmTo, localPosition, useLocation } from '@/services/location';
@@ -21,6 +21,11 @@ import { planRoute } from '@/services/routing';
 import { MADINAH_CORE } from '@/scene/madinah';
 import { Cam } from '@/scene/oblique';
 import { MAKKAH_CORE } from '@/scene/makkah';
+import { NearbyMap } from './NearbyMap';
+
+const L = {
+  here: { tr: 'Konumum', en: 'My area', ar: 'موقعي' },
+};
 
 export default function MapScreen() {
   const { t, lang } = useI18n();
@@ -39,6 +44,13 @@ export default function MapScreen() {
   // 3D: Harem'in kendi çizimimiz; 2D: gerçek OSM haritası (Baki, sokaklar, oteller dahil her ayrıntı)
   const [is3d, setIs3d] = useState(prefs.map3d);
 
+  // Görünüm: Mekke ya da Medine'deyseniz (30 km) orası, uzaktaysanız "Konumum" (bulunduğunuz yerin haritası);
+  // üstteki seçiciyle değiştirilir (0.24.0)
+  const [choice, setChoice] = useState<'here' | City | null>(null);
+  const nearCity: City | null = fix ? (kmTo('makkah', fix) < 30 ? 'makkah' : kmTo('madinah', fix) < 30 ? 'madinah' : null) : null;
+  const view: 'here' | City = choice ?? (fix && !nearCity ? 'here' : city);
+  const pickView = (v: 'here' | City) => { setChoice(v); if (v !== 'here') setCity(v); };
+  const [zl, setZl] = useState(0); // 2D +/− adımı
   const { pos: user, demo } = localPosition(city, fix);
   const [layersOpen, setLayersOpen] = useState(false);
   const [selLayer, setSelLayer] = useState<string | undefined>(undefined);
@@ -80,13 +92,17 @@ export default function MapScreen() {
   const routePts = plan?.points && plan.points.length > 1 ? plan.points.map(ll) : [];
   const fitTo = [...basePins, ...routePts, ...(hacFit ? lyr.pins.filter((p) => p.id.startsWith('L:hac:')) : [])];
   // Bakî seçiliyse mezarlığın batı yarısı da çerçeveye girsin (yalnız giriş kapısı değil)
-  // Geniş görünüm (0.22.0): Mekke'de Saat Kulesi'nin eteği, Medine'de Bakî'nin batı yarısı da çerçevede
-  const wide: Pt[] = city === 'makkah' ? [[-66, 430]] : [[340, -70], [340, 130]];
+  // Geniş görünüm (0.22.0): Medine'de Bakî'nin batı yarısı da çerçevede. Mekke'de Saat Kulesi çerçeveden çıktı
+  // (0.24.0): açılışta Kâbe ve mescit büyük görünsün, kule uzaklaşınca görünür.
+  const wide: Pt[] = city === 'makkah' ? [] : [[340, -70], [340, 130]];
   const fit = [...(city === 'makkah' ? MAKKAH_CORE : MADINAH_CORE), ...wide, ...(plan?.points ?? []), dest.pos];
 
+  const here = view === 'here';
   return (
     <View style={{ flex: 1, backgroundColor: C.mapGround }} onLayout={(e) => setSize({ w: e.nativeEvent.layout.width, h: e.nativeEvent.layout.height })}>
-      {is3d ? (
+      {here ? (
+        <NearbyMap fix={fix} denied={denied} top={topH} />
+      ) : is3d ? (
         <HaramScene
           city={city}
           width={size.w}
@@ -118,6 +134,7 @@ export default function MapScreen() {
           recenterKey={recenter}
           controls={false}
           threeD={false}
+          zoomLevel={zl}
           areas={lyr.areas}
           selectedId={selLayer}
           onPin={(id) => {
@@ -142,13 +159,14 @@ export default function MapScreen() {
         </View>
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8, alignItems: 'center' }}>
           <View style={[{ flexDirection: 'row', padding: 3, borderRadius: 20, backgroundColor: C.bg }, shadow]}>
-            {(['makkah', 'madinah'] as const).map((c) => (
-              <Pressable key={c} onPress={() => setCity(c)} accessibilityRole="button" accessibilityState={{ selected: city === c }}
-                style={{ height: 34, paddingHorizontal: 12, borderRadius: 17, justifyContent: 'center', backgroundColor: city === c ? C.ink : 'transparent' }}>
-                <Text style={{ fontSize: fs(13), fontWeight: city === c ? '700' : '500', color: city === c ? C.onInk : C.muted }}>{t(c === 'makkah' ? 'city.makkah' : 'city.madinah')}</Text>
+            {(['here', 'makkah', 'madinah'] as const).map((c) => (
+              <Pressable key={c} onPress={() => pickView(c)} accessibilityRole="button" accessibilityState={{ selected: view === c }}
+                style={{ height: 34, paddingHorizontal: 12, borderRadius: 17, justifyContent: 'center', backgroundColor: view === c ? C.ink : 'transparent' }}>
+                <Text style={{ fontSize: fs(13), fontWeight: view === c ? '700' : '500', color: view === c ? C.onInk : C.muted }}>{c === 'here' ? pick(L.here, lang) : t(c === 'makkah' ? 'city.makkah' : 'city.madinah')}</Text>
               </Pressable>
             ))}
           </View>
+          {!here && <>
           {DESTINATIONS.filter((d) => d.city === city).map((d) => (
             <Chip key={d.id} label={t(d.label).split(' · ')[0]} active={d.id === dest.id} onPress={() => setDestId(d.id)} />
           ))}
@@ -158,8 +176,10 @@ export default function MapScreen() {
           {city === 'madinah' && <Chip label="Ravza" onPress={() => router.push('/ravza')} />}
           {city === 'madinah' && <Chip label="360°" onPress={() => Linking.openURL(RAWDAH.tourUrl)} />}
           {city === 'madinah' && <Chip label={t('guide.title')} onPress={() => router.push('/medine-rehber')} />}
+          </>}
         </ScrollView>
       </View>
+      {!here && <>
 
       <View style={{ position: 'absolute', right: ctrl.right, bottom: ctrl.bottom, gap: 8, alignItems: 'center' }}>
         <Pressable onPress={() => setIs3d((v) => !v)} accessibilityRole="button"
@@ -167,13 +187,11 @@ export default function MapScreen() {
           style={[{ width: 44, height: 44, borderRadius: 22, backgroundColor: C.ink, alignItems: 'center', justifyContent: 'center' }, shadow]}>
           <Text style={{ fontSize: fs(13), fontWeight: '800', color: C.onInk }}>{is3d ? '2D' : '3D'}</Text>
         </Pressable>
-        {is3d && (
         <View style={[{ width: ctrl.w, borderRadius: ctrl.w / 2, backgroundColor: C.bg, overflow: 'hidden' }, shadow]}>
-          <IconBtn name="plus" label={t('map.zoomIn')} tint={C.bg} onPress={() => setZoom((z) => Math.min(8, z * 1.4))} />
+          <IconBtn name="plus" label={t('map.zoomIn')} tint={C.bg} onPress={() => (is3d ? setZoom((z) => Math.min(8, z * 1.4)) : setZl((n) => n + 1))} />
           <View style={{ height: 1, marginHorizontal: 10, backgroundColor: C.border }} />
-          <IconBtn name="minus" label={t('map.zoomOut')} tint={C.bg} onPress={() => setZoom((z) => Math.max(0.2, z / 1.4))} />
+          <IconBtn name="minus" label={t('map.zoomOut')} tint={C.bg} onPress={() => (is3d ? setZoom((z) => Math.max(0.2, z / 1.4)) : setZl((n) => n - 1))} />
         </View>
-        )}
         {!is3d && (
           <IconBtn name="layers" label={lang === 'en' ? 'Layers' : lang === 'ar' ? 'الطبقات' : 'Katmanlar'} tint={layersOpen ? C.ink : C.bg} color={layersOpen ? C.onInk : C.ink} elevated onPress={() => setLayersOpen((v) => !v)} />
         )}
@@ -231,6 +249,7 @@ export default function MapScreen() {
         </View>
         )}
       </View>
+      </>}
     </View>
   );
 }

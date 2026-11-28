@@ -25,4 +25,6 @@ export type OnlineMapProps = {
   recenterKey?: number;
   /** Sağ üstteki 2D/3D ve konum düğmeleri (varsayılan: açık). */
   controls?: boolean;
+  /** Dışarıdaki +/− düğmelerinin toplam adımı (+1 yaklaş, −1 uzaklaş; harita farkı uygular). */
+  zoomLevel?: number;
 };

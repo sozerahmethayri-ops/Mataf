@@ -12,18 +12,26 @@ import { arcades, buildModel, decodeOsm3d, drawModel, hull, type Model, type Pai
 const f = (v: number) => v.toFixed(1);
 const GOLDISH = /^#(ffcc00|ffd700|d4af37)$/i;
 
-/** OSM renklerini sahnenin açık mermer tonlarına yaklaştırır (kubbeler OSM'de turuncu işaretli; gerçekte açık renk). */
+/** Ebrâcü'l-Beyt (Saat Kulesi, Zemzem Kulesi, oteller): mescidin güneyindeki yüksek yapılar */
+const inAbraj = (x: number, y: number) => y > 240 && x > -330 && x < 260;
+/** Soluk altın (kadran halkası, hilâl): kuleler Kâbe'den göz almasın */
+const PALE_GOLD = '#E4D9B8';
+
+/** OSM renklerini sahnenin açık mermer tonlarına yaklaştırır (kubbeler OSM'de turuncu işaretli; gerçekte açık renk).
+ *  Ebrâcü'l-Beyt soluk ve neredeyse renksiz çizilir (0.24.0): göz Kâbe'ye gitsin. */
 function paint(p: Part): Paint {
-  const tone = (c: string | null, t: number) => {
-    if (!c) return null;
-    if (GOLDISH.test(c)) return '#D4AF37';
-    if (c.toLowerCase() === '#ff6414') return '#E2DDD3';
-    if (c.toLowerCase() === '#277db5') return '#A8C1CF';
-    return mixHex(c, '#F2EDE4', t);
+  const c = p.circ ? [p.circ.x, p.circ.y] : [p.pts.reduce((s, q) => s + q[0], 0) / p.pts.length, p.pts.reduce((s, q) => s + q[1], 0) / p.pts.length];
+  const pale = inAbraj(c[0], c[1]);
+  const tone = (col: string | null, t: number) => {
+    if (!col) return null;
+    if (GOLDISH.test(col)) return pale ? PALE_GOLD : '#D4AF37';
+    if (col.toLowerCase() === '#ff6414') return '#E2DDD3';
+    if (col.toLowerCase() === '#277db5') return pale ? '#DCE3E6' : '#A8C1CF';
+    return mixHex(col, '#F2EDE4', pale ? 0.8 : t);
   };
-  const wall = tone(p.wall, 0.42) ?? '#E6E0D4';
+  const wall = tone(p.wall, 0.42) ?? (pale ? '#EEEAE3' : '#E6E0D4');
   const roof = tone(p.roofC, 0.22) ?? mixHex(wall, '#FFFFFF', 0.4);
-  return { wall, roof, edge: true };
+  return { wall, roof, edge: !pale };
 }
 
 /** Saat bölümünün dört yüzüne kadran; en tepeye hilâl. */
@@ -46,13 +54,13 @@ function extra(cam: Cam, p: Part): Prim[] {
         const [x, y] = at(r * Math.cos(a), 447.5 + r * Math.sin(a));
         return `${i ? 'L' : 'M'}${f(x)} ${f(y)}`;
       }).join(' ') + ' Z';
-      out.push({ t: 'path', d: ring(20.5), fill: '#D4AF37', keep: true });
+      out.push({ t: 'path', d: ring(20.5), fill: PALE_GOLD, keep: true });
       out.push({ t: 'path', d: ring(18), fill: '#FDFCF8', nfill: '#E8F7EE' });
       if (cam.k >= 0.35) {
         const [cx, cy] = at(0, 447.5);
         const [hx, hy] = at(6, 456);
         const [mx, my] = at(-2, 462);
-        out.push({ t: 'path', d: `M${f(cx)} ${f(cy)} L${f(hx)} ${f(hy)} M${f(cx)} ${f(cy)} L${f(mx)} ${f(my)}`, stroke: '#2B2B2B', sw: Math.max(0.8, 1.2 * cam.k), fill: 'none' });
+        out.push({ t: 'path', d: `M${f(cx)} ${f(cy)} L${f(hx)} ${f(hy)} M${f(cx)} ${f(cy)} L${f(mx)} ${f(my)}`, stroke: '#9A9283', sw: Math.max(0.8, 1.2 * cam.k), fill: 'none' });
       }
     }
   }
@@ -63,7 +71,7 @@ function extra(cam: Cam, p: Part): Prim[] {
     const [sx, sy] = cam.P(cx, cy0, p.h1);
     const r = Math.max(2, 6 * cam.k);
     const cy = sy - r * 0.9;
-    out.push({ t: 'path', d: `M${f(sx - r)} ${f(cy)} A${f(r)} ${f(r)} 0 0 0 ${f(sx + r)} ${f(cy)} A${f(r * 1.3)} ${f(r * 1.3)} 0 0 1 ${f(sx - r)} ${f(cy)} Z`, fill: '#D4AF37', keep: true });
+    out.push({ t: 'path', d: `M${f(sx - r)} ${f(cy)} A${f(r)} ${f(r)} 0 0 0 ${f(sx + r)} ${f(cy)} A${f(r * 1.3)} ${f(r * 1.3)} 0 0 1 ${f(sx - r)} ${f(cy)} Z`, fill: PALE_GOLD, keep: true });
   }
   return out;
 }
@@ -88,7 +96,8 @@ function getModel(): Model {
     // Kâbe, Hicr ve Makam yerine kendi ayrıntılı modelimiz
     skip: (p) => p.pts.every(([x, y]) => Math.hypot(x, y) < 17),
     extra,
-    towers: { fromTiers: true, tone: (c) => (GOLDISH.test(c) ? '#D4AF37' : mixHex(c, '#F4F0E9', 0.55)) },
+    // Kuleler (Saat Kulesi dahil) soluk: altın yerine açık kum, gövde mermere yakın
+    towers: { fromTiers: true, tone: (c) => (GOLDISH.test(c) ? PALE_GOLD : mixHex(c, '#F4F0E9', 0.82)) },
     more: [{ fp: kaabaFp, h0: 0, h1: 13.1, size: 14, draw: (cam) => { const kb = buildKaaba(cam, { shadow: cam.k >= 2 }); return [...kb.under, ...kb.body]; } }],
     ghost: (c) => c[1] > 240,
   });

@@ -12,7 +12,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { AR_DIGITS, MarkSheet, QL, TajweedLegend, nextZoom } from '@/components/QuranParts';
 import { Btn, Chip, Header, IconBtn, T } from '@/components/ui';
 import { Icon } from '@/components/Icon';
-import { C, fs, fsAr, isDark } from '@/constants/theme';
+import { C, fs, fsAr } from '@/constants/theme';
 import { ayahMark, lineFor } from '@/data/quranFonts';
 import { RECITERS } from '@/data/quranEditions';
 import { PAGE_COUNT, fromGlobalAyah, pageAyahs, pageGlobalRange, pageOf } from '@/data/quranPages';
@@ -25,6 +25,7 @@ import { getPageText, stripBasmala, surahName, type PageAyah } from '@/services/
 import { localAyahAudio } from '@/services/offline';
 import { ayahAudioUrl } from '@/services/quranIndex';
 import { useQuranPrefs } from '@/services/QuranPrefs';
+import { useTheme } from '@/services/ThemeContext';
 import { parseTajweed, stripTajweedBasmala } from '@/services/tajweed';
 import { useAsync } from '@/services/useAsync';
 import { useQuranFont } from '@/services/useQuranFont';
@@ -57,7 +58,8 @@ export default function MushafScreen() {
   const pages = useMemo(() => Array.from({ length: PAGE_COUNT }, (_, i) => i + 1), []);
   const tajweed = prefs.view === 'tecvid';
   const z = prefs.zoom ?? 1;
-  const dark = isDark();
+  // Temadan (bağlamdan): sistem teması gece kendiliğinden koyulaşınca da tecvid renkleri koyu takıma geçsin
+  const { dark } = useTheme();
   const [mark, setMark] = useState<{ s: number; a: number } | null>(null);
   const [onAyah] = useState(() => (sn: number, an: number) => setMark({ s: sn, a: an }));
   // Sayfa 1 sağda, sonraki solda: soldan sağa düzende liste ters çevrilir (Arapça telefonda düzen zaten sağdan sola)

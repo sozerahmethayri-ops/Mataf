@@ -7,6 +7,7 @@ import { MAKKAH_CORE, buildMakkah } from '../src/scene/makkah';
 import { CORNERS, KAABA_POLY, adjustLap, bearingOf, initialLap, pointAt, startManual, stepLap, zoneOf, type Fix, type LapState } from '../src/services/tawaf';
 import { globalAyah, surahLength } from '../src/services/quranIndex';
 import { juzStartPage, parseQuranQuery } from '../src/services/quranNav';
+import { MAPLIBRE_VERSION, onlineMapHtml } from '../src/components/onlineMapHtml';
 import { DUA_LIB, isQuranRef } from '../src/data/duas';
 import { TAWAF_DHIKR, type DuaText } from '../src/data/tawaf';
 import { OVERPASS_ENDPOINTS, bearingDeg, distanceM, findMosques, parseOverpass, parsePhotonMosques, pickMosques, type El, type Fetcher } from '../src/services/mosques';
@@ -1136,3 +1137,16 @@ mosqueChecks().then(transitChecks).then(() => process.exit(fails ? 1 : 0));
   ok(juzStartPage(1) === 1 && juzStartPage(2) === 22 && juzStartPage(30) === 582, `cüz başı sayfaları (2 → ${juzStartPage(2)}, 30 → ${juzStartPage(30)})`);
 }
 
+
+{
+  // Gömülü MapLibre (0.24.0): harita sayfası CDN'siz açılabilsin, web'de iframe köprüsü
+  const fsMod = require('fs') as { readFileSync: (p: string, e: string) => string; existsSync: (p: string) => boolean };
+  const asset = `assets/maplibre/maplibre-gl-${MAPLIBRE_VERSION}.html`;
+  const frag = fsMod.existsSync(asset) ? fsMod.readFileSync(asset, 'utf8') : '';
+  ok(frag.length > 500000 && frag.split('</script>').length === 2 && frag.startsWith('<style>'), `gömülü kütüphane ${asset} (tek betik, ${Math.round(frag.length / 1024)} KB)`);
+  const th = { dark: false, bg: '#FFFFFF', ink: '#000000', user: '#2563EB', building: '#DDDDDD' };
+  const inl = onlineMapHtml({ ...th, lib: '<script>window.maplibregl={x:1}</script>' });
+  ok(inl.includes('window.maplibregl={x:1}') && inl.includes('if(i===0&&window.maplibregl)'), 'harita sayfası: gömülü kütüphane satır içi, CDN atlanır');
+  ok(onlineMapHtml(th).includes('unpkg.com/maplibre-gl@') && !onlineMapHtml(th).includes('window.maplibregl={'), 'harita sayfası: kütüphane yoksa CDN yedeği');
+  ok(onlineMapHtml({ ...th, frame: 'm7' }).includes('"frame":"m7"') && onlineMapHtml(th).includes('"frame":null'), 'harita sayfası: web iframe kimliği');
+}

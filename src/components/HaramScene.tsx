@@ -38,7 +38,8 @@ const AnimatedPath = Animated.createAnimatedComponent(Path);
 const PIN = 28; // kapı dairesi
 const STEM = 10;
 const MINOR = 18; // diğer kapıların dairesi
-const MINOR_K = 1.0; // diğer kapılar bu yakınlıktan (piksel/metre) sonra görünür
+const MINOR_S = 16; // uzakken
+const MINOR_K = 0.3; // diğer kapılar bu yakınlıktan (piksel/metre) sonra görünür; çakışanlar atlanır
 const LABEL_H = 18;
 const DEST_H = 24;
 const PIN_CLOSED = '#B42318';
@@ -215,12 +216,13 @@ export function HaramScene(props: SceneProps) {
   const destBox = placed.__dest;
   const taken: Box[] = [...fixed, ...Object.values(placed).filter((x): x is Box => !!x)];
   const minor: { g: (typeof GATES)[number]; x: number; y: number }[] = [];
+  const ms = k >= 0.8 ? MINOR : MINOR_S;
   if (k >= MINOR_K) {
     for (const g of GATES) {
       if (g.city !== city || g.main || g.id === routeGateId) continue;
       const [x, y] = P(g.pos);
       if (x < 0 || x > width || y < 0 || y > height) continue;
-      const b: Box = { x: x - MINOR / 2 - 1, y: y - MINOR / 2 - 1, w: MINOR + 2, h: MINOR + 2 };
+      const b: Box = { x: x - ms / 2 - 1, y: y - ms / 2 - 1, w: ms + 2, h: ms + 2 };
       if (taken.some((o) => overlaps(o, b))) continue;
       taken.push(b);
       minor.push({ g, x, y });
@@ -238,7 +240,7 @@ export function HaramScene(props: SceneProps) {
             <Prims prims={scene.below} />
             <Prims prims={scene.above} />
             {scene.ghost.length > 0 && (
-              <G opacity={xray ? 0.42 : 1}>
+              <G opacity={xray ? 0.3 : 1}>
                 <Prims prims={scene.ghost} />
               </G>
             )}
@@ -268,8 +270,8 @@ export function HaramScene(props: SceneProps) {
           const bg = s === 'closed' ? PIN_CLOSED : s === 'open' ? PIN_OPEN : PIN_LIMITED;
           return (
             <Pressable key={g.id} accessibilityRole="button" accessibilityLabel={`${pick(g.name, lang)} · ${s}`} onPress={() => onGatePress?.(g.id)} hitSlop={8}
-              style={{ position: 'absolute', left: x - MINOR / 2, top: y - MINOR / 2, width: MINOR, height: MINOR, borderRadius: MINOR / 2, backgroundColor: bg, borderWidth: 1.5, borderColor: '#FFFFFF', alignItems: 'center', justifyContent: 'center' }}>
-              <Text style={{ color: s !== 'open' && s !== 'closed' ? '#17181C' : '#FFFFFF', fontSize: g.no.length > 2 ? 7 : 8, fontWeight: '700' }}>{g.no.split('–')[0]}</Text>
+              style={{ position: 'absolute', left: x - ms / 2, top: y - ms / 2, width: ms, height: ms, borderRadius: ms / 2, backgroundColor: bg, borderWidth: 1.5, borderColor: '#FFFFFF', alignItems: 'center', justifyContent: 'center' }}>
+              <Text allowFontScaling={false} style={{ color: s !== 'open' && s !== 'closed' ? '#17181C' : '#FFFFFF', fontSize: g.no.length > 2 ? 7 : ms > 16 ? 9 : 8, fontWeight: '700' }}>{g.no.split('–')[0]}</Text>
             </Pressable>
           );
         })}

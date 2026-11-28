@@ -6,6 +6,10 @@ export type OnlineMapTheme = {
   dark: boolean; bg: string; ink: string; user: string; building: string;
   /** Çevrimdışı paket: yerel stil (mataf:// adresli) ve kütüphane klasörü (file://) */
   offline?: { style: object; libBase?: string };
+  /** Uygulamaya gömülü kütüphane (<style> + <script> parçası, services/mapLib); yoksa CDN'den yüklenir */
+  lib?: string | null;
+  /** Web: sayfa bir iframe içinde; iletiler üst pencereye bu kimlikle gider */
+  frame?: string;
 };
 
 export function onlineMapHtml(th: OnlineMapTheme) {
@@ -17,6 +21,7 @@ export function onlineMapHtml(th: OnlineMapTheme) {
     building: th.building,
     style: th.offline ? th.offline.style : `https://tiles.openfreemap.org/styles/${th.dark ? 'dark' : 'liberty'}`,
     offline: !!th.offline,
+    frame: th.frame ?? null,
     cdns: [
       ...(th.offline?.libBase ? [th.offline.libBase] : []),
       `https://unpkg.com/maplibre-gl@${MAPLIBRE_VERSION}/dist/`,
@@ -26,14 +31,17 @@ export function onlineMapHtml(th: OnlineMapTheme) {
   return `<!doctype html><html><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
 <style>html,body,#m{margin:0;padding:0;width:100%;height:100%;overflow:hidden;background:${th.bg}}
-.maplibregl-ctrl-attrib{font:10px sans-serif}.maplibregl-ctrl-bottom-left{display:none}</style></head>
+.maplibregl-ctrl-attrib{font:10px sans-serif}.maplibregl-ctrl-bottom-left{display:none}</style>${th.lib ?? ''}</head>
 <body><div id="m"></div><script>
 var CFG=${cfg};
-var map=null,ready=false,state=null,lastFit=null,lastRecenter=0,threeD=null,lastLong=0;
-function post(o){try{window.ReactNativeWebView.postMessage(JSON.stringify(o))}catch(e){}}
+var map=null,ready=false,state=null,lastFit=null,lastRecenter=0,lastZoom=null,threeD=null,lastLong=0;
+function post(o){var s=JSON.stringify(o);try{if(window.ReactNativeWebView){window.ReactNativeWebView.postMessage(s);return}
+  if(CFG.frame&&window.parent!==window)window.parent.postMessage({mataf:CFG.frame,d:s},'*')}catch(e){}}
 window.onerror=function(m){post({t:'log',m:String(m)})};
 function fc(f){return{type:'FeatureCollection',features:f}}
 function loadLib(i){
+  // Gömülü kütüphane sayfayla geldiyse ağa gerek yok
+  if(i===0&&window.maplibregl){post({t:'log',m:'kütüphane: gömülü'});init();return}
   if(i>=CFG.cdns.length){post({t:'error',m:'maplibre yüklenemedi'});return}
   var css=document.createElement('link');css.rel='stylesheet';css.href=CFG.cdns[i]+'maplibre-gl.css';document.head.appendChild(css);
   var s=document.createElement('script');s.src=CFG.cdns[i]+'maplibre-gl.js';
@@ -141,6 +149,8 @@ function apply(st,first){
   map.getSource('user').setData(fc(st.user?[{type:'Feature',properties:{},geometry:{type:'Point',coordinates:[st.user.lng,st.user.lat]}}]:[]));
   if(first||st.fitKey!==lastFit){lastFit=st.fitKey;fit(st,!first)}
   if(st.threeD!==threeD){var was=threeD;threeD=st.threeD;map.easeTo({pitch:threeD?55:0,bearing:threeD?(was===null?-20:map.getBearing()):0,duration:was===null?0:600})}
+  // +/− düğmeleri: toplam adım (zl) değiştikçe fark kadar yakınlaş; ilk durumda yalnız başlangıç alınır
+  if(st.zl!=null&&st.zl!==lastZoom){var dz=lastZoom==null?0:st.zl-lastZoom;lastZoom=st.zl;if(dz)map.easeTo({zoom:map.getZoom()+dz,duration:300})}
   if(st.recenter&&st.recenter!==lastRecenter){lastRecenter=st.recenter;if(st.user)map.easeTo({center:[st.user.lng,st.user.lat],zoom:Math.max(map.getZoom(),16.5),duration:600})}
 }
 function fit(st,anim){

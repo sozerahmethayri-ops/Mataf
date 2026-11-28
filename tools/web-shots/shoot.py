@@ -97,6 +97,15 @@ async def mocks(pg, here):
     await pg.route('**/api.alquran.cloud/v1/surah', quran_list)
     await pg.route('**/api.alquran.cloud/v1/surah/**', fail)
     await pg.route('**/overpass**', fail)
+    # OpenFreeMap: bulut oturumunda karo yok; arka planı çizen en küçük stil (harita iframe'i, işaretler ve düğmeler
+    # denetlenebilsin). Yazı tipleri gelmez (etiketler çizilmez), karo istekleri düşer.
+    async def ofm_style(route):
+        dark = '/styles/dark' in route.request.url
+        style = {'version': 8, 'glyphs': 'https://tiles.openfreemap.org/fonts/{fontstack}/{range}.pbf', 'sources': {},
+                 'layers': [{'id': 'bg', 'type': 'background', 'paint': {'background-color': '#22252B' if dark else '#EFE9DF'}}]}
+        await route.fulfill(status=200, headers=CORS, body=json.dumps(style))
+    await pg.route('**/tiles.openfreemap.org/styles/**', ofm_style)
+    await pg.route('**/tiles.openfreemap.org/fonts/**', fail)
 
 
 async def nav(pg, route, wait):

@@ -57,7 +57,7 @@
 | T.C. Cidde Başkonsolosluğu (cidde-bk.mfa.gov.tr) | Acil durum: başkonsolosluk santrali, acil hattı, Mekke Din Hizmetleri Ataşeliği, Konsolosluk Çağrı Merkezi | Resmî site; Kasım 2026'da kontrol edildi |
 | photon.komoot.io (amenity:hospital/clinic) | Acil durum: en yakın hastaneler | ODbL |
 | tiles.openfreemap.org | Uygulama içi online harita (vektör karolar, liberty/dark stilleri) | Ücretsiz, anahtarsız; © OpenMapTiles © OpenStreetMap — haritanın köşesinde atıf |
-| unpkg.com / cdn.jsdelivr.net (maplibre-gl 5.24.1) | Harita çizim kütüphanesi (WebView içinde) | BSD-3; biri açılmazsa diğeri denenir |
+| maplibre-gl 5.24.1 (uygulamaya gömülü: `assets/maplibre/maplibre-gl-5.24.1.html`, `tools/maplibre/build.mjs`; yedek unpkg.com / cdn.jsdelivr.net) | Harita çizim kütüphanesi (WebView içinde, web'de iframe) | BSD-3-Clause (lisans dosyanın başında); 0.24.0'dan beri CDN yalnız yedek |
 | routing.openstreetmap.de | Yaya rotası | FOSSGIS kullanım koşulları; yoğun kullanımda kendi OSRM sunucunuzu kurun |
 | Çevrimdışı paket: tiles.openfreemap.org (planet TileJSON, vektör karolar z0–14, liberty/dark stilleri, yazı tipleri, simgeler) | Mekke/Medine haritası internetsiz | © OpenMapTiles © OpenStreetMap; karolar telefona bir kez indirilir (Mekke ~130, Medine ~80 karo) |
 | Çevrimdışı paket: api.alquran.cloud/v1/quran/<baskı> | Kur'an metni ve seçili mealler internetsiz | Arapça metin Tanzil; meal hakları sahiplerine aittir |
