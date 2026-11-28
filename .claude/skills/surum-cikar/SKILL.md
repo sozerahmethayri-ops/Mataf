@@ -23,7 +23,7 @@ description: MATAF'ın yeni sürümünü çıkarıp main'e gönderir. Denetimler
    ```
    Betik şu yerleri günceller: `package.json`, `package-lock.json` (en üstteki iki `version`), `app.json` (`expo.version`, `android.versionCode` +1), README "Durum" satırı, CLAUDE.md'deki sürüm satırları.
 3. **README değişiklik günlüğü:** Listenin başına bir madde ekle: `- **Kısa başlık (X.Y.Z)** — …`. Madde proje sahibi ve kullanıcılar içindir. Gündelik Türkçeyle ne değiştiğini ve kullanıcının ne göreceğini yaz; teknik ad (Glance, FlatList, RAPTOR…) kullanma. Biçim için README'nin ilk maddelerine bak.
-4. **CLAUDE.md:** Yeni özelliği "Tamamlanan özellikler"de ilgili maddeye işle. Yeni karar "Mimari kararlar"a, yeni sınır "Bilinen hatalar"a girer. Biten iş "Yapılacaklar"dan çıkar. "Şu anki durum"u güncelle.
+4. **Belgeler:** Yeni özelliği `docs/OZELLIKLER.md`'de ilgili maddeye işle; dosya yerlerini de yaz. CLAUDE.md'de yeni karar "Mimari kararlar"a, yeni sınır "Bilinen hatalar"a girer. Biten iş "Yapılacaklar"dan çıkar. "Şu anki durum"u güncelle.
 5. **Acil numaraları:** CLAUDE.md "Yapılacaklar 14"teki kaynaklarla uygulamadakileri karşılaştır. Değişiklik yoksa o maddedeki tarihi güncelle; varsa numarayı düzelt ve günlüğe yaz.
 6. **Commit:** Türkçe. İlk satır `X.Y.Z: kısa özet`, altında madde madde ne değişti ve neden. Oturumun istediği atıf satırlarını ekle; model adı yazma.
 7. **Gönder:** `git push -u origin main`. Ağ hatasında 4 kez dene, her seferinde daha uzun bekle (2, 4, 8, 16 sn). Deneme dalından geliyorsan aşağıdaki "Deneme dalı" bölümüne bak.
