@@ -10,6 +10,8 @@ import { C, fs } from '@/constants/theme';
 import type { DuaText } from '@/data/tawaf';
 import type { T3 } from '@/data/umre';
 import { pick } from '@/i18n';
+import { resolveTabPath } from '@/services/tabs';
+import { useTheme } from '@/services/ThemeContext';
 
 type Lang = 'tr' | 'en' | 'ar';
 
@@ -43,6 +45,7 @@ export function GuideStepCard({ step, n, lg, done, open, onToggleOpen, onToggleD
   /** Bugünün adımı: vurgulu kenar ve "Bugün" etiketi */
   today?: boolean;
 }) {
+  const { prefs: theme } = useTheme();
   const edge = open || today ? C.accent : C.border;
   return (
     <View style={{ borderRadius: 18, borderWidth: open || today ? 1.5 : 1, borderColor: edge, overflow: 'hidden' }}>
@@ -79,7 +82,7 @@ export function GuideStepCard({ step, n, lg, done, open, onToggleOpen, onToggleD
               <Text style={[T.body, { flex: 1 }]}>{pick(x, lg)}</Text>
             </View>
           ))}
-          {step.action && <Btn title={pick(step.action.label, lg)} icon={step.action.icon} onPress={() => router.push(step.action!.to as never)} />}
+          {step.action && <Btn title={pick(step.action.label, lg)} icon={step.action.icon} onPress={() => router.push(resolveTabPath(step.action!.to, theme.tabs) as never)} />}
           {step.duas && step.duas.length > 0 && (
             <>
               <SectionTitle>{pick(L.duas, lg)}</SectionTitle>

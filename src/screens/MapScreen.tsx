@@ -27,7 +27,8 @@ const L = {
   here: { tr: 'Konumum', en: 'My area', ar: 'موقعي' },
 };
 
-export default function MapScreen() {
+/** `back`: /harita yığın ekranı olarak açıldıysa arama çubuğunda geri düğmesi; alt sekmedeyken yok. */
+export default function MapScreen({ back = false }: { back?: boolean } = {}) {
   const { t, lang } = useI18n();
   const insets = useSafeAreaInsets();
   const { city, setCity, destId, setDestId } = useApp();
@@ -146,7 +147,7 @@ export default function MapScreen() {
 
       <View style={{ position: 'absolute', left: 16, right: 16, top: insets.top + 8, gap: 10 }}>
         <View style={[{ flexDirection: 'row', alignItems: 'center', gap: 10, height: 52, paddingLeft: 16, paddingRight: 6, borderRadius: 26, backgroundColor: C.bg }, shadow]}>
-          <Icon name="search" color={C.muted} />
+          {back ? <IconBtn name="back" label={lang === 'en' ? 'Back' : lang === 'ar' ? 'رجوع' : 'Geri'} tint={C.bg} size={40} onPress={() => router.back()} /> : <Icon name="search" color={C.muted} />}
           <Pressable style={{ flex: 1, height: 44, justifyContent: 'center' }} onPress={() => router.push('/arama')} accessibilityRole="search">
             <Text style={{ fontSize: fs(15), color: C.muted }} numberOfLines={1}>{t('map.search')}</Text>
           </Pressable>

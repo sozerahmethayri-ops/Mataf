@@ -69,7 +69,8 @@ const L = {
   allTime: { tr: 'Toplam', en: 'All time', ar: 'الإجمالي' },
 };
 
-export default function Zikir() {
+/** `back`: yığın ekranında geri düğmesi; ana sayfada ve alt sekmede yok. */
+export default function Zikir({ back = true }: { back?: boolean } = {}) {
   const { lang } = useI18n();
   const lg = lang as Lang;
   const { prefs } = useTheme();
@@ -121,7 +122,7 @@ export default function Zikir() {
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: C.bg }} edges={['top', 'left', 'right']}>
       <ScrollView contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 32, gap: 14 }} keyboardShouldPersistTaps="handled">
-        <Header back title={pick(L.title, lg)} subtitle={`${pick(L.todayTotal, lg)}: ${todayTotal.toLocaleString(lang)}`} />
+        <Header back={back} title={pick(L.title, lg)} subtitle={`${pick(L.todayTotal, lg)}: ${todayTotal.toLocaleString(lang)}`} />
 
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8 }}>
           {all.map((d) => {

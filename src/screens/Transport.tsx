@@ -18,9 +18,10 @@ import makkahBus from '@/data/makkahBus.json';
 import { ANCHORS } from '@/data/sites';
 import { pick, useI18n } from '@/i18n';
 import { kmTo, useLocation } from '@/services/location';
+import { setNavItinerary } from '@/services/navStore';
 import { uaHeaders } from '@/services/cache';
 import {
-  fmtMinutes, mapsUrl, meters, osrmUrl, parseOsrm, parsePhoton, photonReverseUrl, photonUrl, placeLine, planTransit, roughRoute,
+  fmtMinutes, meters, osrmUrl, parseOsrm, parsePhoton, photonReverseUrl, photonUrl, placeLine, planTransit, roughRoute,
   shareText, uberUrl, type Itinerary, type LatLng, type LegKind, type Place, type StreetRoute, type Travel,
 } from '@/services/transport';
 import { covers, planRail, railNetwork, type RailData, type RailNet } from '@/services/railRouter';
@@ -55,7 +56,7 @@ const L = {
   routing: { tr: 'Rota hesaplanıyor…', en: 'Finding a route…', ar: 'جارٍ حساب المسار…' },
   approx: { tr: 'Rota sunucusuna ulaşılamadı. Süre kaba tahmindir.', en: "Couldn't reach the routing server. The time is a rough estimate.", ar: 'تعذّر الوصول إلى خادم المسارات. المدة تقديرية.' },
   noFrom: { tr: 'Konumunuz olmadan süre hesaplanamıyor; tarifi telefonun haritasında açabilirsiniz.', en: "Without your location the time can't be calculated; open directions in your maps app.", ar: 'بدون موقعك لا يمكن حساب المدة؛ افتح الاتجاهات في تطبيق الخرائط.' },
-  openMaps: { tr: 'Telefonun haritasında aç', en: 'Open in maps app', ar: 'افتح في تطبيق الخرائط' },
+  goTransit: { tr: 'Bu tarifle git', en: 'Go with this plan', ar: 'انطلق بهذه الخطة' },
   startWalk: { tr: 'Yürüyüş tarifini başlat', en: 'Start walking directions', ar: 'ابدأ اتجاهات المشي' },
   longWalk: { tr: 'Uzun bir yürüyüş. Sıcakta su alın; toplu taşıma ya da taksi daha uygun olabilir.', en: 'A long walk. Carry water in the heat; transit or a taxi may be better.', ar: 'مسافة مشي طويلة. احمل الماء في الحر؛ قد يكون النقل العام أو التاكسي أنسب.' },
   drive: { tr: 'Araçla yol tarifi', en: 'Driving directions', ar: 'اتجاهات القيادة' },
@@ -148,7 +149,8 @@ async function reverseAddress(p: LatLng): Promise<string> {
 
 type Recent = { items: Place[] };
 
-export default function TransportScreen() {
+/** `back`: yığın ekranı olarak açıldıysa (/yol, yol tarifi) başlıkta geri düğmesi; sekmedeyken yok. */
+export default function TransportScreen({ back = false }: { back?: boolean } = {}) {
   const { lang } = useI18n();
   const lg = lang as Lang;
   const l = (k: keyof typeof L) => pick(L[k], lg);
@@ -311,11 +313,17 @@ export default function TransportScreen() {
     </Card>
   );
 
-  const open = (m: Travel) => dest && Linking.openURL(mapsUrl(dest, m, Platform.OS, from2 ?? undefined));
+  // Navigasyon uygulamanın içinde (0.25.0): telefonun harita uygulamasına yönlendirme yok
+  const open = (m: Travel) => {
+    if (!dest) return;
+    if (m === 'transit') setNavItinerary(all[sel] ?? null);
+    router.push({ pathname: '/rota', params: { to: `${dest.lat.toFixed(6)},${dest.lng.toFixed(6)}`, name: dest.name, mode: m } });
+  };
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: C.bg }} edges={['top', 'left', 'right']}>
       <View style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 8, gap: 12 }}>
+        {back ? <IconBtn name="back" label={pick({ tr: 'Geri', en: 'Back', ar: 'رجوع' }, lg)} size={44} onPress={() => router.back()} /> : null}
         <Text style={[T.h1, { flex: 1 }]} accessibilityRole="header">{l('title')}</Text>
         <IconBtn name="settings" label={pick({ tr: 'Ayarlar', en: 'Settings', ar: 'الإعدادات' }, lg)} size={44} color={C.accent} onPress={() => router.push('/ayarlar')} />
       </View>
@@ -450,7 +458,7 @@ export default function TransportScreen() {
                     {!all.length && (!remote || Array.isArray(itins)) && !(rail && rail.walkOnly < 30) && <Text style={T.muted}>{l('transitNone')}</Text>}
                   </>
                 )}
-                <Btn title={l('openMaps')} kind={transitOn ? 'secondary' : 'primary'} icon="train" onPress={() => open('transit')} />
+                {all.length > 0 && <Btn title={l('goTransit')} icon="nav" onPress={() => open('transit')} />}
                 {rail && <Text style={T.small}>{l(railId === 'mkk' ? 'busSrc' : 'railSrc')}</Text>}
                 {remote && (
                   <Pressable onPress={() => Linking.openURL('https://transitous.org/sources/')} accessibilityRole="link">

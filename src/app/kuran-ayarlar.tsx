@@ -3,6 +3,8 @@ import { Pressable, ScrollView, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Icon } from '@/components/Icon';
+import { ModeList } from '@/components/QuranModes';
+import { nextZoom } from '@/components/QuranParts';
 import { Header, SectionTitle, Segmented, T } from '@/components/ui';
 import { C, fs, fsAr } from '@/constants/theme';
 import { QURAN_FONTS, lineFor, quranFont } from '@/data/quranFonts';
@@ -16,6 +18,9 @@ import { useAllQuranFonts } from '@/services/useQuranFont';
 
 const BESMELE = 'بِسْمِ ٱللَّهِ ٱلرَّحْمَٰنِ ٱلرَّحِيمِ';
 const L = {
+  view: { tr: 'Okuma biçimi', en: 'Reading view', ar: 'طريقة القراءة' },
+  viewSub: { tr: 'Kur’an hangi biçimde açılsın. Okurken de üstteki kitap düğmesinden değişir.', en: 'How the Quran opens. You can also change it while reading (book button at the top).', ar: 'كيف يُفتح القرآن. يمكن تغييره أثناء القراءة أيضًا.' },
+  size: { tr: 'Yazı boyu', en: 'Text size', ar: 'حجم الخط' },
   font: { tr: 'Hat (yazı stili)', en: 'Script style', ar: 'نوع الخط' },
   fontSub: { tr: 'Kur’an metni seçtiğiniz yazıyla gösterilir; arayüz değişmez.', en: 'The Quran text is shown in the style you choose; the rest of the app stays the same.', ar: 'يُعرض نص القرآن بالخط الذي تختاره، وتبقى الواجهة كما هي.' },
   title: { tr: 'Okuma ayarları', en: 'Reading settings', ar: 'إعدادات القراءة' },
@@ -64,6 +69,22 @@ export default function QuranSettings() {
   return (
     <ScrollView style={{ flex: 1, backgroundColor: C.bg }} contentContainerStyle={{ padding: 16, paddingTop: insets.top + 8, paddingBottom: insets.bottom + 32, gap: 10 }}>
       <Header back title={pick(L.title, lang)} />
+
+      <SectionTitle>{pick(L.view, lang)}</SectionTitle>
+      <Text style={T.small}>{pick(L.viewSub, lang)}</Text>
+      <ModeList lang={lang} value={prefs.view ?? 'ar+meal'} onPick={(v) => setPrefs({ view: v })} />
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, minHeight: 52, paddingHorizontal: 12, borderRadius: 14, backgroundColor: C.surface }}>
+        <Text style={{ flex: 1, fontSize: fs(15), fontWeight: '600', color: C.ink }}>{pick(L.size, lang)}</Text>
+        <Pressable onPress={() => setPrefs({ zoom: nextZoom(prefs.zoom ?? 1, -1) })} accessibilityRole="button" accessibilityLabel={`${pick(L.size, lang)} −`}
+          style={{ width: 48, height: 44, borderRadius: 12, backgroundColor: C.bg, alignItems: 'center', justifyContent: 'center' }}>
+          <Text style={{ fontSize: fs(15), fontWeight: '700', color: C.ink }}>A−</Text>
+        </Pressable>
+        <Text style={{ minWidth: 48, textAlign: 'center', fontSize: fs(14), fontWeight: '700', color: C.accent }}>{`${Math.round((prefs.zoom ?? 1) * 100)}%`}</Text>
+        <Pressable onPress={() => setPrefs({ zoom: nextZoom(prefs.zoom ?? 1, 1) })} accessibilityRole="button" accessibilityLabel={`${pick(L.size, lang)} +`}
+          style={{ width: 48, height: 44, borderRadius: 12, backgroundColor: C.bg, alignItems: 'center', justifyContent: 'center' }}>
+          <Text style={{ fontSize: fs(18), fontWeight: '700', color: C.ink }}>A+</Text>
+        </Pressable>
+      </View>
 
       <SectionTitle>{pick(L.font, lang)}</SectionTitle>
       <Text style={T.small}>{pick(L.fontSub, lang)}</Text>

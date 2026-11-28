@@ -1,7 +1,8 @@
 // Haremeyn Hızlı Treni: beş istasyon haritada ve listede (uzaklık, yol tarifi), yaklaşık süreler, bilet ve bagaj
 // bilgisi; sefer saatleri ve bilet için resmî siteye bağlantı.
 import { useMemo, useState } from 'react';
-import { Linking, Platform, Pressable, ScrollView, Text, View } from 'react-native';
+import { Linking, Pressable, ScrollView, Text, View } from 'react-native';
+import { router } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Icon } from '@/components/Icon';
@@ -12,7 +13,6 @@ import { C, fs } from '@/constants/theme';
 import { HHR_LINKS, HHR_STATIONS, HHR_TIMES, HHR_TIPS } from '@/data/train';
 import { pick, useI18n } from '@/i18n';
 import { useLocation } from '@/services/location';
-import { directionsUrl } from '@/services/mosques';
 import { meters } from '@/services/transport';
 
 type Lang = 'tr' | 'en' | 'ar';
@@ -78,7 +78,7 @@ export default function TrainScreen() {
                 <Text style={{ fontSize: fs(15), fontWeight: '600', color: C.ink }}>{pick(s.name, lg)}{nearest?.id === s.id && <Text style={{ fontSize: fs(12.5), fontWeight: '700', color: C.green }}>{`  ${pick(L.nearest, lg)}`}</Text>}</Text>
                 {(s.note || here) && <Text style={T.small}>{[s.note && pick(s.note, lg), here && fmtKm(meters(here, s))].filter(Boolean).join(' · ')}</Text>}
               </View>
-              <Pressable onPress={() => Linking.openURL(directionsUrl({ lat: s.lat, lng: s.lng }, Platform.OS))} accessibilityRole="button" hitSlop={6}
+              <Pressable onPress={() => router.push({ pathname: '/ulasim', params: { to: `${s.lat.toFixed(6)},${s.lng.toFixed(6)}`, name: pick(s.name, lg) } })} accessibilityRole="button" hitSlop={6}
                 style={{ height: 34, paddingHorizontal: 12, borderRadius: 17, backgroundColor: C.surface, justifyContent: 'center' }}>
                 <Text style={{ fontSize: fs(13), fontWeight: '700', color: C.accent }}>{pick(L.route, lg)}</Text>
               </Pressable>

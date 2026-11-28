@@ -26,7 +26,7 @@ Projenin kararları ve çalışma kuralları burada; bir karar değişince bu do
 
 ## Komutlar
 - `npm install`: postinstall `patches/expo-widgets+58.0.29.patch`'i uygular.
-- Her değişiklikten sonra üçü de temiz olmalı: `npm run typecheck`, `npm run lint`, `npm run check` (325 test, her satır `OK`). CI typecheck ve check çalıştırır.
+- Her değişiklikten sonra üçü de temiz olmalı: `npm run typecheck`, `npm run lint`, `npm run check` (342 test, her satır `OK`). CI typecheck ve check çalıştırır.
 - `npx expo start`: Expo Go'da kutular, özel ezan sesleri ve tam zamanlı alarm yok; yerel davranışı APK ya da duman testinde gör.
 - Web görüntüsü: `web-goruntu` skilli (`npx expo export -p web`, `tools/web-shots/shoot.py` + spec).
 - Emülatör duman testi (~25 dk): `duman-testi` skilli. Tek komut, arka planda: `python3 -I .claude/skills/duman-testi/scripts/smoke_check.py --start main` (başlatır, bekler, ölçütleri denetler, görüntüleri birleştirir).
@@ -46,10 +46,10 @@ Projenin kararları ve çalışma kuralları burada; bir karar değişince bu do
 ## Kod haritası
 | Yer | İçerik |
 |---|---|
-| `src/app/` | Rotalar. `(tabs)/`: `harita`, `kuran`, `index` (Ana sayfa), `ulasim`, `menu`. Diğerleri yığın ekranı; dosya adı yoldur (`vakitler`, `mushaf`, `umre`, `hac`, `tavaf`, `say`, `cemerat`, `erisim`, `tren`, …) |
-| `src/screens/` | Birden çok rotanın paylaştığı ekran gövdeleri: `HomePrayer`, `PrayerTimes`, `MapScreen` (+ `NearbyMap`: "Konumum" görünümü), `Tawaf`, `Zikir`, `Menu`, `QuranList`, `HadithScreen` |
+| `src/app/` | Rotalar. `(tabs)/`: `s1`, `s2` (yuva), `index` (Ana sayfa), `s4` (yuva), `menu`; yuvalarda Ayarlar'da seçilen bölüm (`screens/TabSlot`, `services/tabs`). Diğerleri yığın ekranı; dosya adı yoldur (`harita`, `kuran`, `ulasim` her zaman kendi bölümü; `rota` uygulama içi navigasyon, `nuzul`, `hac-umre`, `vakitler`, `mushaf`, `umre`, `hac`, `tavaf`, …) |
+| `src/screens/` | Birden çok rotanın paylaştığı ekran gövdeleri: `HomePrayer`, `PrayerTimes`, `MapScreen` (+ `NearbyMap`: "Konumum" görünümü), `Transport`, `Kible`, `HacUmre`, `TabSlot`, `Tawaf`, `Zikir`, `Menu`, `QuranList`, `HadithScreen` |
 | `src/components/` | `ui.tsx` (Screen, Header, Card, Btn, Chip, Segmented, ListRow, SelectRow, Toggle, StatusPill, `T` yazı stilleri), `Icon.tsx`, haritalar (`OnlineMap` + `onlineMapHtml.ts`, `PlainMap`, `TransportMap`, `CityMap`, `MosqueMap`), `HaramScene`, `SkyScene` + `sceneArt`, `WidgetPinRow`, `AdhanHost` |
-| `src/services/` | Mantık ve bağlamlar; React'sız olanlar testli: `prayer`, `adhanPlan`, `adhanNotify`, `prayedTask`, `location`, `transport`, `railRouter`, `transitText`, `routing`, `reports`, `tawaf`, `say`, `hac`, `kaza`, `offline`, `widgetProps`, `widgetSync`, `update`, `errorLog`, `ThemeContext`, … |
+| `src/services/` | Mantık ve bağlamlar; React'sız olanlar testli: `prayer`, `adhanPlan`, `adhanNotify`, `prayedTask`, `location`, `transport`, `navigation` (uygulama içi yol tarifi), `railRouter`, `transitText`, `routing`, `tabs`, `mapLib`, `reports`, `tawaf`, `say`, `hac`, `kaza`, `offline`, `widgetProps`, `widgetSync`, `update`, `errorLog`, `ThemeContext`, … |
 | `src/scene/` | Kendi 3D motorumuz: eğik izdüşüm (`oblique.ts`), Mekke ve Medine sahneleri, Kâbe modeli, tavaf sahnesi |
 | `src/data/` | Gömülü veri: kapılar, dualar, umre ve hac adımları, tren, erişim, `osm/` (3D binalar, hac yerleri), `istanbulRail.json`, `makkahBus.json` |
 | `src/widgets/` | Ana ekran kutuları ve kalıcı vakit bildirimi (`PrayerNotification`; her biri `'widget'` yönergeli, ayrı JS ortamı) |
@@ -102,13 +102,15 @@ Ayrıntı (renk tablosu, paletler, yazı ölçeği, aralıklar, hazır parçalar
 13. **Gizlilik:** aile konumu yalnız uygulama açıkken paylaşılır, geçmiş tutulmaz. Fotoğraflarda yüz bulanıklaştırma cihazda yapılacak. Kişisel veri URL'ye konmaz.
 14. **Veriden bilinçli sapmalar:** OSM'de turuncu işaretli kubbeler mermer tonunda; Yeşil Kubbe kasnak + sivri kubbe (~26 m); Medine çatısındaki 27 sürgülü kubbe çizilmez (yerleri bilinmiyor). Ana kapılar: Mekke 1, 79, 62, 45, 100 (Genel Kurum'un 2025 duyurusu); Medine 1, 41, 37, 20–22, 7–9, 33–35. Diğer kapılar OSM'den (0.23.0); OSM'nin Mekke kuzeyindeki 30–41 numaraları resmî duyuruyla çeliştiği için alınmadı. Rota ana kapıyı tercih eder (diğeri ancak 120 m'den fazla kısaysa).
 15. **Doğrulama üç katlı:** saf mantık testleri (Node), web ekran görüntüsü (Playwright), emülatör duman testi (API 34). Gerçek cihaz denemesi henüz yapılmadı.
+16. **Alt sekmeler değiştirilebilir (0.25.0):** 1., 2. ve 4. sekme yuvadır (`s1`, `s2`, `s4`); bölüm `theme:prefs.tabs`'ta, Ana sayfa ve Menü sabit. Bölümlerin yığın rotaları (`/harita`, `/kuran`, `/ulasim`, …) her zaman o bölümü açar, böylece eski bağlantılar kırılmaz; Menü bölüm sekmedeyse sekmeye gider.
+17. **Navigasyon uygulamanın içinde (0.25.0):** telefonun harita uygulamasına yönlendirme yok (proje sahibinin isteği); yürüme ve araçta OSRM adımları, toplu taşımada seçilen tarifin bacakları (`/rota`). Uber ve şoföre gösterme kartı kalır.
 
-## Tamamlanan özellikler (0.24.0)
+## Tamamlanan özellikler (0.25.0)
 Envanter, dosya yerleri ve özellik başına kararlar `docs/OZELLIKLER.md`'de; bir özelliğe dokunmadan önce oradaki maddesine bak, değişince güncelle. Sürüm sırasıyla kullanıcıya dönük ayrıntı README.md'nin başında. Gruplar: ana sayfa ve vakitler; namaz takibi, hatim, cuma, zikir (bağlılık); bildirimler ve "Kıldım"; ana ekran kutuları (Android); Harem haritası (3D/2D) ve navigasyon; hac ve umre; ulaşım (yürüme, araç, toplu taşıma, tren); yer (cami, şehir, otel, acil, aile); Kur'an okuma (mushaf, tecvid, hatlar, sayfa numaraları); ibadet içerikleri; genel (dil, tema, çevrimdışı, yedek, güncelleme, web).
 
 ## Şu anki durum
-- Sürüm 0.24.0 (versionCode 35). CI, APK ve web yeşil. APK: https://github.com/sozerahmethayri-ops/Mataf/releases/download/apk-latest/mataf.apk; web: https://sozerahmethayri-ops.github.io/Mataf/.
-- Doğrulandı: 325 mantık testi; web görüntüleri (Arapça sağdan sola dahil; 0.24.0'da web'de gerçek harita iframe'de açılıyor, +/− çalışıyor, 3D'de kapı numaraları ve "Konumum" görünümü); emülatörde çökme yok, beş kutu eklendi ve çizildi (namaz takibi kutusu 0.19.0, daireler 0.21.1; 0.22.0'da sayaç saniye saniye işliyor, varsayılan koyu ve %40 şeffaf zemin), Medine Mushafı hattı telefonda doğru çiziliyor (besmele tek, âyet sonu daireli), mushafta kaydırınca sonraki sayfa geliyor, 24 vakit alarmı kurulu (24 farklı an), bildirimdeki "Kıldım" uygulama kapalıyken arka planda işliyor (deneme bildirimi kapandı, görev çalıştı; 0.20.0), Mekke otobüs tarifi (7A) doğru. 0.23.0 emülatörde: kalıcı vakit bildirimi panelde (geri sayım işliyor, açınca altı vakit), yeni Kâbe simgesi başlatıcıda, Kur'an sekmesi ve mushaf düğmeleri doğru, kutu sayaçları kısa vakit adında da tam.
+- Sürüm 0.25.0 (versionCode 36). CI, APK ve web yeşil. APK: https://github.com/sozerahmethayri-ops/Mataf/releases/download/apk-latest/mataf.apk; web: https://sozerahmethayri-ops.github.io/Mataf/.
+- Doğrulandı: 342 mantık testi; web görüntüleri (Arapça sağdan sola dahil; 0.24.0'da web'de gerçek harita iframe'de açılıyor, +/− çalışıyor, 3D'de kapı numaraları ve "Konumum" görünümü); emülatörde çökme yok, beş kutu eklendi ve çizildi (namaz takibi kutusu 0.19.0, daireler 0.21.1; 0.22.0'da sayaç saniye saniye işliyor, varsayılan koyu ve %40 şeffaf zemin), Medine Mushafı hattı telefonda doğru çiziliyor (besmele tek, âyet sonu daireli), mushafta kaydırınca sonraki sayfa geliyor, 24 vakit alarmı kurulu (24 farklı an), bildirimdeki "Kıldım" uygulama kapalıyken arka planda işliyor (deneme bildirimi kapandı, görev çalıştı; 0.20.0), Mekke otobüs tarifi (7A) doğru. 0.23.0 emülatörde: kalıcı vakit bildirimi panelde (geri sayım işliyor, açınca altı vakit), yeni Kâbe simgesi başlatıcıda, Kur'an sekmesi ve mushaf düğmeleri doğru, kutu sayaçları kısa vakit adında da tam. 0.24.0 emülatörde: 2D harita gömülü kütüphaneyle 2–4 sn'de açılıyor (CDN'siz), duman testi temiz.
 - Doğrulanmadı: gerçek telefon, Mekke ve Medine'de saha, Samsung ve Xiaomi başlatıcıları.
 - Proje sahibinden beklenenler: Supabase URL ve Publishable key (GitHub secrets'a), sahada deneme, hoca kontrolü (gözden geçirme belgesi: https://claude.ai/artifact/BZSU1wpF6vLspLDwDCGiGc), dağıtım izni olan bir ezan kaydı.
 - Sürüm sürüm ayrıntılı notlar: claude.ai'deki "MATAF uygulama" projesinde `eksikler-ve-yol-haritasi.md`.
@@ -118,6 +120,7 @@ Envanter, dosya yerleri ve özellik başına kararlar `docs/OZELLIKLER.md`'de; b
 2. Supabase'i bağla (canlı kapı bildirimleri, aile konumu): `docs/SUPABASE.md`.
 3. Dinî metinleri hocanın düzeltmeleriyle güncelle (tecvid kuralları sayfası ve secde notu dahil). Diyanet'in mushaf hattı/sayfaları için Diyanet'ten (Mushafları İnceleme ve Kıraat Kurulu) izin: izin gelirse hat olarak eklenir.
 4. Bağlılık (ilke: suçlama yok, yarış ve sıralama yok, veri telefonda): Kur'an dışı günlük içerik (hadis) seçeneği.
+4a. Proje sahibinin istekleri, kaynak ya da izin bekleyenler (0.25.0): kelime kelime Türkçe meal (açık lisanslı kaynak yok; quran.com/Quran Foundation API'si anahtar istiyor ya da Diyanet izni); Türk kâriler (Fatih Çolak, İsmail Biçer, İsmail Coşar ve “Osman Hoca”, tam adı sorulacak: kayıtların izni); ana sayfada konuma göre İslam yapılarının gerçek fotoğrafları, gece/gündüz, hikâye ve belge (Wikimedia Commons; bulut ortamının ağ izni gerekli); hutbe bölümü (resmî haftalık hutbe metni; canlı çeviri için mikrofon izni, konuşma tanıma ve çeviri modülü).
 5. Ezan sesi: izinli kayıt; uygulama kapalıyken tam ezan için ön plan servisi.
 6. Toplu taşıma: Medine otobüs verisi; İstanbul vapurları (OSM'de durak üyeleri eksik); sefer saatli veri (GTFS); kullanıcı artarsa kendi MOTIS sunucusu.
 7. Kur'an dışı tavaf ve sa'y dualarına kâri kaydı (şimdi cihaz sesi okuyor).
@@ -143,6 +146,7 @@ Envanter, dosya yerleri ve özellik başına kararlar `docs/OZELLIKLER.md`'de; b
 - Harem 3D modeli OSM kadar doğru; mescit içi hizmet noktaları örnek veri.
 - Tecvid renkleri alquran.cloud `quran-tajweed` işaretlemesine dayanır (`[kural[metin]`); bulut oturumundan servis açılmadığı için gerçek metinle görülmedi, telefonda bakılmalı. Ayrıştırıcı tanınmayan işareti renksiz bırakır.
 - GitHub'da kullanılmayan `probe`, `smoke-run`, `widget-test` (0.22.0) ve `surum-023` (0.23.0; ikisi de `main`'e tek commit olarak alındı) dalları duruyor; bulut oturumundan silinemedi, elle silinebilir.
+- Uygulama içi navigasyon (0.25.0) gerçek cihazda ve sahada denenmedi; bulut oturumundan rota sunucusu açılmadığı için web görüntüsünde kuş uçuşu yedeği görüldü. Sesli yönlendirme cihazın metin okuma sesiyle.
 - Kalıcı vakit bildiriminin açık görünümünde çok dar ekranda (320 dp) ilk ve son vakit hücresinin kenarı kesilir; 360 dp ve üstünde sığar.
 
 ## Ortam notları

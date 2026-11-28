@@ -1,7 +1,7 @@
 import * as Location from 'expo-location';
 import { router } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, Linking, Platform, Pressable, ScrollView, Text, View } from 'react-native';
+import { ActivityIndicator, Linking, Pressable, ScrollView, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Svg, { Path } from 'react-native-svg';
 
@@ -13,7 +13,7 @@ import type { ML } from '@/data/sites';
 import { pick, useI18n } from '@/i18n';
 import { useHeading } from '@/services/location';
 import { searchMosques } from '@/services/mosqueStore';
-import { directionsUrl, distanceM, fmtDistance, relocate, walkMinutes, type LatLng, type Mosque, type SearchResult } from '@/services/mosques';
+import { distanceM, fmtDistance, relocate, walkMinutes, type LatLng, type Mosque, type SearchResult } from '@/services/mosques';
 import { walkRoute } from '@/services/osm';
 import { fmtTime, getMethod, nextPrayer, type MethodId } from '@/services/prayer';
 
@@ -198,9 +198,9 @@ export default function NearestMosque() {
                     {routing ? <ActivityIndicator color={C.green} /> : <Icon name="nav" size={18} color={C.green} />}
                     <Text style={{ fontSize: fs(15), fontWeight: '700', color: C.green }}>{pick(L.directions, lang)}</Text>
                   </Pressable>
-                  <Pressable onPress={() => Linking.openURL(directionsUrl(sel, Platform.OS))} accessibilityRole="button" accessibilityLabel={pick(L.route, lang)}
+                  <Pressable onPress={() => router.push({ pathname: '/rota', params: { to: `${sel.lat.toFixed(6)},${sel.lng.toFixed(6)}`, name: nameOf(sel), mode: 'walk' } })} accessibilityRole="button" accessibilityLabel={pick(L.route, lang)}
                     style={{ width: 48, height: 48, borderRadius: 24, borderWidth: 1.5, borderColor: '#FFFFFF', alignItems: 'center', justifyContent: 'center' }}>
-                    <Icon name="external" size={18} color="#FFFFFF" />
+                    <Icon name="walk" size={20} color="#FFFFFF" />
                   </Pressable>
                 </View>
               </View>

@@ -56,14 +56,32 @@ export function roughRoute(from: LatLng, to: LatLng, mode: 'foot' | 'car'): Stre
 }
 
 // ── Yürüme / araç (OSRM) ──
-export type StreetRoute = { coords: LatLng[]; meters: number; seconds: number; approximate: boolean };
+/** Adım adım yönlendirmenin bir adımı (OSRM manevrası); idx: rotanın koordinatlarında manevranın yeri */
+export type NavStep = { type: string; modifier?: string; exit?: number; name: string; distance: number; loc: LatLng; idx: number };
+export type StreetRoute = { coords: LatLng[]; meters: number; seconds: number; approximate: boolean; steps?: NavStep[] };
 export function osrmUrl(from: LatLng, to: LatLng, profile: 'foot' | 'car') {
-  return `https://routing.openstreetmap.de/routed-${profile}/route/v1/driving/${from.lng},${from.lat};${to.lng},${to.lat}?overview=full&geometries=geojson`;
+  return `https://routing.openstreetmap.de/routed-${profile}/route/v1/driving/${from.lng},${from.lat};${to.lng},${to.lat}?overview=full&geometries=geojson&steps=true`;
 }
-export function parseOsrm(json: { routes?: { distance: number; duration: number; geometry: { coordinates: [number, number][] } }[] }): StreetRoute | null {
+type OsrmStep = { distance: number; name?: string; maneuver: { type: string; modifier?: string; exit?: number; location: [number, number] } };
+export function parseOsrm(json: { routes?: { distance: number; duration: number; geometry: { coordinates: [number, number][] }; legs?: { steps?: OsrmStep[] }[] }[] }): StreetRoute | null {
   const r = json.routes?.[0];
   if (!r) return null;
-  return { coords: r.geometry.coordinates.map(([lng, lat]) => ({ lat, lng })), meters: r.distance, seconds: r.duration, approximate: false };
+  const coords = r.geometry.coordinates.map(([lng, lat]) => ({ lat, lng }));
+  // Her manevrayı rotadaki en yakın noktaya bağla (sırayla ilerleyerek: aynı yerden iki kez geçen rotada karışmasın)
+  let from = 0;
+  const steps: NavStep[] = (r.legs ?? []).flatMap((l) => l.steps ?? []).map((st) => {
+    const loc = { lat: st.maneuver.location[1], lng: st.maneuver.location[0] };
+    let best = from;
+    let bd = Infinity;
+    for (let i = from; i < coords.length; i++) {
+      const d = meters(coords[i], loc);
+      if (d < bd) { bd = d; best = i; }
+      if (bd < 1) break;
+    }
+    from = best;
+    return { type: st.maneuver.type, modifier: st.maneuver.modifier, exit: st.maneuver.exit, name: st.name ?? '', distance: st.distance, loc, idx: best };
+  });
+  return { coords, meters: r.distance, seconds: r.duration, approximate: false, ...(steps.length ? { steps } : null) };
 }
 
 // ── Toplu taşıma (Transitous / MOTIS 2) ──

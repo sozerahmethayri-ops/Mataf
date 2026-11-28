@@ -17,6 +17,8 @@ import { TesrikNote, tesrikActive } from '@/components/TesrikNote';
 import { ZikirCard } from '@/components/ZikirCard';
 import { C, fs, getTextScale, isDark, shadow } from '@/constants/theme';
 import { pick, useI18n } from '@/i18n';
+import { routeFor } from '@/services/tabs';
+import { useTheme } from '@/services/ThemeContext';
 import { hijriText, nextSpecial } from '@/services/hijri';
 import { PRAYERS, fmtTime, nextPrayer, shownDay, times, type PrayerKey } from '@/services/prayer';
 import { altitudeText, directionText, moonPhaseName, skyNow } from '@/services/sky';
@@ -83,6 +85,7 @@ function hajjTitle(p: HajjPhase, lg: Lang) {
 }
 
 export default function HomePrayer() {
+  const { prefs: theme } = useTheme();
   const { t, lang } = useI18n();
   const lg = lang as Lang;
   const insets = useSafeAreaInsets();
@@ -227,7 +230,7 @@ export default function HomePrayer() {
       <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 10 }}>
         <Shortcut icon="compass" label={pick(L.qibla, lg)} onPress={() => router.push('/kible')} />
         <Shortcut icon="beads" label={pick(L.zikr, lg)} onPress={() => router.push('/zikir')} />
-        <Shortcut icon="book" label={pick(L.quran, lg)} onPress={() => router.push('/kuran')} />
+        <Shortcut icon="book" label={pick(L.quran, lg)} onPress={() => router.push(routeFor('kuran', theme.tabs) as never)} />
         <Shortcut icon="pin" label={pick(L.mosque, lg)} onPress={() => router.push('/cami')} />
         {/* Mekke ya da Medine'deyken (ya da vakitler oraya göreyken) ziyaretçi kısayolları */}
         {pilgrim && nearMakkah && (hajj ? <Shortcut icon="sun" label={pick(L.hajj, lg)} onPress={() => router.push('/hac')} /> : <Shortcut icon="list" label={pick(L.umre, lg)} onPress={() => router.push('/umre')} />)}
@@ -235,7 +238,7 @@ export default function HomePrayer() {
         {pilgrim && <Shortcut icon="hotel" label={pick(L.hotel, lg)} onPress={() => router.push('/otel')} />}
         {pilgrim && <Shortcut icon="sos" label={pick(L.sos, lg)} onPress={() => router.push('/acil')} tint={C.closed} />}
         {pilgrim && !nearMakkah && <Shortcut icon="star" label={pick(L.rawdah, lg)} onPress={() => router.push('/ravza')} />}
-        {pilgrim && !nearMakkah && <Shortcut icon="map" label={pick(L.map, lg)} onPress={() => router.push('/harita')} />}
+        {pilgrim && !nearMakkah && <Shortcut icon="map" label={pick(L.map, lg)} onPress={() => router.push(routeFor('harita', theme.tabs) as never)} />}
       </View>
       {/* Her gün dönülen yerler: cuma (yalnız cuma), bugünkü namazlar, hatim planı (varsa), zikir hedefi (zikir yapılıyorsa), günün duası */}
       <FridayCard now={now} dhuhr={tt.dhuhr} tz={loc.tz} lg={lg} />

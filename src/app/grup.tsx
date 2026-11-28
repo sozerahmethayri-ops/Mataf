@@ -3,7 +3,7 @@
 // Sunucu yapılandırılmadıysa yalnız bu cihazda çalışan önizleme kullanılabilir.
 import { router, useFocusEffect } from 'expo-router';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Alert, Linking, Platform, Pressable, ScrollView, Share, Text, TextInput, View } from 'react-native';
+import { Alert, Pressable, ScrollView, Share, Text, TextInput, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Icon } from '@/components/Icon';
@@ -18,7 +18,6 @@ import { groupBackend } from '@/services/group';
 import { useGroup } from '@/services/GroupContext';
 import { freshness, inviteText, isValidCode, metersBetween, normalizeCode, sortMembers, type GroupMember } from '@/services/groupLogic';
 import { useLocation } from '@/services/location';
-import { directionsUrl } from '@/services/mosques';
 import { fmtMinutes, osrmUrl, parseOsrm, roughRoute, type StreetRoute } from '@/services/transport';
 
 type Lang = 'tr' | 'en' | 'ar';
@@ -47,7 +46,7 @@ const L = {
   noPos: { tr: 'konum yok', en: 'no location', ar: 'لا موقع' },
   off: { tr: 'paylaşmıyor', en: 'not sharing', ar: 'لا يشارك' },
   route: { tr: 'Yürüyüş', en: 'Walk', ar: 'مشي' },
-  open: { tr: 'Harita uygulamasında aç', en: 'Open in maps app', ar: 'افتح في الخرائط' },
+  open: { tr: 'Yol tarifi', en: 'Directions', ar: 'الاتجاهات' },
   leave: { tr: 'Gruptan çık', en: 'Leave group', ar: 'غادر المجموعة' },
   leaveQ: { tr: 'Gruptan çıkılsın mı? Konumunuz artık paylaşılmaz.', en: 'Leave the group? Your location will no longer be shared.', ar: 'مغادرة المجموعة؟' },
   cancel: { tr: 'Vazgeç', en: 'Cancel', ar: 'إلغاء' },
@@ -233,7 +232,7 @@ function GroupView({ lg }: { lg: Lang }) {
           );
         })}
         {selM && (
-          <Btn title={pick(L.open, lg)} kind="secondary" icon="nav" onPress={() => Linking.openURL(directionsUrl({ lat: selM.lat!, lng: selM.lng! }, Platform.OS))} />
+          <Btn title={pick(L.open, lg)} kind="secondary" icon="nav" onPress={() => router.push({ pathname: '/rota', params: { to: `${selM.lat!.toFixed(6)},${selM.lng!.toFixed(6)}`, name: selM.name, mode: 'walk' } })} />
         )}
         <Text style={T.small}>{pick(L.privacy, lg)}</Text>
         <Pressable onPress={leave} accessibilityRole="button" style={{ alignSelf: 'center', padding: 10, flexDirection: 'row', alignItems: 'center', gap: 6 }}>

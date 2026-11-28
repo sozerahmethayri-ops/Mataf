@@ -96,6 +96,14 @@ async def mocks(pg, here):
     await pg.route('**/photon.komoot.io/api/*', photon)
     await pg.route('**/api.alquran.cloud/v1/surah', quran_list)
     await pg.route('**/api.alquran.cloud/v1/surah/**', fail)
+    # Mushaf sayfası: düzeni görmek için her sayfaya Fâtiha (yalnız bu araçta; uygulamada metin API'den gelir)
+    FATIHA = ['بِسْمِ ٱللَّهِ ٱلرَّحْمَٰنِ ٱلرَّحِيمِ', 'ٱلْحَمْدُ لِلَّهِ رَبِّ ٱلْعَٰلَمِينَ', 'ٱلرَّحْمَٰنِ ٱلرَّحِيمِ', 'مَٰلِكِ يَوْمِ ٱلدِّينِ',
+              'إِيَّاكَ نَعْبُدُ وَإِيَّاكَ نَسْتَعِينُ', 'ٱهْدِنَا ٱلصِّرَٰطَ ٱلْمُسْتَقِيمَ',
+              'صِرَٰطَ ٱلَّذِينَ أَنْعَمْتَ عَلَيْهِمْ غَيْرِ ٱلْمَغْضُوبِ عَلَيْهِمْ وَلَا ٱلضَّآلِّينَ']
+    async def quran_page(route):
+        ayahs = [{'numberInSurah': i + 1, 'text': t, 'surah': {'number': 1, 'name': 'سُورَةُ ٱلْفَاتِحَةِ'}} for i, t in enumerate(FATIHA)]
+        await route.fulfill(status=200, headers=CORS, body=json.dumps({'data': {'ayahs': ayahs}}))
+    await pg.route('**/api.alquran.cloud/v1/page/**', quran_page)
     await pg.route('**/overpass**', fail)
     # OpenFreeMap: bulut oturumunda karo yok; arka planı çizen en küçük stil (harita iframe'i, işaretler ve düğmeler
     # denetlenebilsin). Yazı tipleri gelmez (etiketler çizilmez), karo istekleri düşer.

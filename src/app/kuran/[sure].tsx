@@ -1,24 +1,28 @@
 import { setAudioModeAsync, useAudioPlayer } from 'expo-audio';
+import { useKeepAwake } from 'expo-keep-awake';
 import { router, useLocalSearchParams } from 'expo-router';
 import { memo, useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, FlatList, Platform, Pressable, Share, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Icon } from '@/components/Icon';
-import { AR_DIGITS, MarkSheet, PageMark, QL, nextZoom } from '@/components/QuranParts';
+import { GoToSheet } from '@/components/QuranGoTo';
+import { ModeSheet, isPageMode, openReading } from '@/components/QuranModes';
+import { AR_DIGITS, MarkSheet, PageMark } from '@/components/QuranParts';
 import { Btn, Header, IconBtn, T } from '@/components/ui';
 import { C, fs, fsAr, shadow } from '@/constants/theme';
-import { MEAL_AUDIO, RECITERS, TRANSLIT, type QuranView } from '@/data/quranEditions';
+import { MEAL_AUDIO, RECITERS, TAFSIRS, TRANSLIT, type QuranView } from '@/data/quranEditions';
 import { SAJDAH_NOTE, SAJDAH_SIGN, isSajdah, stripSajdahSign, surahHasSajdah } from '@/data/sajdah';
 import { lineFor } from '@/data/quranFonts';
-import { pageOf } from '@/data/quranPages';
+import { pageAyahs, pageOf } from '@/data/quranPages';
 import type { ML } from '@/data/sites';
 import { pick, useI18n } from '@/i18n';
 import type { Lang } from '@/i18n/strings';
 import { getSurahAudio, getSurahText, surahName, type FullAyah } from '@/services/quran';
 import { useQuranPrefs, type Bookmark } from '@/services/QuranPrefs';
-import { juzOf } from '@/services/hatim';
+import { JUZ_STARTS, juzOf } from '@/services/hatim';
 import { surahLength } from '@/services/quranIndex';
+import { getTafsir } from '@/services/tafsir';
 import { useAsync } from '@/services/useAsync';
 import { useQuranFont } from '@/services/useQuranFont';
 import { stopVoice } from '@/services/voice';
@@ -26,18 +30,15 @@ import { stopVoice } from '@/services/voice';
 const L = {
   play: { tr: 'Dinle', en: 'Play', ar: 'استمع' },
   tafsir: { tr: 'Tefsir', en: 'Tafsir', ar: 'التفسير' },
-  settings: { tr: 'Okuma ayarları', en: 'Reading settings', ar: 'إعدادات القراءة' },
+  goto: { tr: 'Git: sûre, cüz, sayfa, ayraç', en: 'Go to: surah, juz, page, bookmark', ar: 'انتقل إلى: سورة، جزء، صفحة، علامة' },
+  view: { tr: 'Görünüm ve yazı boyu', en: 'View and text size', ar: 'طريقة العرض وحجم الخط' },
+  tafsirErr: { tr: 'Tefsir yüklenemedi (internet?)', en: 'Could not load the tafsir (internet?)', ar: 'تعذّر تحميل التفسير' },
   playAll: { tr: 'Sûreyi dinle', en: 'Play surah', ar: 'استمع إلى السورة' },
   repeat: { tr: 'Âyet tekrarı (ezber)', en: 'Repeat each verse (memorise)', ar: 'تكرار الآية (للحفظ)' },
   speed: { tr: 'Okuma hızı', en: 'Playback speed', ar: 'سرعة التلاوة' },
   meal: { tr: 'meal', en: 'translation', ar: 'الترجمة' },
   audioErr: { tr: 'Ses yüklenemedi; bağlantınızı kontrol edin.', en: 'Audio could not be loaded; check your connection.', ar: 'تعذّر تحميل الصوت؛ تحقق من الاتصال.' },
   surah: { tr: '. sûre', en: '', ar: '' },
-  vBoth: { tr: 'Mealli', en: 'With translation', ar: 'مع الترجمة' },
-  vAr: { tr: 'Arapça', en: 'Arabic', ar: 'العربية' },
-  vMeal: { tr: 'Meal', en: 'Translation', ar: 'الترجمة' },
-  vMushaf: { tr: 'Mushaf', en: 'Mushaf', ar: 'مصحف' },
-  vTecvid: { tr: 'Tecvid', en: 'Tajweed', ar: 'تجويد' },
   sajdah: { tr: 'Secde âyeti', en: 'Verse of prostration', ar: 'آية سجدة' },
   sub: { tr: '{n}. sûre · s. {p}', en: 'Surah {n} · p. {p}', ar: 'السورة {n} · ص {p}' },
   mark: { tr: 'Ayraç', en: 'Bookmark', ar: 'علامة' },
@@ -51,6 +52,7 @@ const REPEATS = [1, 3, 5, 10, 0];
 const RATES = [1, 1.25, 1.5, 0.75];
 
 export default function SurahReader() {
+  useKeepAwake();
   const { sure, b, a } = useLocalSearchParams<{ sure: string; b?: string; a?: string }>();
   const n = Number(sure) || 1;
   const { t, lang } = useI18n();
@@ -58,16 +60,16 @@ export default function SurahReader() {
   const view: QuranView = prefs.view ?? 'ar+meal';
   const active = bookmarks.find((x) => x.id === b);
   const [markFor, setMarkFor] = useState<number | null>(null);
+  const [sheet, setSheet] = useState<'goto' | 'view' | null>(null);
   const [attempt, setAttempt] = useState(0);
   const translit = prefs.translit ? TRANSLIT[lang === 'en' ? 'en' : 'tr'] : null;
   const res = useAsync(() => getSurahText(n, prefs.translation, translit), [n, prefs.translation, translit, attempt]);
   const ayahs = res.data?.ayahs ?? null;
   // Yazı büyütme: yalnız bu ekranda (genel yazı ölçeği değişince ekran baştan kurulurdu, yer kaybolurdu)
   const z = prefs.zoom ?? 1;
-  const zoomBy = (d: 1 | -1) => setPrefs({ zoom: nextZoom(z, d) });
   // Mushaf ve tecvid görünümü sayfa sayfa ekranda (sağa sola çevrilir): bu sûrenin (ya da ayracın) sayfasından açılır
   const startAyah = Number(a) || 0;
-  const pageView = view === 'mushaf' || view === 'tecvid';
+  const pageView = isPageMode(view);
   useEffect(() => {
     if (!pageView) return;
     router.replace({ pathname: '/mushaf', params: { p: String(pageOf(n, Math.max(1, startAyah))), ...(b ? { b } : null) } });
@@ -104,11 +106,13 @@ export default function SurahReader() {
   useEffect(() => { activeRef.current = active; saveRef.current = saveBookmark; surahRef.current = n; lastRef.current = (s, a) => setPrefs({ last: { s, a, p: pageOf(s, a) } }); });
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   useEffect(() => () => { if (saveTimer.current) clearTimeout(saveTimer.current); }, []);
+  const lastSeen = useRef(Math.max(1, startAyah));
   const [onViewable] = useState(() => ({ viewableItems }: { viewableItems: { item?: unknown }[] }) => {
     const bm = activeRef.current;
     const first = viewableItems[0]?.item as FullAyah | FullAyah[] | undefined;
     const ay = Array.isArray(first) ? first[0]?.n : first?.n;
     if (!ay) return;
+    lastSeen.current = ay;
     // Kaldığınız yer her zaman; ayraçla açıldıysa ayraç da (1,5 sn durunca)
     if (saveTimer.current) clearTimeout(saveTimer.current);
     saveTimer.current = setTimeout(() => {
@@ -186,22 +190,10 @@ export default function SurahReader() {
         <Header back title={surahName(n, lang)} subtitle={pick(L.sub, lang).replace('{n}', d(n)).replace('{p}', p1 === p2 ? d(p1) : `${d(p1)}–${d(p2)}`)}
           right={
             <View style={{ flexDirection: 'row', gap: 6 }}>
-              <IconBtn name="minus" label={pick(QL.zoomOut, lang)} onPress={() => zoomBy(-1)} />
-              <IconBtn name="plus" label={pick(QL.zoomIn, lang)} onPress={() => zoomBy(1)} />
-              <IconBtn name="settings" label={pick(L.settings, lang)} onPress={() => router.push('/kuran-ayarlar')} />
+              <IconBtn name="search" label={pick(L.goto, lang)} onPress={() => setSheet('goto')} />
+              <IconBtn name="book" label={pick(L.view, lang)} onPress={() => setSheet('view')} />
             </View>
           } />
-      </View>
-      <View style={{ flexDirection: 'row', gap: 6, paddingHorizontal: 16, paddingTop: 8, paddingBottom: 4 }}>
-        {([['ar+meal', L.vBoth], ['ar', L.vAr], ['meal', L.vMeal], ['mushaf', L.vMushaf], ['tecvid', L.vTecvid]] as [QuranView, ML][]).map(([v, lab]) => {
-          const on = v === view;
-          return (
-            <Pressable key={v} onPress={() => setPrefs({ view: v })} accessibilityRole="radio" accessibilityState={{ selected: on }}
-              style={{ flex: 1, height: 36, borderRadius: 18, alignItems: 'center', justifyContent: 'center', backgroundColor: on ? C.accent : C.surface }}>
-              <Text style={{ fontSize: fs(12), fontWeight: on ? '700' : '500', color: on ? C.onAccent : C.ink }} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8}>{pick(lab, lang)}</Text>
-            </Pressable>
-          );
-        })}
       </View>
       {active && (
         <View style={{ marginHorizontal: 16, marginTop: 4, flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 10, paddingVertical: 6, borderRadius: 12, backgroundColor: C.accentSoft }}>
@@ -235,7 +227,7 @@ export default function SurahReader() {
             </View>
           }
           renderItem={({ item, index }) => (
-            <AyahRow a={item} index={index} n={n} view={view} lang={lang} active={now?.idx === index}
+            <AyahRow a={item} index={index} n={n} view={view} tafsirId={prefs.tafsir} lang={lang} active={now?.idx === index}
               arFont={qff} arSize={arSize(24)} arLine={arLine(arSize(24), fsAr(40) * z)} z={z} act={act} />
           )}
           ListFooterComponent={
@@ -274,6 +266,19 @@ export default function SurahReader() {
       )}
       <MarkSheet visible={markFor != null} ayah={markFor ?? 1} surah={n} lang={lang} bookmarks={bookmarks}
         onPick={(bm) => { saveBookmark({ ...bm, surah: n, ayah: markFor ?? 1 }); setMarkFor(null); }} onClose={() => setMarkFor(null)} />
+      <GoToSheet visible={sheet === 'goto'} lang={lang} bookmarks={bookmarks} onClose={() => setSheet(null)}
+        onGo={(t, bId) => {
+          setSheet(null);
+          const [ts, ta] = t.kind === 'ayah' ? [t.s, t.a] : t.kind === 'page' ? pageAyahs(t.p)[0] : JUZ_STARTS[t.j - 1];
+          if (ts === n && !bId) { try { scrollToAyah(Math.min(ta, ayahs?.length ?? ta)); } catch { /* yok say */ } return; }
+          router.replace({ pathname: '/kuran/[sure]', params: { sure: String(ts), a: String(ta), ...(bId ? { b: bId } : null) } });
+        }} />
+      <ModeSheet visible={sheet === 'view'} lang={lang} value={view} zoom={z} onClose={() => setSheet(null)}
+        onZoom={(nz) => setPrefs({ zoom: nz })}
+        onPick={(v) => {
+          setPrefs({ view: v });
+          if (isPageMode(v)) { setSheet(null); openReading(v, n, lastSeen.current, { b, replace: true }); }
+        }} />
     </SafeAreaView>
   );
 }
@@ -289,13 +294,13 @@ function Chipish({ icon, label, onPress }: { icon: string; label: string; onPres
 }
 
 type RowActs = { play: (i: number) => void; mark: (ayah: number) => void };
-type RowProps = { a: FullAyah; index: number; n: number; view: QuranView; lang: Lang; active: boolean; arFont?: string; arSize: number; arLine: number; z: number; act: RowActs };
+type RowProps = { a: FullAyah; index: number; n: number; view: QuranView; tafsirId: string; lang: Lang; active: boolean; arFont?: string; arSize: number; arLine: number; z: number; act: RowActs };
 
 /**
  * Tek âyet satırı (sayfa işareti, Arapça, okunuş, meal, düğmeler). Ayrı ve hafızalı: dinlerken yalnız çalan satır,
  * yazı büyütünce yalnız yüklü satırlar yeniden çizilir (önceden her değişiklikte bütün liste yeniden kuruluyordu).
  */
-const AyahRow = memo(function AyahRow({ a, index, n, view, lang, active, arFont, arSize, arLine, z, act }: RowProps) {
+const AyahRow = memo(function AyahRow({ a, index, n, view, tafsirId, lang, active, arFont, arSize, arLine, z, act }: RowProps) {
   const newPage = index === 0 || pageOf(n, a.n) !== pageOf(n, a.n - 1);
   const sj = isSajdah(n, a.n);
   return (
@@ -314,7 +319,8 @@ const AyahRow = memo(function AyahRow({ a, index, n, view, lang, active, arFont,
           </View>
         )}
         {view === 'ar+meal' && a.translit ? <Text style={{ fontSize: fs(14) * z, fontStyle: 'italic', color: C.muted, lineHeight: fs(20) * z }}>{a.translit}</Text> : null}
-        {view === 'ar+meal' && a.meal ? <Text style={[T.body, { fontSize: fs(15) * z, lineHeight: fs(22) * z }]}>{a.meal}</Text> : null}
+        {(view === 'ar+meal' || view === 'tefsir') && a.meal ? <Text style={[T.body, { fontSize: fs(15) * z, lineHeight: fs(22) * z }]}>{a.meal}</Text> : null}
+        {view === 'tefsir' ? <TafsirBlock id={tafsirId} s={n} a={a.n} lang={lang} z={z} /> : null}
         <View style={{ flexDirection: 'row', gap: 8 }}>
           <Chipish icon="play" label={pick(L.play, lang)} onPress={() => act.play(index)} />
           <Chipish icon="tafsir" label={pick(L.tafsir, lang)} onPress={() => router.push({ pathname: '/tefsir', params: { s: String(n), a: String(a.n) } })} />
@@ -325,3 +331,20 @@ const AyahRow = memo(function AyahRow({ a, index, n, view, lang, active, arFont,
     </>
   );
 });
+
+/** "Tefsirli" biçimde âyetin altındaki tefsir (seçili tefsir kaynağı; satır göründüğünde yüklenir, cihazda saklanır). */
+function TafsirBlock({ id, s, a, lang, z }: { id: string; s: number; a: number; lang: Lang; z: number }) {
+  const r = useAsync(() => getTafsir(id, s, a), [id, s, a]);
+  const src = TAFSIRS.find((x) => x.id === id);
+  const rtl = src?.lang === 'ar' || src?.lang === 'ur' || src?.lang === 'fa' || src?.lang === 'ps' || src?.lang === 'ug';
+  return (
+    <View style={{ gap: 6, padding: 12, borderRadius: 14, backgroundColor: C.surface }}>
+      <Text style={{ fontSize: fs(12), fontWeight: '700', color: C.accent }}>{pick(L.tafsir, lang)}{src ? ` · ${src.name}` : ''}</Text>
+      {r.loading ? <ActivityIndicator color={C.accent} /> : r.error ? (
+        <Text style={T.small}>{pick(L.tafsirErr, lang)}</Text>
+      ) : r.data ? (
+        <Text style={[T.body, { fontSize: fs(14.5) * z, lineHeight: fs(22) * z, textAlign: rtl ? 'right' : 'left', writingDirection: rtl ? 'rtl' : 'ltr' }]}>{r.data}</Text>
+      ) : null}
+    </View>
+  );
+}

@@ -40,6 +40,7 @@ const L = {
   juzFrom: { tr: '{s} {a} · sayfa {p}', en: '{s} {a} · page {p}', ar: '{s} {a} · صفحة {p}' },
   hatim: { tr: 'Hatim planı: her gün bir bölüm', en: 'Khatm plan: a daily portion', ar: 'خطة الختمة: ورد يومي' },
   tajweed: { tr: 'Tecvid kuralları ve renkleri', en: 'Tajweed rules and colours', ar: 'أحكام التجويد وألوانها' },
+  nuzul: { tr: 'Nüzul sırası: sûreler indiği sırayla', en: 'Order of revelation', ar: 'ترتيب النزول' },
   settings: { tr: 'Okuma ayarları', en: 'Reading settings', ar: 'إعدادات القراءة' },
 } satisfies Record<string, ML>;
 
@@ -119,7 +120,7 @@ function Marks({ items, lang, list, onRemove }: { items: Bookmark[]; lang: 'tr' 
   );
 }
 
-function LinkRow({ icon, label, onPress }: { icon: 'bookmark' | 'text' | 'settings'; label: string; onPress: () => void }) {
+function LinkRow({ icon, label, onPress }: { icon: 'bookmark' | 'text' | 'settings' | 'clock'; label: string; onPress: () => void }) {
   return (
     <Pressable onPress={onPress} accessibilityRole="button" style={({ pressed }) => ({ minHeight: 44, flexDirection: 'row', alignItems: 'center', gap: 8, opacity: pressed ? 0.7 : 1 })}>
       <Icon name={icon} size={18} color={C.accent} />
@@ -129,7 +130,8 @@ function LinkRow({ icon, label, onPress }: { icon: 'bookmark' | 'text' | 'settin
   );
 }
 
-export default function QuranList() {
+/** `back`: /kuran yığın ekranı olarak açıldıysa başlıkta geri düğmesi; alt sekmedeyken yok. */
+export default function QuranList({ back = false }: { back?: boolean } = {}) {
   const { t, lang } = useI18n();
   const { bookmarks, removeBookmark } = useQuranPrefs();
   const [list, setList] = useState<SurahMeta[] | null>(null);
@@ -175,6 +177,7 @@ export default function QuranList() {
         <View style={{ gap: 4 }}>
           <Marks items={bookmarks} lang={lang} list={list} onRemove={removeBookmark} />
           <LinkRow icon="bookmark" label={pick(L.hatim, lang)} onPress={() => router.push('/hatim')} />
+          <LinkRow icon="clock" label={pick(L.nuzul, lang)} onPress={() => router.push('/nuzul')} />
           <LinkRow icon="text" label={pick(L.tajweed, lang)} onPress={() => router.push('/tecvid')} />
           <LinkRow icon="settings" label={pick(L.settings, lang)} onPress={() => router.push('/kuran-ayarlar')} />
         </View>
@@ -187,7 +190,7 @@ export default function QuranList() {
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: C.bg }} edges={['top', 'left', 'right']}>
       <View style={{ paddingHorizontal: 16, gap: 10, paddingBottom: 8 }}>
-        <Header title={t('quran.title')} right={(
+        <Header back={back} title={t('quran.title')} right={(
           <Pressable onPress={() => router.push('/kuran-ayarlar')} accessibilityRole="button" accessibilityLabel={pick(L.settings, lang)} hitSlop={8}>
             <Icon name="settings" color={C.muted} />
           </Pressable>

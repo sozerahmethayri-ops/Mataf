@@ -58,7 +58,7 @@
 | photon.komoot.io (amenity:hospital/clinic) | Acil durum: en yakın hastaneler | ODbL |
 | tiles.openfreemap.org | Uygulama içi online harita (vektör karolar, liberty/dark stilleri) | Ücretsiz, anahtarsız; © OpenMapTiles © OpenStreetMap — haritanın köşesinde atıf |
 | maplibre-gl 5.24.1 (uygulamaya gömülü: `assets/maplibre/maplibre-gl-5.24.1.html`, `tools/maplibre/build.mjs`; yedek unpkg.com / cdn.jsdelivr.net) | Harita çizim kütüphanesi (WebView içinde, web'de iframe) | BSD-3-Clause (lisans dosyanın başında); 0.24.0'dan beri CDN yalnız yedek |
-| routing.openstreetmap.de | Yaya rotası | FOSSGIS kullanım koşulları; yoğun kullanımda kendi OSRM sunucunuzu kurun |
+| routing.openstreetmap.de | Yaya ve araç rotası; 0.25.0'dan beri adımlarıyla (`steps=true`: uygulama içi navigasyonun talimatları) | FOSSGIS kullanım koşulları; yoğun kullanımda kendi OSRM sunucunuzu kurun |
 | Çevrimdışı paket: tiles.openfreemap.org (planet TileJSON, vektör karolar z0–14, liberty/dark stilleri, yazı tipleri, simgeler) | Mekke/Medine haritası internetsiz | © OpenMapTiles © OpenStreetMap; karolar telefona bir kez indirilir (Mekke ~130, Medine ~80 karo) |
 | Çevrimdışı paket: api.alquran.cloud/v1/quran/<baskı> | Kur'an metni ve seçili mealler internetsiz | Arapça metin Tanzil; meal hakları sahiplerine aittir |
 | Çevrimdışı paket: cdn.islamic.network/quran/audio | Dua kütüphanesindeki Kur'an ayetlerinin sesleri | Kayıt hakları kâri/yayıncılara aittir |
@@ -97,3 +97,5 @@ Seçim ölçütü: Uthmani metnin bütün Kur'an işaretlerini (U+06D6–U+06ED,
 ## Mushaf sayfa numaraları
 
 Medine Mushafı (Hafs) düzeni, 604 sayfa: her sayfanın ilk âyeti `src/data/quranPages.ts`'te. Kaynak: [quran-meta](https://github.com/quran-center/quran-meta) 7.0.0 (MIT, Huseyn Guliyev). Paketin kodu çalıştırılmadan dosyasından okundu; bilinen sayfalarla denetlendi (Bakara 1 = s. 2, Bakara 142 = s. 22, Kehf 45 = s. 298, Nebe 1 = s. 582, İhlâs 1 = s. 604). Türkiye baskılarının (ör. Hafız Osman hattı) sayfa düzeni bundan farklı olabilir.
+
+Nüzul sırası (0.25.0, `src/data/nuzul.ts`): Kahire 1924 mushafının geleneksel sırası, aynı quran-meta 7.0.0 üzerinden (Tanzil ile aynı); ilk 86 sûre Mekkî, son 28 Medenî. Birkaç sûrenin Mekkî/Medenî oluşu tartışmalıdır (ekranda yazılı). Dönemler ve "İlk vahiy" kartı proje sahibinin video belgesinden; olay kaynağı Buhârî, Bed'ü'l-vahy 3–4 ve Müslim, Îmân 252 (160). Henüz bir ilahiyatçı kontrolünden geçmedi.

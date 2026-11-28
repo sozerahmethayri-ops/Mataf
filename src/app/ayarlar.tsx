@@ -15,6 +15,7 @@ import { loadNotifPrefs } from '@/services/adhanNotify';
 import { METHODS, getMethod, setMethod, type MethodId } from '@/services/prayer';
 import { useReports } from '@/services/ReportsContext';
 import { useTheme, type HomeId } from '@/services/ThemeContext';
+import { TAB_IDS, normTabs, setSlot, type TabId } from '@/services/tabs';
 import { checkUpdate } from '@/services/update';
 import { shareApp } from '@/services/shareApp';
 import { clearErrors, getErrors, shareErrors } from '@/services/errorLog';
@@ -27,6 +28,23 @@ const TEXT_STEPS: { v: number; l: { tr: string; en: string; ar: string } }[] = [
   { v: 1.3, l: { tr: 'Çok büyük', en: 'Larger', ar: 'أكبر' } },
 ];
 const AR_STEPS: { v: number; l: string }[] = [{ v: 0.85, l: 'A−' }, { v: 1, l: 'A' }, { v: 1.2, l: 'A+' }, { v: 1.4, l: 'A++' }, { v: 1.6, l: 'A+++' }];
+/** Alt sekmelere konabilecek bölümler (0.25.0) */
+const TAB_LABEL: Record<TabId, { tr: string; en: string; ar: string }> = {
+  harita: { tr: 'Harita', en: 'Map', ar: 'الخريطة' },
+  kuran: { tr: "Kur'an", en: 'Quran', ar: 'القرآن' },
+  ulasim: { tr: 'Ulaşım', en: 'Transport', ar: 'التنقل' },
+  hac: { tr: 'Hac ve umre', en: 'Hajj and Umrah', ar: 'الحج والعمرة' },
+  vakitler: { tr: 'Namaz vakitleri', en: 'Prayer times', ar: 'مواقيت الصلاة' },
+  kible: { tr: 'Kıble', en: 'Qibla', ar: 'القبلة' },
+  zikir: { tr: 'Zikirmatik', en: 'Dhikr counter', ar: 'المسبحة' },
+  hadis: { tr: 'Hadis ve dualar', en: 'Hadith and du‘as', ar: 'الحديث والدعاء' },
+};
+const SLOT_NAMES = [
+  { tr: '1. sekme (solda)', en: 'Tab 1 (left)', ar: 'التبويب 1' },
+  { tr: '2. sekme', en: 'Tab 2', ar: 'التبويب 2' },
+  { tr: '4. sekme', en: 'Tab 4', ar: 'التبويب 4' },
+];
+
 const HOMES: { id: HomeId; l: { tr: string; en: string; ar: string } }[] = [
   { id: 'vakit', l: { tr: 'Sade ezan vakitleri (önerilen)', en: 'Minimal prayer times (recommended)', ar: 'مواقيت الصلاة المبسطة' } },
   { id: 'vakitler', l: { tr: 'Ayrıntılı namaz vakitleri', en: 'Detailed prayer times', ar: 'مواقيت الصلاة المفصلة' } },
@@ -66,6 +84,8 @@ const L = {
   arabic: { tr: 'Arapça yazı boyutu (Kur’an, dua)', en: 'Arabic text size (Quran, du‘a)', ar: 'حجم الخط العربي' },
   sample: { tr: 'Örnek: Bugün öğle namazı 12:08’de.', en: 'Sample: Dhuhr today is at 12:08.', ar: 'مثال: الظهر اليوم الساعة ١٢:٠٨' },
   home: { tr: 'Ana sayfa', en: 'Home screen', ar: 'الصفحة الرئيسية' },
+  tabs: { tr: 'Alt sekmeler', en: 'Bottom tabs', ar: 'التبويبات السفلية' },
+  tabsSub: { tr: 'Alttaki 1., 2. ve 4. sekmeye istediğiniz bölümü koyun. Ana sayfa ortada, Menü sonda kalır.', en: 'Choose what tabs 1, 2 and 4 show. Home stays in the middle, Menu at the end.', ar: 'اختر ما تعرضه التبويبات 1 و2 و4. تبقى الرئيسية في الوسط والقائمة في الآخر.' },
   homeNote: { tr: 'Alttaki ortadaki düğme bu ekranı açar.', en: 'The middle button at the bottom opens this screen.', ar: 'الزر الأوسط في الأسفل يفتح هذه الشاشة.' },
   behaviour: { tr: 'Kullanım', en: 'Behaviour', ar: 'الاستخدام' },
   map3d: { tr: 'Haram/Nebevî haritası 3D açılsın', en: 'Open the Haram/Nabawi map in 3D', ar: 'فتح الخريطة ثلاثية الأبعاد' },
@@ -177,6 +197,13 @@ export default function Settings() {
       <SectionTitle>{l('home')}</SectionTitle>
       <SelectRow<HomeId> title={l('homeScreen')} value={theme.home} options={HOMES.map((h) => ({ value: h.id, label: pick(h.l, lg) }))}
         onChange={(id) => setTheme({ home: id })} left={<Icon name="home" color={C.accent} />} />
+
+      <SectionTitle>{l('tabs')}</SectionTitle>
+      <Text style={T.small}>{l('tabsSub')}</Text>
+      {normTabs(theme.tabs).map((cur, i) => (
+        <SelectRow<TabId> key={i} title={pick(SLOT_NAMES[i], lg)} value={cur} options={TAB_IDS.map((id) => ({ value: id, label: pick(TAB_LABEL[id], lg) }))}
+          onChange={(id) => setTheme({ tabs: setSlot(theme.tabs, i, id) })} left={<Icon name="grid" color={C.accent} />} />
+      ))}
 
       <SectionTitle>{l('behaviour')}</SectionTitle>
       <ToggleRow title={l('map3d')} sub={l('map3dSub')} value={theme.map3d} onChange={(v) => setTheme({ map3d: v })} />

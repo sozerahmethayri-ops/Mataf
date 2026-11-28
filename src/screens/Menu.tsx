@@ -9,6 +9,8 @@ import { shareApp } from '@/services/shareApp';
 import { C, fs } from '@/constants/theme';
 import { RAWDAH } from '@/data/content';
 import { pick, useI18n } from '@/i18n';
+import { resolveTabPath } from '@/services/tabs';
+import { useTheme } from '@/services/ThemeContext';
 
 type Lang = 'tr' | 'en' | 'ar';
 // sos: kırmızı yazılır (Acil durum); öbürlerinin simgesi tek renk (renkli simge zeminleri şablon gibi duruyordu, 0.13.5)
@@ -91,13 +93,15 @@ function fold(x: string) {
 }
 
 export default function Menu() {
+  const { prefs: theme } = useTheme();
   const { lang } = useI18n();
   const lg = lang as Lang;
   const insets = useSafeAreaInsets();
   const [q, setQ] = useState('');
   const fq = fold(q.trim());
   const found = fq ? ALL.filter((it) => [it.title.tr, it.title.en, it.title.ar].some((x) => fold(x).includes(fq))) : null;
-  const open = (it: Item) => (it.url ? Linking.openURL(it.url) : it.to === 'share:app' ? shareApp(lg) : router.push(it.to as never));
+  // Harita, Kur'an ve Ulaşım alt sekmedeyse o sekmeye, değilse kendi ekranına (0.25.0: sekmeler değiştirilebilir)
+  const open = (it: Item) => (it.url ? Linking.openURL(it.url) : it.to === 'share:app' ? shareApp(lg) : router.push(resolveTabPath(it.to ?? '/', theme.tabs) as never));
   return (
     <ScrollView style={{ flex: 1, backgroundColor: C.bg }} contentContainerStyle={{ paddingTop: insets.top + 12, paddingHorizontal: 16, paddingBottom: 28, gap: 18 }}>
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>

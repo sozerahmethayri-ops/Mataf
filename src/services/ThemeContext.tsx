@@ -8,6 +8,7 @@ import { useColorScheme, View } from 'react-native';
 
 import { C, applyTextScale, applyTheme, type PaletteId, type ThemeMode } from '@/constants/theme';
 import { usePersisted } from './usePersisted';
+import type { TabId } from './tabs';
 import type { WidgetStyle } from './widgetProps';
 
 export type HomeId = 'vakit' | 'vakitler' | 'kuran' | 'harita' | 'tavaf' | 'zikir' | 'hadis';
@@ -32,6 +33,8 @@ export type ThemePrefs = {
   widget: WidgetStyle;
   /** Kutu zemininin şeffaflığı, % (0–80) */
   widgetClear: number;
+  /** Alt çubuğun 1., 2. ve 4. sekmesindeki bölümler (0.25.0; yoksa Harita, Kur'an, Ulaşım): services/tabs.ts */
+  tabs?: TabId[];
 };
 const DEFAULTS: ThemePrefs = { mode: 'system', palette: 'kabe', text: 1, arabic: 1, home: 'vakit', map3d: true, reduceMotion: false, haptics: true, swipeTabs: true, widget: 'dark', widgetClear: 40 };
 type Ctx = { prefs: ThemePrefs; dark: boolean; key: string; setTheme: (p: Partial<ThemePrefs>) => void };

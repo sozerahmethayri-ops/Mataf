@@ -8,6 +8,10 @@ import { CORNERS, KAABA_POLY, adjustLap, bearingOf, initialLap, pointAt, startMa
 import { globalAyah, surahLength } from '../src/services/quranIndex';
 import { juzStartPage, parseQuranQuery } from '../src/services/quranNav';
 import { MAPLIBRE_VERSION, onlineMapHtml } from '../src/components/onlineMapHtml';
+import { MECCAN_COUNT, NUZUL_EPISODES, NUZUL_ORDER, nuzulRank } from '../src/data/nuzul';
+import { MODES, isPageMode } from '../src/data/quranModes';
+import { normTabs, resolveTabPath, routeFor, setSlot } from '../src/services/tabs';
+import { distText, legText, offRoute, progress, spokenText, stepText } from '../src/services/navigation';
 import { DUA_LIB, isQuranRef } from '../src/data/duas';
 import { TAWAF_DHIKR, type DuaText } from '../src/data/tawaf';
 import { OVERPASS_ENDPOINTS, bearingDeg, distanceM, findMosques, parseOverpass, parsePhotonMosques, pickMosques, type El, type Fetcher } from '../src/services/mosques';
@@ -62,7 +66,7 @@ import { nextSpecial } from '../src/services/hijri';
 import { SKIP, parseBackup } from '../src/services/backupFormat';
 import { AREAS, GLYPH_RANGES, fontStacks, lat2tile, lon2tile, resolveMataf, rewriteStyle, spriteRoot, tilesFor } from '../src/services/offlineMath';
 import { daysToFinish, initialKaza, lastDays, markKaza, prayersLeft, remaining, setOwedDays, toDays } from '../src/services/kaza';
-import { decodePolyline, legKind, mapsUrl, parseMotis, parseOsrm, parsePhoton, planTransit, roughRoute, transitUserAgent, uberUrl, meters } from '../src/services/transport';
+import { decodePolyline, legKind, mapsUrl, osrmUrl, parseMotis, parseOsrm, parsePhoton, planTransit, roughRoute, transitUserAgent, uberUrl, meters } from '../src/services/transport';
 
 const now = Date.now();
 const r = (gateId: string, status: GateStatus, user: string, minsAgo: number, official = false): Report =>
@@ -1149,4 +1153,47 @@ mosqueChecks().then(transitChecks).then(() => process.exit(fails ? 1 : 0));
   ok(inl.includes('window.maplibregl={x:1}') && inl.includes('if(i===0&&window.maplibregl)'), 'harita sayfası: gömülü kütüphane satır içi, CDN atlanır');
   ok(onlineMapHtml(th).includes('unpkg.com/maplibre-gl@') && !onlineMapHtml(th).includes('window.maplibregl={'), 'harita sayfası: kütüphane yoksa CDN yedeği');
   ok(onlineMapHtml({ ...th, frame: 'm7' }).includes('"frame":"m7"') && onlineMapHtml(th).includes('"frame":null'), 'harita sayfası: web iframe kimliği');
+}
+
+{
+  // Nüzul sırası ve okuma biçimleri (0.25.0)
+  ok(NUZUL_ORDER.length === 114 && new Set(NUZUL_ORDER).size === 114 && NUZUL_ORDER.every((s) => s >= 1 && s <= 114), 'nüzul: 114 sûre, her biri bir kez');
+  ok(NUZUL_ORDER[0] === 96 && NUZUL_ORDER[4] === 1 && NUZUL_ORDER[86] === 2 && NUZUL_ORDER[113] === 110, 'nüzul: ilk Alak, 5. Fâtiha, 87. Bakara, son Nasr');
+  ok(MECCAN_COUNT === 86 && nuzulRank(96) === 1 && nuzulRank(110) === 114, 'nüzul: Mekke 86, sıra numarası');
+  ok(NUZUL_EPISODES.every((e) => e.from >= 1 && e.to <= surahLength(e.s) && e.key === `${e.s}:${e.from}-${e.to}` && !!e.sources), 'nüzul kartları: anahtar âyet aralığıyla aynı, kaynak yazılı');
+  ok(MODES.length === 6 && new Set(MODES.map((m) => m.v)).size === 6 && MODES.filter((m) => m.page).every((m) => isPageMode(m.v)) && !isPageMode('tefsir'), 'okuma biçimleri: 6 biçim, sayfa biçimleri mushafta');
+}
+
+{
+  // Alt sekmeler (0.25.0): yuvalar, değiştirme ve yönlendirme
+  ok(normTabs(undefined).join() === 'harita,kuran,ulasim' && normTabs(['harita', 'harita', 'kuran']).join() === 'harita,kuran,ulasim' && normTabs(['x', 'kuran', 'ulasim']).join() === 'harita,kuran,ulasim', 'sekmeler: bozuk kayıt varsayılana döner');
+  ok(setSlot(undefined, 0, 'hac').join() === 'hac,kuran,ulasim', 'sekmeler: Harita yerine Hac-Umre');
+  ok(setSlot(['harita', 'kuran', 'ulasim'], 0, 'ulasim').join() === 'ulasim,kuran,harita', 'sekmeler: başka yuvadaki bölüm seçilince yer değiştirir');
+  ok(routeFor('kuran', ['hac', 'kuran', 'ulasim']) === '/s2' && routeFor('harita', ['hac', 'kuran', 'ulasim']) === '/harita', 'sekmeler: bölüm sekmedeyse sekmeye, değilse kendi ekranına');
+  ok(resolveTabPath('/ulasim?to=1,2', ['hac', 'kuran', 'ulasim']) === '/s4?to=1,2' && resolveTabPath('/harita', ['hac', 'kuran', 'ulasim']) === '/harita' && resolveTabPath('/umre', null) === '/umre', 'sekmeler: eski yollar bugünkü yere');
+}
+
+{
+  // Uygulama içi navigasyon (0.25.0): OSRM adımları, ilerleme, talimat
+  const A = { lat: 21.4200, lng: 39.8200 }, B = { lat: 21.4200, lng: 39.8230 }, Cc = { lat: 21.4230, lng: 39.8230 };
+  const osrm = {
+    routes: [{ distance: 640, duration: 512, geometry: { coordinates: [[A.lng, A.lat], [B.lng, B.lat], [Cc.lng, Cc.lat]] as [number, number][] },
+      legs: [{ steps: [
+        { distance: 311, name: 'Ecyad', maneuver: { type: 'depart', location: [A.lng, A.lat] as [number, number] } },
+        { distance: 333, name: 'İbrahim Halil', maneuver: { type: 'turn', modifier: 'left', location: [B.lng, B.lat] as [number, number] } },
+        { distance: 0, name: '', maneuver: { type: 'arrive', location: [Cc.lng, Cc.lat] as [number, number] } },
+      ] }] }],
+  };
+  const rt = parseOsrm(osrm)!;
+  ok(osrmUrl(A, B, 'foot').includes('steps=true') && rt.steps?.length === 3 && rt.steps[1].idx === 1 && rt.steps[2].idx === 2, 'navigasyon: OSRM adımları rotaya bağlanır');
+  const mid = { lat: 21.4200, lng: 39.8215 };
+  const pg = progress(rt, mid);
+  ok(pg.next?.type === 'turn' && Math.abs(pg.toNext - 155) < 15 && pg.off < 3 && !pg.arrived, `navigasyon: yolun ortasında sıradaki manevra sola dönüş, ≈155 m (${Math.round(pg.toNext)})`);
+  ok(progress(rt, Cc).arrived && progress(rt, { lat: 21.4209, lng: 39.8215 }).off > 90, 'navigasyon: varış ve rotadan uzaklık');
+  ok(offRoute(60, 'walk', 8) && !offRoute(30, 'walk', 8) && !offRoute(60, 'car', 8), 'navigasyon: rotadan çıkma eşiği (yürüme 40 m, araç 70 m)');
+  ok(stepText(rt.steps![1], 'tr') === 'Sola dönün · İbrahim Halil' && stepText(rt.steps![2], 'en') === 'You have arrived' && spokenText(rt.steps![1], 150, 'tr') === '150 metre sonra sola dönün', 'navigasyon: talimat ve sesli cümle');
+  ok(distText(42, 'tr') === '40 m' && distText(1260, 'tr') === '1,3 km' && distText(1260, 'en') === '1.3 km', 'navigasyon: kısa uzaklık');
+  const leg = { kind: 'bus' as const, mode: 'BUS', line: '7A', headsign: 'Harem', from: { name: 'Ecyad', time: '2026-11-28T10:05:00+03:00' }, to: { name: 'Harem', time: '2026-11-28T10:20:00+03:00' }, minutes: 15, stops: 4, coords: [A, B] };
+  const lt = legText(leg, 'tr', () => '10:20');
+  ok(lt.head === 'Ecyad: 7A otobüsüne binin (Harem yönü)' && lt.sub === '5 durak · Harem durağında inin (10:20)', 'navigasyon: toplu taşıma talimatı');
 }

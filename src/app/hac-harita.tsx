@@ -4,7 +4,7 @@
 // Veri © OpenStreetMap katkıcıları (ODbL), src/data/osm/hacSites.ts.
 import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useMemo, useState } from 'react';
-import { Linking, Platform, Pressable, ScrollView, Text, View } from 'react-native';
+import { Pressable, ScrollView, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Icon } from '@/components/Icon';
@@ -18,7 +18,6 @@ import { pick, useI18n } from '@/i18n';
 import { getJson } from '@/services/cache';
 import { arafatCheck, haramCheck, minaCheck, type ZoneCheck } from '@/services/hac';
 import { useLocation } from '@/services/location';
-import { directionsUrl } from '@/services/mosques';
 import { fmtMinutes, meters, osrmUrl, parseOsrm, roughRoute, type StreetRoute } from '@/services/transport';
 
 type Lang = 'tr' | 'en' | 'ar';
@@ -37,7 +36,7 @@ const L = {
   haram: { tr: 'Harem bölgesi', en: 'the Haram', ar: 'الحرم' },
   approx: { tr: 'Sınırlar OpenStreetMap’ten, yaklaşıktır. Vakfe ve diğer görevler için sahadaki sınır tabelalarını esas alın.', en: 'Boundaries come from OpenStreetMap and are approximate. Rely on the boundary signs on site.', ar: 'الحدود تقريبية من OpenStreetMap؛ اعتمد على اللوحات في الموقع.' },
   route: { tr: 'Yürüyüş rotası', en: 'Walking route', ar: 'مسار المشي' },
-  open: { tr: 'Harita uygulamasında aç', en: 'Open in maps app', ar: 'افتح في الخرائط' },
+  open: { tr: 'Yol tarifi', en: 'Directions', ar: 'الاتجاهات' },
   close: { tr: 'Kapat', en: 'Close', ar: 'إغلاق' },
   legend: { tr: 'Yeşil: Arafat · Mavi: Mina · Kırmızı kesikli: Harem sınırı · Turuncu: Nemire Mescidi', en: 'Green: Arafat · Blue: Mina · Red dashed: Haram boundary · Orange: Namirah Mosque', ar: 'أخضر: عرفات · أزرق: منى · أحمر متقطع: حد الحرم · برتقالي: مسجد نمرة' },
   osm: { tr: '© OpenStreetMap katkıcıları', en: '© OpenStreetMap contributors', ar: '© مساهمو OpenStreetMap' },
@@ -171,7 +170,7 @@ export default function HacHaritaScreen() {
                 {pick(L.route, lg)}: {r ? `${dist(r.meters)} · ${fmtMinutes(Math.max(1, Math.round(r.seconds / 60)), lg)}` : dist(meters(here, sel))}
               </Text>
             )}
-            <Btn title={pick(L.open, lg)} kind="secondary" icon="nav" onPress={() => Linking.openURL(directionsUrl(sel, Platform.OS))} />
+            <Btn title={pick(L.open, lg)} kind="secondary" icon="nav" onPress={() => router.push({ pathname: '/ulasim', params: { to: `${sel.lat.toFixed(6)},${sel.lng.toFixed(6)}`, name: pick(sel.name, lg) } })} />
           </Card>
         ) : (
           <Card style={{ gap: 6 }}>

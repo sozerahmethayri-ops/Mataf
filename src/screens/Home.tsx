@@ -25,7 +25,7 @@ export default function Home() {
     case 'kuran': return <QuranList />;
     case 'harita': return <MapScreen />;
     case 'tavaf': return <Tawaf />;
-    case 'zikir': return <Zikir />;
+    case 'zikir': return <Zikir back={false} />;
     case 'hadis': return <HadithDua />;
     default: return <HomePrayer />;
   }

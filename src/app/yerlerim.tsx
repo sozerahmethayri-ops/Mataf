@@ -2,7 +2,7 @@
 // görün, yürüyüş rotasıyla dönün ya da konumu WhatsApp'la paylaşın. Kayıtlar yalnız bu telefonda.
 import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useMemo, useState } from 'react';
-import { Alert, Linking, Platform, Pressable, ScrollView, Share, Text, TextInput, View } from 'react-native';
+import { Alert, Pressable, ScrollView, Share, Text, TextInput, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Icon, type IconName } from '@/components/Icon';
@@ -14,7 +14,6 @@ import type { T3 } from '@/data/umre';
 import { pick, useI18n } from '@/i18n';
 import { getJson } from '@/services/cache';
 import { useLocation } from '@/services/location';
-import { directionsUrl } from '@/services/mosques';
 import { shareLink, useMyPlaces, type MyPlace, type PlaceKind } from '@/services/myPlaces';
 import { fmtMinutes, meters, osrmUrl, parseOsrm, roughRoute, type StreetRoute } from '@/services/transport';
 
@@ -32,7 +31,7 @@ const L = {
   empty: { tr: 'Henüz kayıtlı yer yok. Çadırınızda, buluşma noktanızda ya da aracınızın yanındayken “Bulunduğum yeri kaydet”e dokunun.', en: 'No places yet. At your tent, meeting point or car, tap “Save where I am”.', ar: 'لا أماكن بعد. اضغط «احفظ مكاني الحالي» عند خيمتك أو نقطة اللقاء.' },
   walk: { tr: 'yürüyerek', en: 'on foot', ar: 'مشيًا' },
   approx: { tr: 'yaklaşık', en: 'approximate', ar: 'تقريبي' },
-  open: { tr: 'Harita uygulamasında aç', en: 'Open in maps', ar: 'افتح في الخرائط' },
+  open: { tr: 'Yol tarifi', en: 'Directions', ar: 'الاتجاهات' },
   share: { tr: 'Konumu paylaş', en: 'Share location', ar: 'شارك الموقع' },
   del: { tr: 'Sil', en: 'Delete', ar: 'حذف' },
   delQ: { tr: '“{n}” silinsin mi?', en: 'Delete “{n}”?', ar: 'حذف «{n}»؟' },
@@ -156,7 +155,7 @@ export default function MyPlacesScreen() {
               </Text>
             )}
             <View style={{ flexDirection: 'row', gap: 8, flexWrap: 'wrap' }}>
-              <Btn title={pick(L.open, lg)} icon="nav" kind="secondary" onPress={() => Linking.openURL(directionsUrl({ lat: selP.lat, lng: selP.lng }, Platform.OS))} />
+              <Btn title={pick(L.open, lg)} icon="nav" kind="secondary" onPress={() => router.push({ pathname: '/rota', params: { to: `${selP.lat.toFixed(6)},${selP.lng.toFixed(6)}`, name: selP.name, mode: 'walk' } })} />
               <Btn title={pick(L.share, lg)} icon="share" kind="secondary" onPress={() => share(selP)} />
               <Btn title={pick(L.del, lg)} icon="trash" kind="secondary" onPress={() => del(selP)} />
             </View>
