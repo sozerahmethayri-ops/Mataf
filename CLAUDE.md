@@ -28,9 +28,19 @@ Projenin kararları ve çalışma kuralları burada; bir karar değişince bu do
 - `npm install`: postinstall `patches/expo-widgets+58.0.29.patch`'i uygular.
 - Her değişiklikten sonra üçü de temiz olmalı: `npm run typecheck`, `npm run lint`, `npm run check` (309 test, her satır `OK`). CI typecheck ve check çalıştırır.
 - `npx expo start`: Expo Go'da kutular, özel ezan sesleri ve tam zamanlı alarm yok; yerel davranışı APK ya da duman testinde gör.
-- Web görüntüsü: `npx expo export -p web --output-dir /tmp/web`, sonra `python3 tools/web-shots/shoot.py /tmp/web /tmp/shots tools/web-shots/ornek-spec.json`. Spec biçimi dosyanın başında.
-- Emülatör (duman testi, ~25 dk): `gh workflow run android-smoke.yml -R sozerahmethayri-ops/Mataf --ref main`. Sonuçlar "smoke-latest" sürüm sayfasında: `crash.txt`, `status.txt`, `screen-*.png`, `logcat.txt`, `widget-log.txt`, `alarm.txt`. Akış `scripts/smoke.sh`'te.
+- Web görüntüsü: `web-goruntu` skilli (`npx expo export -p web`, `tools/web-shots/shoot.py` + spec).
+- Emülatör duman testi (~25 dk): `duman-testi` skilli. Tek komut, arka planda: `python3 -I .claude/skills/duman-testi/scripts/smoke_check.py --start main` (başlatır, bekler, ölçütleri denetler, görüntüleri birleştirir).
 - OSM verisi: `gh workflow run osm-fetch.yml -R sozerahmethayri-ops/Mataf --ref main -f query='…'`. Sonuç "osm-data" sürümünde `out.json`; `scripts/*.py` uygulama verisine çevirir. Sorgular `scripts/osm-3d.md`'de.
+
+## Proje skilleri (`.claude/skills/`)
+İlgili işe başlamadan önce skilli yükle; ayrıntılı adımlar ve kurallar orada.
+- `surum-cikar`: kullanıcıya görünen değişiklik bitince; sürüm numarası (`bump_version.py`), README, commit, gönderim, iş akışları, `version.json`.
+- `duman-testi`: yerel davranış (kutu, bildirim, alarm, yama, izin, derin bağlantı, yazı tipi) değişince; bitti ölçütleri orada.
+- `kutu-gelistir`: `src/widgets/`, kutu verisi (`widgetProps`, `widgetSync`) ya da expo-widgets yaması.
+- `metin-ekle`: kullanıcıya görünen her metin (tr/en/ar, Türkçe yazım, sağdan sola).
+- `web-goruntu`: arayüz değişikliğini görmek; Arapça, tema ve palet denetimi.
+- `dini-icerik`: âyet, meal, dua, hadis, rehber adımı, vakit ve takvim hesabı, Kur'an hattı.
+- Expo eklentisi de açık (`expo:*`): SDK yükseltmesinde `expo-upgrade`, `@expo/ui` için `expo-ui`, yerel modül için `expo-module`. Sürüme özel Expo belgesi Expo bağlayıcısıyla aranır (`search_documentation`).
 
 ## Kod haritası
 | Yer | İçerik |
@@ -52,28 +62,22 @@ Projenin kararları ve çalışma kuralları burada; bir karar değişince bu do
 Platforma özel dosyalar: `X.web.tsx`, `X.android.ts`, `X.types.ts`. Giriş `index.ts`: önce `expo-router/entry`, sonra uygulama kapalıyken de tanımlı olması gereken arka plan görevi (`services/prayedTask`).
 
 ## Kodlama kuralları
-- **Metin:** Kullanıcıya görünen her yazının `tr`, `en`, `ar` karşılığı olur. Ekrana özel yazılar dosyada `const L = { anahtar: { tr, en, ar } }` ve `pick(L.anahtar, lg)`; ortak olanlar `src/i18n/strings.ts` ve `t('…')`; üç sözlük aynı anahtarları ve `{değişken}`leri taşır (test var; eksik Arapça anahtar İngilizceye düşüyordu). Arapça seçilince telefonda `I18nManager.forceRTL` (yeniden başlatınca), web'de `<html dir="rtl">` ile yön döner. Web'de sekme kaydırıcısı yön bilmez: soldan sağa kalır, sayfaların içi ve alt çubuk sağdan sola (`(tabs)/_layout.tsx`). Yön simgeleri (`chevron`, `back`) sağdan sola düzende aynalanır (`Icon.tsx`, `useLayoutRtl`); dönüş okları aynalanmaz.
-- **Türkçe yazım:** Eki cins isim taşır, özel ad yalın kalır: "Yenikapı istasyonunda inin", "Al-Shabeka 439 durağında inin", "{p} vaktine kalan". Kısa, gündelik dil; sayı birimiyle ("≈ 27 dk", "560 m").
+- **Metin:** Kullanıcıya görünen her yazının `tr`, `en`, `ar` karşılığı olur: ekrana özel `const L = { anahtar: { tr, en, ar } }` + `pick(L.anahtar, lg)`, ortak olanlar `src/i18n/strings.ts` + `t('…')` (üç sözlük aynı anahtar ve `{değişken}`leri taşır, test var). Arapçada düzen sağdan sola döner. Ayrıntı: `metin-ekle` skilli.
+- **Türkçe yazım:** Kısa, gündelik dil; eki cins isim taşır, özel ad yalın kalır ("Yenikapı istasyonunda inin", "{p} vaktine kalan"); sayı birimiyle ("≈ 27 dk").
 - **Tema:** Renkleri `C` nesnesinden çizim anında oku; tema değişince `applyTheme` aynı nesneyi günceller, ekranlar yeniden kurulur. Modül düzeyinde renkten türeyen stil varsa `onThemeChange` ile yenile. Yazı boyutu `fs(n)`, Arapça `fsAr(n)`, ortak stiller `T`. Yeni renk çifti WCAG AA'yı geçmeli (`check-logic.ts` kontrast testleri).
 - **Kayıt:** `usePersisted(anahtar, başlangıç)` ya da AsyncStorage. Var olan anahtar adları kalıcıdır (`theme:prefs`, `adhan:prefs`, `mataf.city`, `mataf.lang`, `mataf.hotel.<şehir>`, `prayer:log`, `prayer:logHidden`, `quran:plan`, `zikir:goal`, `trip:checklist`, `widget:logCtx` …); adı değişirse kullanıcının kaydı kaybolur.
 - **React Compiler (lint):** Çizimde `ref.current` okunmaz. Effect içinde `setState` yerine türetilmiş değer ya da `setTimeout(…, 0)`. `Animated.Value` için `useState(() => new Animated.Value(0))`.
-- **Kutu dosyaları (`src/widgets/`):** Ayrı Hermes ortamında çalışır, dosya dışındaki değerlere erişmez. Babel yardımcısı istemeyen sözdizimi yaz: `a && a.b`, üçlü işleç, klasik `for` (`?.`, `??`, yayma `...` ve `for…of` çalışmaz). Glance'te bir `Row`/`Column` en çok 10 çocuk çizer, fazlasını sessizce keser; `weight` yok, sağa yaslamak için `Box contentAlignment`. Satıra sığmayan son çocuk sıfır genişliğe sıkışır: önemli olan önce gelsin, dar kutuda gereksizi hiç çizme (`env.width`, dp). `null` çocuk atlanır (koşullu çizim olur). Geri sayım: `Text`'e `countdownTo` (hedef an, ms) verilir, yerelde Android `Chronometer` olur ve saniye saniye kendiliğinden işler (yama `WidgetCountdown.kt`); `Text`'in yazısı yalnız yedek. Sayaç kabın kalan alanına yayılır: kendi `Column`'unda son çocuk ya da sabit genişlikli `Box` içinde olsun, yoksa yanındakileri gizler. Renkler `#RRGGBBAA` (alfa sonda) ya da `rgba()`. Değişen kutuyu duman testinin görüntüsünde gör.
-- **expo-widgets yaması** (`patches/expo-widgets+58.0.29.patch`): sabitleme, kurulu kutu sayısı, dokununca açma, 30 dk yenileme, `scheduleWidgetTicks` + `WidgetTicks.kt`, canlı geri sayım (`countdownTo` → `WidgetCountdown.kt` + `res/layout/expo_widgets_countdown.xml`; Glance'te internal olan `EmittableAndroidRemoteViews` peek-emittables'taki gibi bastırmayla kullanılır). expo-widgets sürümü değişirse `node_modules`'te yeniden uygula ve `npx patch-package expo-widgets` ile yamayı üret.
+- **Kutular (`src/widgets/`):** Ayrı Hermes ortamında çalışır: dosya dışındaki değerlere erişmez, `?.`, `??`, yayma ve `for…of` yok; Glance satırda en çok 10 çocuk çizer, sığmayanı sıkıştırır. Kod yazmadan önce `kutu-gelistir` skilli; görünümü duman testinin görüntüsünde gör.
+- **expo-widgets yaması** (`patches/expo-widgets+58.0.29.patch`): sabitleme, dokununca açma, 30 dk yenileme, vakit alarmları (`scheduleWidgetTicks`), canlı geri sayım (`countdownTo` → Chronometer), `env.width/height`. Yeniden üretme: `node_modules`'te düzenle, `npx patch-package expo-widgets` (`kutu-gelistir`).
 - **Arka plan görevi:** `TaskManager.defineTask` giriş dosyasından (`index.ts`) yüklenen modülde, modül düzeyinde çağrılır. Ekran ya da `_layout` içinde tanımlanan görev uygulama kapalıyken bulunmaz; expo-task-manager bulamadığı görevin kaydını siler. Görev sonucu beklenir (kutu yazımı dahil); yoksa görünmeden açılan JS iş bitmeden kapanır.
 - **Simgeler:** `Icon.tsx`'teki yol tablosu. Olmayan ad tür denetiminde yakalanmaz, boş çizilir; yeni simgeyi tabloya ekle.
 - **Ağ:** Her istek uygulamayı tanıtan User-Agent taşır. Yer ve cami araması Photon'la (Overpass yalnız yedek). Transitous koşulları: açık kaynak, ticari değil, iletişimli User-Agent, ekranda `transitous.org/sources` bağlantısı; günde ~720 `/plan` isteği aşılırsa onlarla konuşulur. Mekke ve Medine'nin 90 km çevresinde Transitous'a istek gitmez (Suudi Arabistan verisi yok).
 - **Test:** Mantığı React'sız `src/services/*.ts` dosyasına koy, `scripts/check-logic.ts`'e `ok(koşul, 'açıklama')` ekle.
-- **Dinî içerik:** Hanefî, Diyanet kaynaklı; her adım ve duanın yanında kaynağı yazar. Rehber ekranlarında "henüz bir ilahiyatçı kontrolünden geçmedi" notu durur. Ayet, hadis ve dua metni yalnız kaynağa ya da hocanın düzeltmesine göre değişir. Ayet metinleri API'den gelir (gömülü değil); hadis duaları `src/data/duas.ts`'te.
+- **Dinî içerik:** Hanefî, Diyanet kaynaklı; her adım ve duanın yanında kaynağı yazar; rehber ekranlarında "henüz bir ilahiyatçı kontrolünden geçmedi" notu durur; âyet, hadis ve dua metni yalnız kaynağa ya da hocanın düzeltmesine göre değişir. Âyet metinleri API'den gelir (gömülü değil); hadis duaları `src/data/duas.ts`'te. Ayrıntı: `dini-icerik` skilli.
 - Yorumlar Türkçe, tanımlayıcılar İngilizce.
 
 ## Sürüm çıkarma
-`main`'e her gönderim APK'yı ve web'i yeniden yayınlar; kullanıcıya görünen her değişiklik sürüm alır.
-1. `npm run typecheck`, `npm run lint`, `npm run check` temiz.
-2. Sürümü yükselt: `package.json` `version`; `package-lock.json` en üstteki iki `version`; `app.json` `expo.version` ve `android.versionCode` (+1).
-3. README: değişiklik günlüğünün başına bir madde; "Durum" satırında sürüm.
-4. Commit: Türkçe, ilk satır `0.13.5: kısa özet`, altında madde madde ne ve neden. `main`'e gönder.
-5. "Android APK" iş akışı bitince `https://github.com/sozerahmethayri-ops/Mataf/releases/download/apk-latest/version.json` yeni sürümü gösterir. Uygulama buna 6 saatte bir bakar, yeni sürümde "İndir" şeridi çıkarır.
-6. Yerel davranış değiştiyse (kutular, bildirim, yama, izin, derin bağlantı) duman testini çalıştır. Bitti sayılması için: `crash.txt` "çökme kaydı yok" ile başlar; `status.txt`'te beş "eklendi: 1" satırı, "vakit alarmı: 24 (farklı an: 24)" (0.21.0'da bir kez 34 çıktı, yeniden üretilemedi; tekrarlarsa `alarm-all.txt` ve `alarm-sections.txt`'e bak) ve "kıldım: süreç kapatıldı evet, bildirim önce 1, düğme 1, sonra 0, görev 1" var; ilgili `screen-*.png` gözle doğru.
+`main`'e her gönderim APK'yı ve web'i yeniden yayınlar; kullanıcıya görünen her değişiklik sürüm alır (yalnız belge, test ya da araç değişikliği almaz; commit `belgeler:`/`araçlar:` ile başlar). Adımlar `surum-cikar` skillinde: üç denetim; `python3 -I .claude/skills/surum-cikar/scripts/bump_version.py X.Y.Z` (package.json, package-lock.json, app.json version ve versionCode +1, README "Durum", CLAUDE.md sürüm satırları); README günlüğüne madde; Türkçe commit, ilk satır `X.Y.Z: kısa özet`, altında madde madde ne ve neden; `main`'e gönder; CI, APK ve web yeşil, `version.json` yeni sürüm (uygulama 6 saatte bir bakar, "İndir" şeridi çıkarır); yerel davranış değiştiyse `duman-testi` (bitti ölçütleri orada).
 
 ## Tasarım kuralları
 ### Renkler (`src/constants/theme.ts`)
@@ -179,5 +183,6 @@ Sürüm sırasıyla ayrıntı README.md'nin başında.
 - GitHub'da kullanılmayan `probe`, `smoke-run` ve `widget-test` (0.22.0 deneme dalı, `main`'e tek commit olarak alındı) dalları duruyor; bulut oturumundan silinemedi, elle silinebilir.
 
 ## Ortam notları
+- Bulut ortamı "Mataf": ağ sınırlı (paket kayıtları + `mcp.expo.dev`); kurulum betiği `npm ci` çalıştırır. Expo erişim anahtarı yok: `eas` komutları burada çalışmaz (proje sahibi anahtar vermedi, 28.11.2026).
 - Kullanıcının ağından Overpass açılmıyor; OSM sorgusu `osm-fetch.yml` ile GitHub'da çalışır.
 - Bulut oturumunda `gh` GraphQL çalışmıyordu: `gh workflow run` için `--ref main` ver, sürüm dosyalarını `curl -L https://github.com/sozerahmethayri-ops/Mataf/releases/download/<etiket>/<dosya>` ile indir.
