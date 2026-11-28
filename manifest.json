@@ -1,0 +1,11 @@
+{
+  "name": "MATAF",
+  "short_name": "MATAF",
+  "description": "Ezan vakitleri, Kur'an, zikir, Mekke ve Medine rehberi",
+  "start_url": "/Mataf/",
+  "scope": "/Mataf/",
+  "display": "standalone",
+  "background_color": "#FFFFFF",
+  "theme_color": "#C2410C",
+  "icons": [{ "src": "/Mataf/icon.png", "sizes": "1024x1024", "type": "image/png" }]
+}
