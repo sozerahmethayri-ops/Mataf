@@ -108,7 +108,7 @@ Envanter, dosya yerleri ve özellik başına kararlar `docs/OZELLIKLER.md`'de; b
 
 ## Şu anki durum
 - Sürüm 0.23.0 (versionCode 34). CI, APK ve web yeşil. APK: https://github.com/sozerahmethayri-ops/Mataf/releases/download/apk-latest/mataf.apk; web: https://sozerahmethayri-ops.github.io/Mataf/.
-- Doğrulandı: 309 mantık testi; web görüntüleri (Arapça sağdan sola dahil); emülatörde çökme yok, beş kutu eklendi ve çizildi (namaz takibi kutusu 0.19.0, daireler 0.21.1; 0.22.0'da sayaç saniye saniye işliyor, varsayılan koyu ve %40 şeffaf zemin), Medine Mushafı hattı telefonda doğru çiziliyor (besmele tek, âyet sonu daireli), mushafta kaydırınca sonraki sayfa geliyor, 24 vakit alarmı kurulu (24 farklı an), bildirimdeki "Kıldım" uygulama kapalıyken arka planda işliyor (deneme bildirimi kapandı, görev çalıştı; 0.20.0), Mekke otobüs tarifi (7A) doğru.
+- Doğrulandı: 321 mantık testi; web görüntüleri (Arapça sağdan sola dahil); emülatörde çökme yok, beş kutu eklendi ve çizildi (namaz takibi kutusu 0.19.0, daireler 0.21.1; 0.22.0'da sayaç saniye saniye işliyor, varsayılan koyu ve %40 şeffaf zemin), Medine Mushafı hattı telefonda doğru çiziliyor (besmele tek, âyet sonu daireli), mushafta kaydırınca sonraki sayfa geliyor, 24 vakit alarmı kurulu (24 farklı an), bildirimdeki "Kıldım" uygulama kapalıyken arka planda işliyor (deneme bildirimi kapandı, görev çalıştı; 0.20.0), Mekke otobüs tarifi (7A) doğru. 0.23.0 emülatörde: kalıcı vakit bildirimi panelde (geri sayım işliyor, açınca altı vakit), yeni Kâbe simgesi başlatıcıda, Kur'an sekmesi ve mushaf düğmeleri doğru, kutu sayaçları kısa vakit adında da tam.
 - Doğrulanmadı: gerçek telefon, Mekke ve Medine'de saha, Samsung ve Xiaomi başlatıcıları.
 - Proje sahibinden beklenenler: Supabase URL ve Publishable key (GitHub secrets'a), sahada deneme, hoca kontrolü (gözden geçirme belgesi: https://claude.ai/artifact/BZSU1wpF6vLspLDwDCGiGc), dağıtım izni olan bir ezan kaydı.
 - Sürüm sürüm ayrıntılı notlar: claude.ai'deki "MATAF uygulama" projesinde `eksikler-ve-yol-haritasi.md`.
@@ -142,7 +142,8 @@ Envanter, dosya yerleri ve özellik başına kararlar `docs/OZELLIKLER.md`'de; b
 - APK hata ayıklama anahtarıyla imzalı; Play Store'a yüklenemez.
 - Harem 3D modeli OSM kadar doğru; mescit içi hizmet noktaları örnek veri.
 - Tecvid renkleri alquran.cloud `quran-tajweed` işaretlemesine dayanır (`[kural[metin]`); bulut oturumundan servis açılmadığı için gerçek metinle görülmedi, telefonda bakılmalı. Ayrıştırıcı tanınmayan işareti renksiz bırakır.
-- GitHub'da kullanılmayan `probe`, `smoke-run` ve `widget-test` (0.22.0 deneme dalı, `main`'e tek commit olarak alındı) dalları duruyor; bulut oturumundan silinemedi, elle silinebilir.
+- GitHub'da kullanılmayan `probe`, `smoke-run`, `widget-test` (0.22.0) ve `surum-023` (0.23.0; ikisi de `main`'e tek commit olarak alındı) dalları duruyor; bulut oturumundan silinemedi, elle silinebilir.
+- Kalıcı vakit bildiriminin açık görünümünde çok dar ekranda (320 dp) ilk ve son vakit hücresinin kenarı kesilir; 360 dp ve üstünde sığar.
 
 ## Ortam notları
 - Bulut ortamı "Mataf": ağ sınırlı (paket kayıtları + `mcp.expo.dev`); kurulum betiği `npm ci` çalıştırır. Expo erişim anahtarı yok: `eas` komutları burada çalışmaz (proje sahibi anahtar vermedi, 28.11.2026).
