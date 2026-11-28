@@ -28,6 +28,8 @@ const L = {
   tafsir: { tr: 'Tefsir', en: 'Tafsir', ar: 'التفسير' },
   settings: { tr: 'Okuma ayarları', en: 'Reading settings', ar: 'إعدادات القراءة' },
   playAll: { tr: 'Sûreyi dinle', en: 'Play surah', ar: 'استمع إلى السورة' },
+  repeat: { tr: 'Âyet tekrarı (ezber)', en: 'Repeat each verse (memorise)', ar: 'تكرار الآية (للحفظ)' },
+  speed: { tr: 'Okuma hızı', en: 'Playback speed', ar: 'سرعة التلاوة' },
   meal: { tr: 'meal', en: 'translation', ar: 'الترجمة' },
   audioErr: { tr: 'Ses yüklenemedi; bağlantınızı kontrol edin.', en: 'Audio could not be loaded; check your connection.', ar: 'تعذّر تحميل الصوت؛ تحقق من الاتصال.' },
   surah: { tr: '. sûre', en: '', ar: '' },
@@ -44,6 +46,9 @@ const L = {
 
 
 type Phase = 'ar' | 'meal';
+/** Ezber için âyet tekrarı (0 = sürekli) ve okuma hızları */
+const REPEATS = [1, 3, 5, 10, 0];
+const RATES = [1, 1.25, 1.5, 0.75];
 
 export default function SurahReader() {
   const { sure, b, a } = useLocalSearchParams<{ sure: string; b?: string; a?: string }>();
@@ -76,7 +81,10 @@ export default function SurahReader() {
   const player = useAudioPlayer(null);
   const [now, setNow] = useState<{ idx: number; phase: Phase } | null>(null);
   const [audioErr, setAudioErr] = useState(false);
-  const queue = useRef<{ ar: string[]; meal: string[]; idx: number; phase: Phase; mode: typeof prefs.mode } | null>(null);
+  const queue = useRef<{ ar: string[]; meal: string[]; idx: number; phase: Phase; mode: typeof prefs.mode; count?: number } | null>(null);
+  // Ezber: her âyet kaç kez çalınsın (0 = sürekli) ve hız
+  const [repeat, setRepeat] = useState(1);
+  const [rate, setRate] = useState(1);
   const list = useRef<FlatList<FullAyah>>(null);
   const d = (x: number) => (lang === 'ar' ? AR_DIGITS(x) : String(x));
   const p1 = pageOf(n, 1);
@@ -91,17 +99,22 @@ export default function SurahReader() {
   // Ayraçla okunuyorsa görünen ilk ayet yeri olarak kaydedilir (1,5 sn sonra)
   const activeRef = useRef<Bookmark | undefined>(active);
   const saveRef = useRef(saveBookmark);
+  const lastRef = useRef((s: number, a: number) => setPrefs({ last: { s, a, p: pageOf(s, a) } }));
   const surahRef = useRef(n);
-  useEffect(() => { activeRef.current = active; saveRef.current = saveBookmark; surahRef.current = n; });
+  useEffect(() => { activeRef.current = active; saveRef.current = saveBookmark; surahRef.current = n; lastRef.current = (s, a) => setPrefs({ last: { s, a, p: pageOf(s, a) } }); });
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   useEffect(() => () => { if (saveTimer.current) clearTimeout(saveTimer.current); }, []);
   const [onViewable] = useState(() => ({ viewableItems }: { viewableItems: { item?: unknown }[] }) => {
     const bm = activeRef.current;
     const first = viewableItems[0]?.item as FullAyah | FullAyah[] | undefined;
     const ay = Array.isArray(first) ? first[0]?.n : first?.n;
-    if (!bm || !ay) return;
+    if (!ay) return;
+    // Kaldığınız yer her zaman; ayraçla açıldıysa ayraç da (1,5 sn durunca)
     if (saveTimer.current) clearTimeout(saveTimer.current);
-    saveTimer.current = setTimeout(() => saveRef.current({ ...bm, surah: surahRef.current, ayah: ay }), 1500);
+    saveTimer.current = setTimeout(() => {
+      lastRef.current(surahRef.current, ay);
+      if (bm) saveRef.current({ ...bm, surah: surahRef.current, ayah: ay });
+    }, 1500);
   });
   const [viewCfg] = useState(() => ({ itemVisiblePercentThreshold: 40 }));
 
@@ -112,14 +125,19 @@ export default function SurahReader() {
     if (!uri) { advance(idx, phase); return; }
     q.idx = idx; q.phase = phase;
     setNow({ idx, phase });
-    try { player.replace({ uri }); player.play(); } catch { setAudioErr(true); }
+    try { player.replace({ uri }); player.setPlaybackRate(rate, 'high'); player.play(); } catch { setAudioErr(true); }
     list.current?.scrollToIndex({ index: idx, viewPosition: 0.25, animated: true });
   };
   const advance = (idx: number, phase: Phase) => {
     const q = queue.current;
     if (!q) return;
     if (q.mode === 'ar+meal' && phase === 'ar' && q.meal.length) return playAt(idx, 'meal');
-    playAt(idx + 1, q.mode === 'meal' ? 'meal' : 'ar');
+    const first: Phase = q.mode === 'meal' ? 'meal' : 'ar';
+    // Âyet (mealiyle birlikte) seçilen sayıda tekrarlanır, sonra sıradakine geçilir
+    const done = (q.count ?? 0) + 1;
+    if (repeat === 0 || done < repeat) { q.count = done; return playAt(idx, first); }
+    q.count = 0;
+    playAt(idx + 1, first);
   };
   const stop = () => { queue.current = null; setNow(null); try { player.pause(); } catch { /* yok say */ } };
 
@@ -242,7 +260,15 @@ export default function SurahReader() {
               </>
             )}
           </View>
-          <Pressable onPress={() => now && playAt(now.idx + 1, queue.current?.mode === 'meal' ? 'meal' : 'ar')} accessibilityLabel="Sonraki" hitSlop={8}><Icon name="next" size={18} color="#FFFFFF" fill="#FFFFFF" /></Pressable>
+          <Pressable onPress={() => setRepeat((r) => REPEATS[(REPEATS.indexOf(r) + 1) % REPEATS.length])} accessibilityRole="button" accessibilityLabel={pick(L.repeat, lang)} hitSlop={6}
+            style={{ minWidth: 40, height: 32, paddingHorizontal: 8, borderRadius: 16, borderWidth: 1, borderColor: repeat === 1 ? 'rgba(255,255,255,0.35)' : C.route, alignItems: 'center', justifyContent: 'center' }}>
+            <Text style={{ color: '#FFFFFF', fontSize: fs(12), fontWeight: '700' }}>{repeat === 0 ? '∞' : `×${repeat}`}</Text>
+          </Pressable>
+          <Pressable onPress={() => { const r = RATES[(RATES.indexOf(rate) + 1) % RATES.length]; setRate(r); try { player.setPlaybackRate(r, 'high'); } catch { /* yok say */ } }} accessibilityRole="button" accessibilityLabel={pick(L.speed, lang)} hitSlop={6}
+            style={{ minWidth: 44, height: 32, paddingHorizontal: 8, borderRadius: 16, borderWidth: 1, borderColor: rate === 1 ? 'rgba(255,255,255,0.35)' : C.route, alignItems: 'center', justifyContent: 'center' }}>
+            <Text style={{ color: '#FFFFFF', fontSize: fs(12), fontWeight: '700' }}>{`${rate}x`.replace('.', lang === 'tr' ? ',' : '.')}</Text>
+          </Pressable>
+          <Pressable onPress={() => { if (now && queue.current) queue.current.count = 0; if (now) playAt(now.idx + 1, queue.current?.mode === 'meal' ? 'meal' : 'ar'); }} accessibilityLabel="Sonraki" hitSlop={8}><Icon name="next" size={18} color="#FFFFFF" fill="#FFFFFF" /></Pressable>
           <Pressable onPress={() => { stop(); setAudioErr(false); }} accessibilityLabel="Durdur" hitSlop={8}><Icon name="close" size={18} color="#FFFFFF" /></Pressable>
         </View>
       )}
