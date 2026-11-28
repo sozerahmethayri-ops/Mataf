@@ -70,7 +70,7 @@ export default function MapScreen() {
     ...GATES.filter((g) => g.city === city).map((g) => {
       const s = summaries[g.id]?.status ?? 'open';
       const isRoute = g.id === plan?.gate?.id;
-      return { id: `g:${g.id}`, ...ll(g.pos), color: isRoute ? C.accent : s === 'closed' ? C.closed : s === 'open' ? C.open : C.limited, label: isRoute ? `${pick(g.name, lang)} (${g.no})` : undefined, big: isRoute };
+      return { id: `g:${g.id}`, ...ll(g.pos), color: isRoute ? C.accent : s === 'closed' ? C.closed : s === 'open' ? C.open : C.limited, label: isRoute ? `${pick(g.name, lang)} (${g.no})` : undefined, big: isRoute, minor: !g.main && !isRoute, num: g.main ? undefined : g.no.split('–')[0] };
     }),
     { id: 'dest', ...ll(dest.pos), color: C.route, label: t(dest.label).split(' · ')[0], big: true },
   ];

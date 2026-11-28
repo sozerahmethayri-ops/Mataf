@@ -8,7 +8,7 @@ import { GATES, type City, type Pt } from '@/data/sites';
 import { pick, useI18n } from '@/i18n';
 import type { GateSummary } from '@/services/reports';
 import { useTheme } from '@/services/ThemeContext';
-import { fitCamera, NO_INSETS, niceScale, placeLabels, textWidth, type Box, type Viewport } from '@/scene/layout';
+import { fitCamera, NO_INSETS, niceScale, overlaps, placeLabels, textWidth, type Box, type Viewport } from '@/scene/layout';
 import { buildMadinah, MADINAH_LABELS } from '@/scene/madinah';
 import { buildMakkah, MAKKAH_LABELS } from '@/scene/makkah';
 import { Cam, pathD } from '@/scene/oblique';
@@ -36,6 +36,8 @@ const AnimatedPath = Animated.createAnimatedComponent(Path);
 // İşaret ölçüleri (px)
 const PIN = 28; // kapı dairesi
 const STEM = 10;
+const MINOR = 18; // diğer kapıların dairesi
+const MINOR_K = 1.6; // diğer kapılar bu yakınlıktan (piksel/metre) sonra görünür
 const LABEL_H = 18;
 const DEST_H = 24;
 const PIN_CLOSED = '#B42318';
@@ -176,7 +178,8 @@ export function HaramScene(props: SceneProps) {
   const scaleM = niceScale(k);
 
   // Sabit işaretler (kapı, hedef, kullanıcı) önce; yapı etiketleri bunlarla çakışmayacak yere yerleşir.
-  const gates = GATES.filter((g) => g.city === city).map((g) => {
+  // Ana kapılar (ve rotadaki kapı) iğneyle; diğer kapılar yakınlaşınca küçük numaralı daireyle, çakışmadan
+  const gates = GATES.filter((g) => g.city === city && (g.main || g.id === routeGateId)).map((g) => {
     const [x, y] = P(g.pos);
     return { g, x, y };
   });
@@ -208,6 +211,19 @@ export function HaramScene(props: SceneProps) {
     fixed, width, height, viewport,
   );
   const destBox = placed.__dest;
+  const taken: Box[] = [...fixed, ...Object.values(placed).filter((x): x is Box => !!x)];
+  const minor: { g: (typeof GATES)[number]; x: number; y: number }[] = [];
+  if (k >= MINOR_K) {
+    for (const g of GATES) {
+      if (g.city !== city || g.main || g.id === routeGateId) continue;
+      const [x, y] = P(g.pos);
+      if (x < 0 || x > width || y < 0 || y > height) continue;
+      const b: Box = { x: x - MINOR / 2 - 1, y: y - MINOR / 2 - 1, w: MINOR + 2, h: MINOR + 2 };
+      if (taken.some((o) => overlaps(o, b))) continue;
+      taken.push(b);
+      minor.push({ g, x, y });
+    }
+  }
   // Etiket noktanın tam üstündeyse kısa bir sap çizilir.
   const destStem = destXY && destBox && Math.abs(destBox.x + destBox.w / 2 - destXY[0]) < 1 && destBox.y + destBox.h <= destXY[1] - 6;
 
@@ -242,6 +258,17 @@ export function HaramScene(props: SceneProps) {
             <View key={l.key} pointerEvents="none" style={{ position: 'absolute', left: b.x, top: b.y, width: b.w, height: b.h, borderRadius: 9, backgroundColor: C.overlay, alignItems: 'center', justifyContent: 'center' }}>
               <Text numberOfLines={1} style={{ fontSize: fs(10), fontWeight: '700', color: C.ink2 }}>{pick(l.text, lang)}</Text>
             </View>
+          );
+        })}
+
+        {minor.map(({ g, x, y }) => {
+          const s = summaries[g.id]?.status ?? 'open';
+          const bg = s === 'closed' ? PIN_CLOSED : s === 'open' ? PIN_OPEN : PIN_LIMITED;
+          return (
+            <Pressable key={g.id} accessibilityRole="button" accessibilityLabel={`${pick(g.name, lang)} · ${s}`} onPress={() => onGatePress?.(g.id)} hitSlop={8}
+              style={{ position: 'absolute', left: x - MINOR / 2, top: y - MINOR / 2, width: MINOR, height: MINOR, borderRadius: MINOR / 2, backgroundColor: bg, borderWidth: 1.5, borderColor: '#FFFFFF', alignItems: 'center', justifyContent: 'center' }}>
+              <Text style={{ color: s !== 'open' && s !== 'closed' ? '#17181C' : '#FFFFFF', fontSize: g.no.length > 2 ? 7 : 8, fontWeight: '700' }}>{g.no.split('–')[0]}</Text>
+            </Pressable>
           );
         })}
 

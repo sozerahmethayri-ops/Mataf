@@ -45,7 +45,7 @@ export default function CityScreen() {
 
   const gates = useMemo(() => GATES.filter((g) => g.city === city).map((g) => {
     const ll = toLatLng(city, g.pos);
-    return { id: g.id, no: g.no, lat: ll.latitude, lng: ll.longitude, closed: statusOf(g.id) === 'closed', name: pick(g.name, lang) };
+    return { id: g.id, no: g.no, lat: ll.latitude, lng: ll.longitude, closed: statusOf(g.id) === 'closed', name: pick(g.name, lang), main: !!g.main };
   }), [city, statusOf, lang]);
 
   const origin = hotel ?? (fix ? { lat: fix.lat, lng: fix.lng } : null);
@@ -67,7 +67,7 @@ export default function CityScreen() {
 
   return (
     <View style={{ flex: 1, backgroundColor: C.mapGround }}>
-      <CityMap padding={{ top: insets.top + 120, bottom: sheetH + 8, left: 10, right: 10 }} center={center} pois={pois.filter((p) => !cat || p.cat === cat)} hotel={hotel} gates={gates}
+      <CityMap padding={{ top: insets.top + 120, bottom: sheetH + 8, left: 10, right: 10 }} center={center} pois={pois.filter((p) => !cat || p.cat === cat)} hotel={hotel} gates={gates.filter((g) => g.main || g.id === target?.id)}
         route={mode === 'taxi' ? undefined : route?.coords} onLongPress={saveHotel}
         onGatePress={(id) => router.push({ pathname: '/kapi/[id]', params: { id } })} />
 

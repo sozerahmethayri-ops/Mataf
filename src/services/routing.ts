@@ -133,6 +133,8 @@ function finish(points: Pt[], gate?: Gate): Plan {
   return { points: clean, gate, lengthM, minutes: Math.max(1, Math.round(lengthM / 60)) }; // kalabalıkta ~60 m/dk
 }
 
+export const MINOR_GATE_PENALTY_M = 120;
+
 export function planRoute(
   city: City,
   from: Pt,
@@ -143,11 +145,15 @@ export function planRoute(
   if (!dest) return null;
   if (isInsideBuilding(city, from)) return finish([from, dest.pos]);
   if (!dest.inside) return finish(walkPath(city, from, dest.pos));
+  // Ana kapılar tabelalı, minareli ve kalabalıkta Mataf'a ayrılan kapılardır: diğer bir kapı ancak
+  // MINOR_GATE_PENALTY_M'den fazla kısaysa seçilir (yaşlı ziyaretçi için bulunması kolay kapı).
   let best: Plan | null = null;
+  let bestScore = Infinity;
   for (const g of GATES.filter((x) => x.city === city)) {
     if (BLOCKED.includes(statusOf(g.id))) continue;
     const p = finish([...walkPath(city, from, g.out), g.pos, g.inner, dest.pos], g);
-    if (!best || p.lengthM < best.lengthM) best = p;
+    const score = p.lengthM + (g.main ? 0 : MINOR_GATE_PENALTY_M);
+    if (score < bestScore) { best = p; bestScore = score; }
   }
   return best;
 }

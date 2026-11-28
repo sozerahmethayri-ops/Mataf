@@ -81,6 +81,18 @@ ok(summarize([r('g', 'closed', 'off', 60, true), r('g', 'open', 'a', 1), r('g', 
 const all = () => 'open' as GateStatus;
 const p1 = planRoute('makkah', DEMO_START.makkah, 'mataf', all)!;
 ok(p1.gate?.id === 'mk-62', `batıdan Mataf'a en kısa kapı 62 (seçilen: ${p1.gate?.id}, ${Math.round(p1.lengthM)} m)`);
+{
+  // Kapılar: ana kapılar + OSM'den gelenler (0.23.0)
+  const ids = new Set(GATES.map((g) => g.id));
+  ok(ids.size === GATES.length, `kapı kimlikleri tekil (${GATES.length} kapı)`);
+  const mk = GATES.filter((g) => g.city === 'makkah');
+  const md = GATES.filter((g) => g.city === 'madinah');
+  ok(mk.length >= 120 && md.length >= 20, `Mekke ${mk.length}, Medine ${md.length} kapı`);
+  ok(['1', '45', '62', '79', '100'].every((n) => mk.some((g) => g.no === n && g.main)), 'Mekke ana kapıları 1, 45, 62, 79, 100 (Genel Kurum)');
+  const good = GATES.filter((g) => !isInsideBuilding(g.city, g.out) && isInsideBuilding(g.city, g.inner)).length;
+  ok(good / GATES.length > 0.9, `kapıların dış noktası dışarıda, iç noktası içeride (${good}/${GATES.length})`);
+  ok(md.some((g) => g.women) && md.filter((g) => g.women).every((g) => g.side.tr.includes('kadınlar')), 'Medine kadınlar girişleri işaretli');
+}
 const p2 = planRoute('makkah', DEMO_START.makkah, 'mataf', (id) => (id === 'mk-62' ? 'closed' : 'open'))!;
 ok(!!p2.gate && p2.gate.id !== 'mk-62', `62 kapalı → yeni kapı ${p2.gate?.id} (${Math.round(p2.lengthM)} m)`);
 {
