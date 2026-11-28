@@ -5,6 +5,7 @@ import { GATES, type Pt } from '@/data/sites';
 import { HARAM_3D } from '@/data/osm/haram3d';
 import { KAABA_POLY, MAQAM, hijrBand } from '@/services/tawaf';
 import { buildKaaba } from './kaaba';
+import { contextPrims } from './context';
 import { Cam, mixHex, type Prim } from './oblique';
 import { arcades, buildModel, decodeOsm3d, drawModel, hull, type Model, type Paint, type Part } from './osm3d';
 
@@ -99,7 +100,8 @@ function getModel(): Model {
 
 export function buildMakkah(cam: Cam): { below: Prim[]; above: Prim[]; ghost: Prim[] } {
   const m = getModel();
-  const ground: Prim[] = [{ t: 'poly', pts: plaza.map(([x, y]) => cam.P(x, y).map(f).join(',')).join(' '), fill: '#FAF8F4' }];
+  // Önce 1,3 km'lik şehir dokusu (bina tabanları, yollar), üstüne mescidin mermer meydanı
+  const ground: Prim[] = [...contextPrims(cam, 'makkah'), { t: 'poly', pts: plaza.map(([x, y]) => cam.P(x, y).map(f).join(',')).join(' '), fill: '#FAF8F4' }];
   const { below, ghost } = drawModel(cam, m);
   return { below: [...ground, ...below], above: [], ghost };
 }

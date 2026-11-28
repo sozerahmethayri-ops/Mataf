@@ -19,8 +19,9 @@ const BASE_K: Record<City, number> = { makkah: 0.6, madinah: 0.56 };
 
 /** Son kurulan sahneler (şehir, ölçek adımı, açı): geri dönüşlerde anında. */
 const sceneCache = new Map<string, ReturnType<typeof buildMakkah>>();
-function sceneFor(city: City, kq: number, rotDeg: number) {
-  const key = `${city}|${kq.toFixed(4)}|${rotDeg}`;
+function sceneFor(city: City, kq: number, rotDeg: number, ground: string) {
+  // Zemin rengi anahtarda: şehir dokusu temaya göre çizilir
+  const key = `${city}|${kq.toFixed(4)}|${rotDeg}|${ground}`;
   let s = sceneCache.get(key);
   if (!s) {
     const cam = new Cam(kq, 0, 0, rotDeg);
@@ -37,7 +38,7 @@ const AnimatedPath = Animated.createAnimatedComponent(Path);
 const PIN = 28; // kapı dairesi
 const STEM = 10;
 const MINOR = 18; // diğer kapıların dairesi
-const MINOR_K = 1.6; // diğer kapılar bu yakınlıktan (piksel/metre) sonra görünür
+const MINOR_K = 1.0; // diğer kapılar bu yakınlıktan (piksel/metre) sonra görünür
 const LABEL_H = 18;
 const DEST_H = 24;
 const PIN_CLOSED = '#B42318';
@@ -97,7 +98,7 @@ export function HaramScene(props: SceneProps) {
   const cam = useMemo(() => {
     if (fitKey) {
       const pts = JSON.parse(fitKey) as Pt[];
-      return fitCamera(pts, width, height, { top: vt, bottom: vb, left: vl, right: vr }, { zoom, headroom: 28, kMin: 0.35, kMax: 1.6, rotDeg });
+      return fitCamera(pts, width, height, { top: vt, bottom: vb, left: vl, right: vr }, { zoom, headroom: 28, kMin: 0.18, kMax: 2.4, rotDeg });
     }
     return Cam.centeredOn(BASE_K[city] * zoom, [fx, fy], width * ax, height * ay, rotDeg);
   }, [fitKey, city, zoom, fx, fy, width, height, ax, ay, vt, vb, vl, vr, rotDeg]);
@@ -106,7 +107,8 @@ export function HaramScene(props: SceneProps) {
   // uygulanır. Böylece konum güncellemeleri ve yakınlaştırma düğmeleri sahneyi çoğu zaman yeniden kurdurmaz
   // (önceden %6'lık adımlarla her basışta binlerce şekil yeniden hesaplanıyordu).
   const kq = Math.pow(1.2, Math.round(Math.log(k) / Math.log(1.2)));
-  const scene = useMemo(() => sceneFor(city, kq, rotDeg), [city, kq, rotDeg]);
+  const ground = C.mapGround;
+  const scene = useMemo(() => sceneFor(city, kq, rotDeg, ground), [city, kq, rotDeg, ground]);
   const sceneTf = `translate(${cam.ox.toFixed(2)} ${cam.oy.toFixed(2)}) scale(${(k / kq).toFixed(4)})`;
 
   // Kaydırma (tek parmak) ve iki parmakla büyütme/döndürme. Hareket sırasında görüntü 2D dönüşümle
