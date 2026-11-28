@@ -94,6 +94,15 @@ if [ $added = 0 ]; then
     if widgetAdded; then added="dokunma $p"; break; fi
   done
 fi
+# Başlatıcının penceresi ara sıra hiç öne gelmiyor: bir kez daha iste
+if [ "$added" = 0 ]; then
+  adb shell input keyevent KEYCODE_HOME; sleep 2
+  open "vakitler?widget=1"; sleep 8
+  if tapText "Add to home screen|ADD TO HOME SCREEN|Add automatically|ADD AUTOMATICALLY|Add|ADD|Ekle|EKLE|Ana ekrana ekle"; then sleep 4; widgetAdded && added="ikinci deneme"; fi
+  if [ "$added" = 0 ]; then
+    for p in "700 950" "850 930" "750 930"; do tap $p; sleep 4; if widgetAdded; then added="ikinci deneme, dokunma $p"; break; fi; done
+  fi
+fi
 echo "widget eklendi: $added" >> smoke/status.txt
 sleep 3
 adb shell input keyevent KEYCODE_HOME; sleep 6; shot "41-widget-ana-ekran"
